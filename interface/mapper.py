@@ -35,7 +35,6 @@ def draw_line(draw_surface, line_color, start_point, end_point, line_thickness, 
                     pygame.draw.line(draw_surface, line_color, (start_point[0], i), (start_point[0], i+4), line_thickness)
 
 def draw_cell(draw_surface, x0, y0, x, y, cell_size, walls, check):
-    wall_list = list(walls)
     wall_color = [layout.grid_color, layout.grid_color, layout.grid_color, layout.grid_color]
     wall_thickness = [1,1,1,1]
     wall_dashed = [0,0,0,0]
@@ -50,14 +49,14 @@ def draw_cell(draw_surface, x0, y0, x, y, cell_size, walls, check):
                        (int(x0 + (x+1)*cell_size) - 4, int(y0 + y*cell_size))]
     
     for i in range(0,4):
-        if wall_list[i]=='1':
+        if walls[i]==1:
             wall_color[i]=layout.nowall_color
             wall_thickness[i]=1
-        if wall_list[i]=='2':
+        if walls[i]==2:
             wall_color[i]=layout.black
             wall_dashed[i]=1
             wall_thickness[i]=4
-        elif wall_list[i]=='3':
+        elif walls[i]==3:
             wall_color[i]=layout.black
             wall_thickness[i]=5
             if i==0 or i==2:
@@ -81,8 +80,8 @@ def draw_cell(draw_surface, x0, y0, x, y, cell_size, walls, check):
 
 
 
-def draw_map(draw_surface, wall_map, node_map):
-    if len(wall_map) == 0 or len(node_map) == 0:
+def draw_map(draw_surface, wall_map):
+    if len(wall_map) == 0:
         label_empty = render_text('Nothing to render', layout.red, layout.white , layout.big_font)
         lemw, lemh = label_empty.get_size()
         draw_surface.blit(label_empty,(layout.divider/2 - lemw/2, layout.screen_height/2 -lemh/2))
@@ -113,7 +112,7 @@ def draw_map(draw_surface, wall_map, node_map):
         for i in range(0,y_cells):
             for j in range(0,x_cells):
                 #Draw single cell
-                draw_cell(draw_surface, map_x_start, map_y_start, j, i, cell_size,wall_map[i][j],node_map[i][j])
+                draw_cell(draw_surface, map_x_start, map_y_start, j, i, cell_size,wall_map[i][j],1)
         print n_lines
         return 1
 

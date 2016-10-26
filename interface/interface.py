@@ -30,7 +30,6 @@ y_pos = 0 ##
 n_victims = 0 #Useless, simply shows on the screen the number of victims found
 elapsed_time = 0
 wall_map = []
-node_map = []
 
 ###End of match parameters
 
@@ -57,7 +56,6 @@ while True:
     n_victims = server.getVictimsNumber()
     elapsed_time = server.getElapsedTime()
     wall_map = server.getWallMap()
-    node_map = server.getNodeMap()
 
     #Checking for events (Escape key, X button)
     for event in pygame.event.get():
@@ -69,7 +67,7 @@ while True:
     layout.draw_layout(screen, robot_status, n_victims, elapsed_time, MAX_T)
 
     #The map
-    if(mapper.draw_map(screen, wall_map, node_map)==1):
+    if(mapper.draw_map(screen, wall_map)==1):
         #The robot
         robot.draw_robot(screen, mapper.map_x_start, mapper.map_y_start, x_pos, y_pos, mapper.cell_size, robot_orientation, layout.light_blue)
     

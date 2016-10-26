@@ -11,7 +11,6 @@ victims_number=0
 elapsed_time=0
 
 wall_map=[]
-node_map=[]
 
 @Pyro4.expose
 class server(object):
@@ -71,13 +70,6 @@ class server(object):
         wall_map=w_map
         return 0
 
-    def getNodeMap(self):
-        return node_map
-
-    def setNodeMap(self, n_map):
-        global node_map
-        node_map=n_map
-        return 0
 
 daemon = Pyro4.Daemon()                # make a Pyro daemon
 ns = Pyro4.locateNS()                  # find the name server
