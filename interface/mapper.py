@@ -23,7 +23,7 @@ def draw_line(draw_surface, line_color, start_point, end_point, line_thickness, 
         pygame.draw.line(draw_surface, line_color, start_point, end_point, line_thickness)
     else:
         if start_point[0]!=end_point[0] and start_point[1]!=end_point[1]:
-            print ("Can not draw oblique dashed lines")
+            print("Can not draw oblique dashed lines")
             return 0;
         elif start_point[0]!=end_point[0]:
             for i in range(start_point[0], end_point[0],1):
@@ -38,7 +38,7 @@ def draw_cell(draw_surface, x0, y0, x, y, cell_size, walls, check):
     wall_color = [layout.grid_color, layout.grid_color, layout.grid_color, layout.grid_color]
     wall_thickness = [1,1,1,1]
     wall_dashed = [0,0,0,0]
-    
+
     wall_start_points = [(int(x0 + x*cell_size), int(y0 + y*cell_size) + 4),
                          (int(x0 + x*cell_size) + 4, int(y0 + (y+1)*cell_size)),
                          (int(x0 + (x+1)*cell_size), int(y0 + y*cell_size) + 4),
@@ -47,7 +47,7 @@ def draw_cell(draw_surface, x0, y0, x, y, cell_size, walls, check):
                        (int(x0 + (x+1)*cell_size) - 4, int(y0 + (y+1)*cell_size)),
                        (int(x0+ (x+1)*cell_size), int(y0 + (y+1)*cell_size) - 4),
                        (int(x0 + (x+1)*cell_size) - 4, int(y0 + y*cell_size))]
-    
+
     for i in range(0,4):
         if walls[i]==1:
             wall_color[i]=layout.nowall_color
@@ -65,14 +65,14 @@ def draw_cell(draw_surface, x0, y0, x, y, cell_size, walls, check):
             else:
                 wall_start_points[i]=(wall_start_points[i][0]-6,wall_start_points[i][1])
                 wall_end_points[i]=(wall_end_points[i][0]+6,wall_end_points[i][1])
-            
-    
-    
+
+
+
     #Walls
     for i in range(0,4):
         if (x==0 and i==0) or (y==0 and i==3) or i==2 or i==1:
             draw_line(draw_surface, wall_color[i], wall_start_points[i], wall_end_points[i], wall_thickness[i], wall_dashed[i])
-        
+
     #Circles
     if check>0:
         pygame.gfxdraw.aacircle(draw_surface, int(x0 + x*cell_size + cell_size/2), int(y0 + y*cell_size + cell_size/2), int(cell_size/8),layout.blue if check==1 else layout.green)
@@ -86,7 +86,7 @@ def draw_map(draw_surface, wall_map):
         lemw, lemh = label_empty.get_size()
         draw_surface.blit(label_empty,(layout.divider/2 - lemw/2, layout.screen_height/2 -lemh/2))
         return -1
-    
+
     x_cells = len(wall_map[0])
     y_cells = len(wall_map)
     cell_width = max_map_width/x_cells
@@ -113,6 +113,5 @@ def draw_map(draw_surface, wall_map):
             for j in range(0,x_cells):
                 #Draw single cell
                 draw_cell(draw_surface, map_x_start, map_y_start, j, i, cell_size,wall_map[i][j],1)
-        print n_lines
+        print(n_lines)
         return 1
-

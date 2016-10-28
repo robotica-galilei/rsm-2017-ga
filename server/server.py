@@ -24,7 +24,7 @@ class server(object):
         global x_pos
         global y_pos
         if len(coords) < 2:
-            print coords
+            print(coords)
             return -1
         else:
             x_pos, y_pos = coords
@@ -77,4 +77,4 @@ uri = daemon.register(server)   # register the greeting maker as a Pyro object
 ns.register("robot.server", uri)   # register the object with a name in the name server
 
 print("Server ready.")
-daemon.requestLoop() 
+daemon.requestLoop()

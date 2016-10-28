@@ -18,7 +18,7 @@ pygame.display.set_caption('Rescue Maze') #Window caption
 pygame.mouse.set_visible(False) #Hide mouse cursor
 screen = pygame.display.set_mode((layout.screen_width,layout.screen_height)) #Add pygame.FULLSCREEN as 2nd parameter of this function to get full-screen
 clock = pygame.time.Clock()
-FPS = 5 #Refreshing rate of the screen 
+FPS = 5 #Refreshing rate of the screen
 MAX_T = 480 #Match max duration, default 480 seconds
 
 ###Match parameters, changed real-time by the main program
@@ -38,14 +38,14 @@ def check_connection():
     try:
         server.ping()
     except Exception as e:
-        print e
+        print(e)
         import errorscreen
         errorscreen.show_error(screen)
         pygame.display.update()
         time.sleep(3)
         pygame.quit()
         sys.exit()
-        
+
 
 while True:
     #Retrieve data from server
@@ -70,7 +70,7 @@ while True:
     if(mapper.draw_map(screen, wall_map)==1):
         #The robot
         robot.draw_robot(screen, mapper.map_x_start, mapper.map_y_start, x_pos, y_pos, mapper.cell_size, robot_orientation, layout.light_blue)
-    
+
 
     #RENDER
     pygame.display.update()
