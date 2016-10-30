@@ -1,6 +1,21 @@
 import numpy as np
 import queue
 
+def queue_check(mat, node, new, wall, dist, path, visited, q):
+    '''
+    Just a function to reduce the repetition of code into dijkstra algorithm
+    '''
+    if (not mat.item(wall) and (not visited.item(new) or dist.item(new) > dist.item(node) +1)):
+        dist.itemset(new, dist.item(node) +1)
+        q.put((dist.item(new),new))
+        visited.itemset(new, True)
+        tmp = [(new[0],new[1])]
+        tmp.extend(path[node[0]][node[1]])
+        path[new[0]][new[1]] = tmp
+
+    return mat, dist, path, visited, q
+
+
 def dijkstra(start, end ,mat):
     '''
     This function gets the starting cell, the final cell and the matrix.
@@ -25,45 +40,35 @@ def dijkstra(start, end ,mat):
         val = top[0]
         node = (top[1][0],top[1][1])
         if(val <= dist.item(node)):
-            if(node[0]>2):
+            if(node[0]>2): #Check left
                 new = (node[0]-2,node[1])
                 wall = (node[0]-1,node[1])
-                if (not mat.item(wall) and (not visited.item(new) or dist.item(new) > dist.item(node) +1)):
-                    dist.itemset(new, dist.item(node) +1)
-                    q.put((dist.item(new),new))
-                    visited.itemset(new, True)
-                    tmp = [(new[0],new[1])]
-                    tmp.extend(path[node[0]][node[1]])
-                    path[new[0]][new[1]] = tmp
-            if(node[1]>2):
+                mat, dist, path, visited, q = queue_check(mat, node, new, wall, dist, path, visited, q)
+            if(node[1]>2): #Check up
                 new = (node[0],node[1]-2)
                 wall = (node[0],node[1]-1)
-                if (not mat.item(wall) and (not visited.item(new) or dist.item(new) > dist.item(node) +1)):
-                    dist.itemset(new, dist.item(node) +1)
-                    q.put((dist.item(new),new))
-                    visited.itemset(new, True)
-                    tmp = [(new[0],new[1])]
-                    tmp.extend(path[node[0]][node[1]])
-                    path[new[0]][new[1]] = tmp
-            if(np.shape(mat)[0]-node[0]>2):
+                mat, dist, path, visited, q = queue_check(mat, node, new, wall, dist, path, visited, q)
+            if(np.shape(mat)[0]-node[0]>2): #Check right
                 new = (node[0]+2,node[1])
                 wall = (node[0]+1,node[1])
-                if (not mat.item(wall) and (not visited.item(new) or dist.item(new) > dist.item(node) +1)):
-                    dist.itemset(new, dist.item(node) +1)
-                    q.put((dist.item(new),new))
-                    visited.itemset(new, True)
-                    tmp = [(new[0],new[1])]
-                    tmp.extend(path[node[0]][node[1]])
-                    path[new[0]][new[1]] = tmp
-            if(np.shape(mat)[1]-node[1]>2):
+                mat, dist, path, visited, q = queue_check(mat, node, new, wall, dist, path, visited, q)
+            if(np.shape(mat)[1]-node[1]>2): #Check down
                 new = (node[0],node[1]+2)
                 wall = (node[0],node[1]+1)
-                if (not mat.item(wall) and (not visited.item(new) or dist.item(new) > dist.item(node) +1)):
-                    dist.itemset(new, dist.item(node) +1)
-                    q.put((dist.item(new),new))
-                    visited.itemset(new, True)
-                    tmp = [(new[0],new[1])]
-                    tmp.extend(path[node[0]][node[1]])
-                    path[new[0]][new[1]] = tmp
+                mat, dist, path, visited, q = queue_check(mat, node, new, wall, dist, path, visited, q)
 
     return dist[end[0]][end[1]], path[end[0]][end[1]][::-1] #Return the distance and the list of cells
+
+
+def best_path(pos, possible, mat):
+    '''
+    Function that given the starting position and the list of all the possible
+    cells to see, select the nearest thanks to dijkstra algorithm
+    '''
+    best = [-1,(0,0)]
+    for i in possible:
+        tmp = dijkstra(pos, i, mat)
+        if(tmp[0]<best[0] or best[0]==-1):
+            best=tmp
+
+    return best
