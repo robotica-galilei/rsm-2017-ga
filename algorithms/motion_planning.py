@@ -24,8 +24,7 @@ def dijkstra(start, end ,mat):
 
     visited = np.zeros((np.shape(mat)[0],np.shape(mat)[1]))
     dist = np.zeros((np.shape(mat)[0],np.shape(mat)[1]))
-
-    path = [[[] for i in range(np.shape(mat)[0])] for j in range(np.shape(mat)[1])]
+    path = [[[] for i in range(np.shape(mat)[1])] for j in range(np.shape(mat)[0])]
     for i in range (1, np.shape(mat)[0]-1,2):
         for j in range (1, np.shape(mat)[1]-1,2):
             path[i][j].append((i,j))
@@ -56,7 +55,6 @@ def dijkstra(start, end ,mat):
                 new = (node[0],node[1]+2)
                 wall = (node[0],node[1]+1)
                 mat, dist, path, visited, q = queue_check(mat, node, new, wall, dist, path, visited, q)
-
     return dist[end[0]][end[1]], path[end[0]][end[1]][::-1] #Return the distance and the list of cells
 
 
@@ -64,6 +62,18 @@ def best_path(pos, possible, mat):
     '''
     Function that given the starting position and the list of all the possible
     cells to see, select the nearest thanks to dijkstra algorithm
+
+    The matrix has this shape:
+
+      0 1 2 3 4 5 (first index)
+    0 a b c d e f
+    1 g h i j k l
+    2 m n o p q r
+
+    (second index)
+
+    and is sent as
+    np.matrix("a g m; b h n; c i o; d j p; e k q; f l r")
     '''
     best = [-1,(0,0)]
     for i in possible:
