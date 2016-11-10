@@ -1,13 +1,35 @@
 import numpy as np
 import queue
 
-def queue_check(mat, node, new, wall, dist, path, visited, q):
+def queue_check(mat, node, new, wall, dist, path, visited, q, dir_now, dir_then):
     '''
     Just a function to reduce the repetition of code into dijkstra algorithm
+    @param mat
+        The matrix of the maze
+    @param node
+        The node the robot is coming from
+    @param new
+        The node the robot is going to
+    @param wall
+        The edge that may be a wall (to check in mat)
+    @param dist
+        The matrix of the distances
+    @param path
+        The matrix of the paths
+    @param visited
+        The boolean matrix of visited nodes
+    @param q
+        The priority queue for dijkstra algorithm
+    @param dir_now
+        The direction of the robot on the node it is coming from
+    @param dir_then
+        The direction of the robot after the move
+
+    This function returns all the matrices and the priority queue updated
     '''
     if (not mat.item(wall) and (not visited.item(new) or dist.item(new) > dist.item(node) +1)):
-        dist.itemset(new, dist.item(node) +1)
-        q.put((dist.item(new),new))
+        dist.itemset(new, dist.item(node) +1 + abs(dir_now-dir_then)%4)
+        q.put((dist.item(new),new,dir_then))
         visited.itemset(new, True)
         tmp = [(new[0],new[1])]
         tmp.extend(path[node[0]][node[1]])
@@ -16,7 +38,7 @@ def queue_check(mat, node, new, wall, dist, path, visited, q):
     return mat, dist, path, visited, q
 
 
-def dijkstra(start, end ,mat):
+def dijkstra(direction,start, end ,mat):
     '''
     This function gets the starting cell, the final cell and the matrix.
     It returns the distance between the starting cell and the final cell.
@@ -30,7 +52,7 @@ def dijkstra(start, end ,mat):
             path[i][j].append((i,j))
 
     q = queue.PriorityQueue()
-    q.put((0,start))
+    q.put((0,start,direction))
     visited[start[0]][start[1]] = 1
     dist[start[0]][start[1]] = 0
 
@@ -42,23 +64,23 @@ def dijkstra(start, end ,mat):
             if(node[0]>2): #Check left
                 new = (node[0]-2,node[1])
                 wall = (node[0]-1,node[1])
-                mat, dist, path, visited, q = queue_check(mat, node, new, wall, dist, path, visited, q)
+                mat, dist, path, visited, q = queue_check(mat, node, new, wall, dist, path, visited, q, top[2], 0)
             if(node[1]>2): #Check up
                 new = (node[0],node[1]-2)
                 wall = (node[0],node[1]-1)
-                mat, dist, path, visited, q = queue_check(mat, node, new, wall, dist, path, visited, q)
+                mat, dist, path, visited, q = queue_check(mat, node, new, wall, dist, path, visited, q, top[2], 3)
             if(np.shape(mat)[0]-node[0]>2): #Check right
                 new = (node[0]+2,node[1])
                 wall = (node[0]+1,node[1])
-                mat, dist, path, visited, q = queue_check(mat, node, new, wall, dist, path, visited, q)
+                mat, dist, path, visited, q = queue_check(mat, node, new, wall, dist, path, visited, q, top[2], 2)
             if(np.shape(mat)[1]-node[1]>2): #Check down
                 new = (node[0],node[1]+2)
                 wall = (node[0],node[1]+1)
-                mat, dist, path, visited, q = queue_check(mat, node, new, wall, dist, path, visited, q)
+                mat, dist, path, visited, q = queue_check(mat, node, new, wall, dist, path, visited, q, top[2], 1)
     return dist[end[0]][end[1]], path[end[0]][end[1]][::-1] #Return the distance and the list of cells
 
 
-def best_path(pos, possible, mat):
+def best_path(direction,pos, possible, mat):
     '''
     Function that given the starting position and the list of all the possible
     cells to see, select the nearest thanks to dijkstra algorithm
@@ -77,7 +99,7 @@ def best_path(pos, possible, mat):
     '''
     best = [-1,(0,0)]
     for i in possible:
-        tmp = dijkstra(pos, i, mat)
+        tmp = dijkstra(direction,pos, i, mat)
         if(tmp[0]<best[0] or best[0]==-1):
             best=tmp
 
