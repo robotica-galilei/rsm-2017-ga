@@ -1,7 +1,7 @@
 import numpy as np
 import queue
 
-def queue_check(mat, node, new, wall, dist, path, visited, q, dir_now, dir_then):
+def queueCheck(mat, node, new, wall, dist, path, visited, q, dir_now, dir_then):
     '''
     Just a function to reduce the repetition of code into dijkstra algorithm
     @param mat
@@ -64,23 +64,23 @@ def dijkstra(direction,start, end ,mat):
             if(node[0]>2): #Check left
                 new = (node[0]-2,node[1])
                 wall = (node[0]-1,node[1])
-                mat, dist, path, visited, q = queue_check(mat, node, new, wall, dist, path, visited, q, top[2], 0)
+                mat, dist, path, visited, q = queueCheck(mat, node, new, wall, dist, path, visited, q, top[2], 0)
             if(node[1]>2): #Check up
                 new = (node[0],node[1]-2)
                 wall = (node[0],node[1]-1)
-                mat, dist, path, visited, q = queue_check(mat, node, new, wall, dist, path, visited, q, top[2], 3)
+                mat, dist, path, visited, q = queueCheck(mat, node, new, wall, dist, path, visited, q, top[2], 3)
             if(np.shape(mat)[0]-node[0]>2): #Check right
                 new = (node[0]+2,node[1])
                 wall = (node[0]+1,node[1])
-                mat, dist, path, visited, q = queue_check(mat, node, new, wall, dist, path, visited, q, top[2], 2)
+                mat, dist, path, visited, q = queueCheck(mat, node, new, wall, dist, path, visited, q, top[2], 2)
             if(np.shape(mat)[1]-node[1]>2): #Check down
                 new = (node[0],node[1]+2)
                 wall = (node[0],node[1]+1)
-                mat, dist, path, visited, q = queue_check(mat, node, new, wall, dist, path, visited, q, top[2], 1)
+                mat, dist, path, visited, q = queueCheck(mat, node, new, wall, dist, path, visited, q, top[2], 1)
     return dist[end[0]][end[1]], path[end[0]][end[1]][::-1] #Return the distance and the list of cells
 
 
-def best_path(direction,pos, possible, mat):
+def bestPath(direction,pos, possible, mat):
     '''
     Function that given the starting position and the list of all the possible
     cells to see, select the nearest thanks to dijkstra algorithm
