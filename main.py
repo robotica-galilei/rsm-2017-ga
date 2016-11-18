@@ -38,4 +38,3 @@ if __name__ == '__main__':
     #print(dijkstra([1,1],[3,3],mat))
     #available = [[7,5],[3,1]]
     #print(best_path(1,[1,1],available,mat))
-
