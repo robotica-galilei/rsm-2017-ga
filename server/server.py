@@ -1,4 +1,5 @@
 import Pyro4
+import numpy as np
 
 ### THIS SERVER IS USED ONLY TO TRANSMIT DATA TO THE GRAPHICAL INTERFACE AND TO RETRIEVE PROXIMITY SENSORS DATA ###
 
@@ -10,7 +11,7 @@ robot_status="Unknown"
 victims_number=0
 elapsed_time=0
 
-wall_map=[]
+maze_map=[]
 
 @Pyro4.expose
 class server(object):
@@ -62,12 +63,12 @@ class server(object):
         victims_number=v_num
         return 0
 
-    def getWallMap(self):
-        return wall_map
+    def getMazeMap(self):
+        return maze_map
 
-    def setWallMap(self, w_map):
-        global wall_map
-        wall_map=w_map
+    def setMazeMap(self, w_map):
+        global maze_map
+        maze_map=w_map
         return 0
 
 
