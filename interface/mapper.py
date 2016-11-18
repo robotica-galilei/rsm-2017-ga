@@ -34,7 +34,7 @@ def draw_line(draw_surface, line_color, start_point, end_point, line_thickness, 
                 if i % 8 == 0:
                     pygame.draw.line(draw_surface, line_color, (start_point[0], i), (start_point[0], i+4), line_thickness)
 
-def draw_cell(draw_surface, x0, y0, x, y, cell_size, walls, check):
+def draw_cell(draw_surface, x0, y0, x, y, cell_size, wall_map, check):
     wall_color = [layout.grid_color, layout.grid_color, layout.grid_color, layout.grid_color]
     wall_thickness = [1,1,1,1]
     wall_dashed = [0,0,0,0]
@@ -47,7 +47,13 @@ def draw_cell(draw_surface, x0, y0, x, y, cell_size, walls, check):
                        (int(x0 + (x+1)*cell_size) - 4, int(y0 + (y+1)*cell_size)),
                        (int(x0+ (x+1)*cell_size), int(y0 + (y+1)*cell_size) - 4),
                        (int(x0 + (x+1)*cell_size) - 4, int(y0 + y*cell_size))]
-
+    print(x, y)
+    walls=[]
+    walls.append(3 if wall_map[2*x][2*y+1]==1 else 1)
+    walls.append(3 if wall_map[2*x+1][2*y+2]==1 else 1)
+    walls.append(3 if wall_map[2*x+2][2*y+1]==1 else 1)
+    walls.append(3 if wall_map[2*x+1][2*y]==1 else 1)
+    #print(walls)
     for i in range(0,4):
         if walls[i]==1:
             wall_color[i]=layout.nowall_color
@@ -81,14 +87,19 @@ def draw_cell(draw_surface, x0, y0, x, y, cell_size, walls, check):
 
 
 def draw_map(draw_surface, wall_map):
+    if len(wall_map)%2==0 or len(wall_map[0])%2==0:
+        print("Invalid map dimensions.")
+        return -1
+    
     if len(wall_map) == 0:
         label_empty = render_text('Nothing to render', layout.red, layout.white , layout.big_font)
         lemw, lemh = label_empty.get_size()
         draw_surface.blit(label_empty,(layout.divider/2 - lemw/2, layout.screen_height/2 -lemh/2))
         return -1
 
-    x_cells = len(wall_map[0])
-    y_cells = len(wall_map)
+    x_cells = (len(wall_map)-1)/2
+    y_cells = (len(wall_map[0])-1)/2
+    print(x_cells,y_cells)
     cell_width = max_map_width/x_cells
     cell_height = max_map_height/y_cells
     if min(cell_width, cell_height) < min_cell_size:
@@ -112,6 +123,6 @@ def draw_map(draw_surface, wall_map):
         for i in range(0,y_cells):
             for j in range(0,x_cells):
                 #Draw single cell
-                draw_cell(draw_surface, map_x_start, map_y_start, j, i, cell_size,wall_map[i][j],1)
+                draw_cell(draw_surface, map_x_start, map_y_start, j, i, cell_size,wall_map,1)
         print(n_lines)
         return 1
