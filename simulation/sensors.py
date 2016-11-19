@@ -1,7 +1,7 @@
 import numpy as np
 
 #Matrix definition
-mat = np.matrix("0 1 0 1 0 1 0; 1 0 0 0 0 0 1; 0 1 0 1 0 0 0; 1 0 0 0 0 0 1; 0 1 0 0 0 1 0; 1 0 0 0 0 0 0; 0 0 0 1 0 1 0; 1 0 0 0 0 0 1; 0 1 0 1 0 1 0")
+mat = np.matrix("0 1 0 1 0 1 0; 1 0 0 0 0 0 1; 0 1 0 1 0 0 0; 1 0 0 0 0 0 1; 0 1 0 0 0 1 0; 1 0 0 0 0 0 1; 0 0 0 1 0 1 0; 1 0 0 0 0 0 1; 0 1 0 1 0 1 0")
 
 def scanWalls(pos, orient):
     walls=[]

@@ -69,7 +69,7 @@ while True:
     #The map
     if(mapper.draw_map(screen, maze_map)==1):
         #The robot
-        robot.draw_robot(screen, mapper.map_x_start, mapper.map_y_start, x_pos, y_pos, mapper.cell_size, robot_orientation, layout.light_blue)
+        robot.draw_robot(screen, mapper.map_x_start, mapper.map_y_start, (x_pos-1)/2, (y_pos-1)/2, mapper.cell_size, robot_orientation, layout.light_blue)
 
 
     #RENDER

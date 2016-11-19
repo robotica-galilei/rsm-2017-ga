@@ -34,7 +34,7 @@ def draw_line(draw_surface, line_color, start_point, end_point, line_thickness, 
                 if i % 8 == 0:
                     pygame.draw.line(draw_surface, line_color, (start_point[0], i), (start_point[0], i+4), line_thickness)
 
-def draw_cell(draw_surface, x0, y0, x, y, cell_size, wall_map, check):
+def draw_cell(draw_surface, x0, y0, x, y, cell_size, wall_map):
     wall_color = [layout.grid_color, layout.grid_color, layout.grid_color, layout.grid_color]
     wall_thickness = [1,1,1,1]
     wall_dashed = [0,0,0,0]
@@ -80,6 +80,7 @@ def draw_cell(draw_surface, x0, y0, x, y, cell_size, wall_map, check):
             draw_line(draw_surface, wall_color[i], wall_start_points[i], wall_end_points[i], wall_thickness[i], wall_dashed[i])
 
     #Circles
+    check = wall_map[2*x+1][2*y+1] 
     if check>0:
         pygame.gfxdraw.aacircle(draw_surface, int(x0 + x*cell_size + cell_size/2), int(y0 + y*cell_size + cell_size/2), int(cell_size/8),layout.blue if check==1 else layout.green)
         pygame.gfxdraw.filled_circle(draw_surface, int(x0 + x*cell_size + cell_size/2), int(y0 + y*cell_size + cell_size/2), int(cell_size/8),layout.blue if check==1 else layout.green)
@@ -123,6 +124,6 @@ def draw_map(draw_surface, wall_map):
         for i in range(0,y_cells):
             for j in range(0,x_cells):
                 #Draw single cell
-                draw_cell(draw_surface, map_x_start, map_y_start, j, i, cell_size,wall_map,1)
+                draw_cell(draw_surface, map_x_start, map_y_start, j, i, cell_size,wall_map)
         print(n_lines)
         return 1
