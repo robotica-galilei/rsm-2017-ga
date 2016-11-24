@@ -12,20 +12,27 @@ def getAbsoluteDirection(robotDirection, robotSensor):
     '''
     return (robotDirection-robotSensor+4)%4
 
-def uodatePosition(position, index):
+def updatePosition(position, home,unexplored_queue, index):
     '''
     Function that updates the position (adding 2 to the value in the index) given
     the actual position and the index
     @param position (tuple)
         The actual position (X,Y)
+    @param home (tuple)
+        The home position (X,Y)
+    @param unexplored_queue (list of tuples)
+        The list of the cells to view (X,Y)
     @param index
         The index to edit (index = 0, index = 1)
 
-    Returns the position edited as tuple
+    Returns the actual position, the home position and the unexplored_queue shifted
     '''
-    #TODO
+    for i in range(0,len(unexplored_queue)):
+        unexplored_queue[i]=(unexplored_queue[i][0]+((not index)*2),unexplored_queue[i][1]+(index*2)) #Shift queued cells position
+    position = (position[0]+((not index)*2),position[1]+(index*2)) #Shift robot position
+    home = (home[0]+((not index)*2),home[1]+(index*2)) #Shift home position
 
-    return position;
+    return position, home, unexplored_queue;
 
 def appendTwoLinesToMatrix(mat, axis, position):
     '''
@@ -38,6 +45,15 @@ def appendTwoLinesToMatrix(mat, axis, position):
 
     Returns the new matrix after the edit.
     '''
-    #TODO
+    if(axis == 0):
+        if(position == 0):
+            mat = np.hstack((np.zeros((np.shape(mat)[0],2)),mat)) #Add 2 rows to the top
+        elif(position == 1):
+            mat = np.hstack((mat,np.zeros((np.shape(mat)[0],2)))) #Add 2 rows to the bottom
+    elif(axis == 1):
+        if(position == 0):
+            mat = np.vstack((np.zeros((2,np.shape(mat)[1])),mat)) #Add 2 columns to the left
+        elif(position == 1):
+            mat = np.vstack((mat,np.zeros((2,np.shape(mat)[1])))) #Add 2 columns to the right
 
-    return 0;
+    return mat;
