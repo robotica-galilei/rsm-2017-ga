@@ -88,37 +88,15 @@ if __name__ == '__main__':
 
 
         ##########Resize map, shift indexes, add walls and cells to queue
-        if walls[0]>0: #Left wall
-            mat.itemset((pos[0]-1,pos[1]),1) #Set wall
-        else:
-            if pos[0]==1:
-                mat = maman.appendTwoLinesToMatrix(mat, 1, 0)
-                pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 1)
-            mat, unexplored_queue = nearcellToQueue(mat, (pos[0]-2,pos[1]), unexplored_queue)
-
-
-        if walls[1]>0: #Bottom wall
-            mat.itemset((pos[0],pos[1]+1),1) #Set wall
-        else:
-            if pos[1]==np.shape(mat)[1]-2:
-                mat = maman.appendTwoLinesToMatrix(mat, 0, 1)
-            mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]+2), unexplored_queue)
-
-
-        if walls[2]>0: #Right wall
-            mat.itemset((pos[0]+1,pos[1]),1) #Set wall
-        else:
-            if pos[0]==np.shape(mat)[0]-2:
-                mat = maman.appendTwoLinesToMatrix(mat, 1, 1)
-            mat, unexplored_queue = nearcellToQueue(mat, (pos[0]+2,pos[1]), unexplored_queue)
-
-        if walls[3]>0: #Top wall
-            mat.itemset((pos[0],pos[1]-1),1) #Set wall
-        else:
-            if pos[1]==1:
-                mat = maman.appendTwoLinesToMatrix(mat, 0, 0)
-                pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 0)
-            mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]-2), unexplored_queue)
+        for n in range(4):
+            if walls[n]>0: #Check wall
+                mat.itemset((pos[0]+(((n+1)%2)*(n-1)),pos[1]+((n%2)*(2-n))),1) #Set wall
+            else:
+                if pos[(n)%2]==(int(n<1 or n>2)+int(n>0 and n<3)*(np.shape(mat)[n%2]-2)):
+                    mat = maman.appendTwoLinesToMatrix(mat, (n+1)%2, (n>0 and n<3))
+                    if(n%3==0):
+                        pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, (n+1)%4)
+                mat, unexplored_queue = nearcellToQueue(mat, (pos[0]+(((n+1)%2)*(n-1)*2),pos[1]+((n%2)*(2-n)*2)), unexplored_queue)
         ##########
 
         server.setMazeMap(mat.tolist()) #Update map
