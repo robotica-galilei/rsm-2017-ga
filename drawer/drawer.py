@@ -29,7 +29,7 @@ def saveMaze():
             mat += "; "
     print(mat)
 
-maze_map = np.matrix("0 0 0 0 0 0 0; 0 0 0 0 0 0 0; 0 0 0 0 0 0 0; 0 0 0 0 0 0 0; 0 0 0 0 0 0 0; 0 0 0 0 0 0 0; 0 0 0 0 0 0 0")
+maze_map = np.matrix("0 0 0; 0 0 0; 0 0 0")
 expansion_mode=1
 pos=(1,1)
 
@@ -41,44 +41,45 @@ while True:
             sys.exit()
         elif event.type==pygame.KEYDOWN:
             print("Key pressed")
-            if event.key==270:
-                expansion_mode=1
-            elif event.key==269:
-                expansion_mode=0
+            if event.key==32:
+                if expansion_mode==0:
+                    expansion_mode=1
+                else:
+                    expansion_mode=0
             elif event.key==13:
                 saveMaze()
             if expansion_mode==0:
-                if event.key==273:
+                if event.key==119:
                     if pos[1] > 1:
                         pos=(pos[0],pos[1]-2)
-                elif event.key==274:
+                elif event.key==115:
                     if pos[1] < np.shape(maze_map)[1]-2:
                         pos=(pos[0],pos[1]+2)
-                elif event.key==275:
+                elif event.key==100:
                     if pos[0] < np.shape(maze_map)[0]-2:
                         pos=(pos[0]+2,pos[1])
-                elif event.key==276:
+                elif event.key==97:
                     if pos[0] > 1:
                         pos=(pos[0]-2,pos[1])
-                elif event.key==258:
+                elif event.key==274:
                     wall_pos=(pos[0],pos[1]+1)
                     if maze_map.item(wall_pos)==0:
                         maze_map.itemset(wall_pos,1)
                     else:
                         maze_map.itemset(wall_pos,0)
-                elif event.key==260:
+                elif event.key==276:
                     wall_pos=(pos[0]-1,pos[1])
                     if maze_map.item(wall_pos)==0:
                         maze_map.itemset(wall_pos,1)
                     else:
                         maze_map.itemset(wall_pos,0)
-                elif event.key==262:
+                elif event.key==275:
                     wall_pos=(pos[0]+1,pos[1])
                     if maze_map.item(wall_pos)==0:
                         maze_map.itemset(wall_pos,1)
                     else:
                         maze_map.itemset(wall_pos,0)
-                elif event.key==264:
+                elif event.key==273:
                     wall_pos=(pos[0],pos[1]-1)
                     if maze_map.item(wall_pos)==0:
                         maze_map.itemset(wall_pos,1)
@@ -87,7 +88,7 @@ while True:
                 else:
                     print(event.key)
             else:
-                if event.key==258:
+                if event.key==261:
                     maze_map = np.hstack((maze_map,np.zeros((np.shape(maze_map)[0],2))))
                 elif event.key==260:
                     maze_map = np.vstack((np.zeros((2,np.shape(maze_map)[1])),maze_map))
