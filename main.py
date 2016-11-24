@@ -4,6 +4,7 @@ import time
 import numpy as np
 import simulation.sensors as sm
 import algorithms.motion_planning as mp
+import algorithms.map_management as maman
 
 
 def moveTo(path):
@@ -29,6 +30,23 @@ def moveTo(path):
         pos=i
         server.setRobotPosition(pos)
 
+def nearcellToQueue(mat, nearcell, unexplored_queue):
+    '''
+    Just a function to reduce the repetition of code into the main
+    @param mat
+        The matrix of the maze
+    @param nearcell (tuple)
+        The cell to check and add
+    @param unexplored_queue (list of tuples)
+        The list of the cells to view (X,Y)
+
+    Returns the updated mat and unexplored_queue
+    '''
+    if (nearcell not in unexplored_queue) and mat.item(nearcell)==0: #If the cell is not queued and not explored yet
+        mat.itemset(nearcell,1) #Set as queued/explored
+        unexplored_queue.append(nearcell) #Add to queue
+    return mat, unexplored_queue
+
 if __name__ == '__main__':
     #Global variables
     mat = np.matrix("0 0 0; 0 0 0; 0 0 0") #1x1 Matrix
@@ -37,9 +55,9 @@ if __name__ == '__main__':
     orientation=3 #Initial orientation, generally
     unexplored_queue=[] #Queue containing all the unexplored cells
     #print(mat)
-    
+
     server = Pyro4.Proxy("PYRONAME:robot.server") #Connect to server for graphical interface
-    
+
     ###Initial settings to be displayed
     server.setRobotStatus("Waiting for start")
     server.setRobotPosition(pos)
@@ -48,21 +66,21 @@ if __name__ == '__main__':
     server.setMazeMap(mat.tolist())
     server.setRobotOrientation(orientation)
     ###
-    
+
     input("Continue...")
     while True:
         server.setRobotStatus("Exploring")
         #Set current cell as explored
         mat.itemset(pos,2)
-        
+
         #Remove current cell from unexplored cells if needed
         if pos in unexplored_queue:
             unexplored_queue.remove(pos)
 
-            
+
         #Read sensors
         walls = sm.scanWalls(pos,orientation)
-        
+
         #Rectify readings on the orientation of the robot (cyclic permutation)
         for i in range(0,3-orientation):
             walls.append(walls[0])
@@ -74,69 +92,52 @@ if __name__ == '__main__':
             mat.itemset((pos[0]-1,pos[1]),1) #Set wall
         else:
             if pos[0]==1:
-                mat = np.vstack((np.zeros((2,np.shape(mat)[1])),mat)) #Add 2 columns to the left
-                pos = (pos[0]+2,pos[1]) #Shift robot position
-                home = (home[0]+2,home[1]) #Shift home position
-                for i in range(0,len(unexplored_queue)):
-                    unexplored_queue[i]=(unexplored_queue[i][0]+2,unexplored_queue[i][1]) #Shift queued cells position
-            nearcell = (pos[0]-2,pos[1]) #Define adjacent cell position
-            if (nearcell not in unexplored_queue) and mat.item(nearcell)==0: #If the cell is not queued and not explored yet
-                mat.itemset(nearcell,1) #Set as queued
-                unexplored_queue.append(nearcell) #Add to queue
+                mat = maman.appendTwoLinesToMatrix(mat, 1, 0)
+                pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 1)
+            mat, unexplored_queue = nearcellToQueue(mat, (pos[0]-2,pos[1]), unexplored_queue)
 
 
         if walls[1]>0: #Bottom wall
             mat.itemset((pos[0],pos[1]+1),1) #Set wall
         else:
             if pos[1]==np.shape(mat)[1]-2:
-                mat = np.hstack((mat,np.zeros((np.shape(mat)[0],2)))) #Add 2 rows to the bottom
-            nearcell = (pos[0],pos[1]+2) #Define adjacent cell position
-            if (nearcell not in unexplored_queue) and mat.item(nearcell)==0: #If the cell is not queued and not explored yet
-                mat.itemset(nearcell,1) #Set as queued
-                unexplored_queue.append(nearcell) #Add to queue
+                mat = maman.appendTwoLinesToMatrix(mat, 0, 1)
+            mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]+2), unexplored_queue)
+
 
         if walls[2]>0: #Right wall
             mat.itemset((pos[0]+1,pos[1]),1) #Set wall
         else:
             if pos[0]==np.shape(mat)[0]-2:
-                mat = np.vstack((mat,np.zeros((2,np.shape(mat)[1])))) #Add 2 columns to the right
-            nearcell = (pos[0]+2,pos[1]) #Define adjacent cell position
-            if (nearcell not in unexplored_queue) and mat.item(nearcell)==0: #If the cell is not queued and not explored yet
-                mat.itemset(nearcell,1) #Set as queued
-                unexplored_queue.append(nearcell) #Add to queue
+                mat = maman.appendTwoLinesToMatrix(mat, 1, 1)
+            mat, unexplored_queue = nearcellToQueue(mat, (pos[0]+2,pos[1]), unexplored_queue)
 
         if walls[3]>0: #Top wall
             mat.itemset((pos[0],pos[1]-1),1) #Set wall
         else:
             if pos[1]==1:
-                mat = np.hstack((np.zeros((np.shape(mat)[0],2)),mat)) #Add 2 rows to the top
-                pos = (pos[0],pos[1]+2) #Shift robot position
-                home = (home[0],home[1]+2) #Shift home position
-                for i in range(0,len(unexplored_queue)):
-                    unexplored_queue[i]=(unexplored_queue[i][0],unexplored_queue[i][1]+2) #Shift queued cells position
-            nearcell = (pos[0],pos[1]-2) #Define adjacent cell position
-            if (nearcell not in unexplored_queue) and mat.item(nearcell)==0: #If the cell is not queued and not explored yet
-                mat.itemset(nearcell,1) #Set as queued
-                unexplored_queue.append(nearcell) #Add to queue
+                mat = maman.appendTwoLinesToMatrix(mat, 0, 0)
+                pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 0)
+            mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]-2), unexplored_queue)
         ##########
-        
+
         server.setMazeMap(mat.tolist()) #Update map
-        
+
         #Decide where to go
         if len(unexplored_queue)==0: #If there is no available cell to explore, the maze is done
             if pos!=home:
                 server.setRobotStatus("Done! Homing...")
-                destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat) #Find the best path to reach home 
+                destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat) #Find the best path to reach home
                 moveTo(destination)
             server.setRobotStatus("Done!")
             input("Press enter to continue")
             sys.exit()
-                
+
         destination=mp.bestPath(orientation,[pos[0],pos[1]],unexplored_queue,mat) #Find the best path to reach the nearest cell
-        
+
         #Move to destination
         moveTo(destination)
-        
+
         #print(dijkstra([1,1],[3,3],mat))
         #available = [[7,5],[3,1]]
         #print(best_path(1,[1,1],available,mat))
