@@ -7,7 +7,7 @@ pip install Pyro4
 
 Pm2, using npm:
 
-nmp install pm2 -g
+npm install pm2 -g
 
 
 
