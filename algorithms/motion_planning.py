@@ -28,7 +28,7 @@ def queueCheck(mat, node, new, wall, dist, path, visited, q, dir_now, dir_then):
     This function returns all the matrices and the priority queue updated
     '''
     if (not mat.item(wall) and (not visited.item(new) or dist.item(new) > dist.item(node) +1)):
-        dist.itemset(new, dist.item(node) +1 + abs(dir_now-dir_then)%4)
+        dist.itemset(new, dist.item(node) +1 + abs(((abs(dir_now-dir_then)+1)%4)-1))
         q.put((dist.item(new),new,dir_then))
         visited.itemset(new, True)
         tmp = [(new[0],new[1])]
@@ -98,6 +98,7 @@ def bestPath(direction,pos, possible, mat):
     np.matrix("a g m; b h n; c i o; d j p; e k q; f l r")
     '''
     best = [-1,(0,0)]
+    print("Possible cells:")
     for i in possible:
         tmp = dijkstra(direction,pos, i, mat)
         if(tmp[0]<best[0] or best[0]==-1):
