@@ -34,6 +34,8 @@ def draw_line(draw_surface, line_color, start_point, end_point, line_thickness, 
                 if i % 8 == 0:
                     pygame.draw.line(draw_surface, line_color, (start_point[0], i), (start_point[0], i+4), line_thickness)
 
+
+
 def draw_cell(draw_surface, x0, y0, x, y, cell_size, wall_map):
     wall_color = [layout.grid_color, layout.grid_color, layout.grid_color, layout.grid_color]
     wall_thickness = [1,1,1,1]
@@ -48,11 +50,12 @@ def draw_cell(draw_surface, x0, y0, x, y, cell_size, wall_map):
                        (int(x0+ (x+1)*cell_size), int(y0 + (y+1)*cell_size) - 4),
                        (int(x0 + (x+1)*cell_size) - 4, int(y0 + y*cell_size))]
     print(x, y)
+    check = wall_map[2*x+1][2*y+1] 
     walls=[]
-    walls.append(3 if wall_map[2*x][2*y+1]==1 else 1)
-    walls.append(3 if wall_map[2*x+1][2*y+2]==1 else 1)
-    walls.append(3 if wall_map[2*x+2][2*y+1]==1 else 1)
-    walls.append(3 if wall_map[2*x+1][2*y]==1 else 1)
+    walls.append(3 if wall_map[2*x][2*y+1]==1 else (2 if (x>0 and ((wall_map[2*(x-1)+1][2*y+1]==1 and check==2) or (wall_map[2*(x-1)+1][2*y+1]==2 and check==1))) else 1))
+    walls.append(3 if wall_map[2*x+1][2*y+2]==1 else (2 if (y<int((len(wall_map[0])-1)/2)-1 and ((wall_map[2*x+1][2*(y+1)+1]==1 and check==2) or (wall_map[2*x+1][2*(y+1)+1]==2 and check==1))) else 1))
+    walls.append(3 if wall_map[2*x+2][2*y+1]==1 else (2 if (x<int((len(wall_map)-1)/2)-1 and ((wall_map[2*(x+1)+1][2*y+1]==1 and check==2) or (wall_map[2*(x+1)+1][2*y+1]==2 and check==1))) else 1))
+    walls.append(3 if wall_map[2*x+1][2*y]==1 else (2 if (y>0 and ((wall_map[2*x+1][2*(y-1)+1]==1 and check==2) or (wall_map[2*x+1][2*(y-1)+1]==2 and check==1))) else 1))
     #print(walls)
     for i in range(0,4):
         if walls[i]==1:
@@ -80,7 +83,6 @@ def draw_cell(draw_surface, x0, y0, x, y, cell_size, wall_map):
             draw_line(draw_surface, wall_color[i], wall_start_points[i], wall_end_points[i], wall_thickness[i], wall_dashed[i])
 
     #Circles
-    check = wall_map[2*x+1][2*y+1] 
     if check>0:
         pygame.gfxdraw.aacircle(draw_surface, int(x0 + x*cell_size + cell_size/2), int(y0 + y*cell_size + cell_size/2), int(cell_size/8),layout.blue if check==1 else layout.green)
         pygame.gfxdraw.filled_circle(draw_surface, int(x0 + x*cell_size + cell_size/2), int(y0 + y*cell_size + cell_size/2), int(cell_size/8),layout.blue if check==1 else layout.green)
