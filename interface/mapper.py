@@ -75,7 +75,17 @@ def draw_cell(draw_surface, x0, y0, x, y, cell_size, wall_map):
                 wall_start_points[i]=(wall_start_points[i][0]-6,wall_start_points[i][1])
                 wall_end_points[i]=(wall_end_points[i][0]+6,wall_end_points[i][1])
 
+    special = 0;
+    if(wall_map[x][y] >= 128):
+        special = 1;
+    if(wall_map[x][y] >= 256):
+        special = 2;
 
+    #Cell specialties
+    if(special == 1): #Checkpoint
+        pygame.draw.rect(draw_surface, layout.silver, (int(x0 + x*cell_size)+3, int(y0 + y*cell_size)+3, cell_size-3, cell_size-3), 0)
+    elif(special == 2): #Black cell
+        pygame.draw.rect(draw_surface, layout.almost_black, (int(x0 + x*cell_size)+3, int(y0 + y*cell_size)+3, cell_size-3, cell_size-3), 0)
 
     #Walls
     for i in range(0,4):
@@ -88,12 +98,11 @@ def draw_cell(draw_surface, x0, y0, x, y, cell_size, wall_map):
         pygame.gfxdraw.filled_circle(draw_surface, int(x0 + x*cell_size + cell_size/2), int(y0 + y*cell_size + cell_size/2), int(cell_size/8),layout.blue if check==1 else layout.green)
 
 
-
 def draw_map(draw_surface, wall_map):
     if len(wall_map)%2==0 or len(wall_map[0])%2==0:
         print("Invalid map dimensions.")
         return -1
-    
+
     if len(wall_map) == 0:
         label_empty = render_text('Nothing to render', layout.red, layout.white , layout.big_font)
         lemw, lemh = label_empty.get_size()

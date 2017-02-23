@@ -19,6 +19,8 @@ red = (255, 0, 0)
 orange = (255, 165, 0)
 blue = (0, 0, 255)
 light_blue = (102, 178, 255)
+silver = (211,211,211)
+almost_black = (15, 15, 15)
 
 #Settings
 screen_width = 800
@@ -46,18 +48,18 @@ def draw_layout(draw_surface, robot_status, n_victims, elapsed_time, max_time):
     if (1 - div_factor)*screen_width < 180:
         div_factor=(screen_width-180)/screen_width
         divider = screen_width*div_factor
-        #print (div_factor)    
-    
+        #print (div_factor)
+
     #base
     draw_surface.fill(white)
     pygame.draw.rect(draw_surface, panel_color, (divider, 0, screen_width-divider, screen_height))
     pygame.draw.line(draw_surface, divider_color , (divider, 0), (divider,screen_height), 4)
-    
+
     #status_label
     label1 = render_text('Status', white, panel_color, big_font)
     l1w, l1h = label1.get_size()
     draw_surface.blit(label1,((divider+screen_width)/2 - l1w/2, screen_height/7 -l1h/2))
-    status_color = green    
+    status_color = green
     if robot_status == 'Lack of progress':
         status_color = orange
     elif robot_status == 'Lost':
@@ -84,7 +86,7 @@ def draw_layout(draw_surface, robot_status, n_victims, elapsed_time, max_time):
     elif elapsed_time < max_time:
         timer_color = orange
     else:
-        timer_color = red    
+        timer_color = red
     label6 = render_text(str(int(elapsed_minutes)) + ":" + str("%02d" % int(elapsed_seconds)), timer_color, panel_color, big_font)
     l6w, l6h = label6.get_size()
     draw_surface.blit(label6,((divider+screen_width)/2 - l6w/2, screen_height*6/7 -l6h/2 + info_offset))
