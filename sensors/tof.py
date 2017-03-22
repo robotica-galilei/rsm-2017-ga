@@ -2,6 +2,7 @@
 
 import time
 import smbus
+import Adafruit_BBIO.GPIO as GPIO
 
 # ===========================================================================
 # ST_VL6180x ToF ranger Class
@@ -109,7 +110,7 @@ class VL6180X:
         40:     40.00,     # Nominal gain 40;   actual gain 40
     }
 
-    def __init__(self, address=0x29, debug=False):
+    def __init__(self, gpio, address=0x29, debug=False):
         # Depending on if you have an old or a new Raspberry Pi, you
         # may need to change the I2C bus.  Older Pis use SMBus 0,
         # whereas new Pis use SMBus 1.  If you see an error like:
@@ -118,7 +119,9 @@ class VL6180X:
 
         # setup i2c bus and SFR address
         self.i2c = smbus.SMBus(2)
-        self.address = address
+        self.address = 0x29
+        self.wanted_address = address
+        self.gpio = gpio
         self.debug = debug
 
         # Module identification
@@ -130,6 +133,14 @@ class VL6180X:
         self.idDate = 0x00
         self.idTime = 0x00
 
+        GPIO.setup(self.gpio, GPIO.OUT)
+        self.deactivate() # Must be started turned off
+
+    def deactivate(self):
+        GPIO.output(self.gpio, GPIO.LOW)
+
+    def activate(self):
+        GPIO.output(self.gpio, GPIO.HIGH)
         if self.get_register(self.__VL6180X_SYSTEM_FRESH_OUT_OF_RESET) == 1:
             print "ToF sensor is ready."
             self.ready = True
@@ -169,6 +180,11 @@ class VL6180X:
         self.set_register(0x01ac, 0x3e)
         self.set_register(0x01a7, 0x1f)
         self.set_register(0x0030, 0x00)
+
+        # Change address if requested
+        if self.wanted_address != 0x29:
+            self.change_address(0x29, self.wanted_address) 
+
         if self.debug:
             print"Register settings:"
             print"0x0207 - %x" % self.get_register(0x0207)
