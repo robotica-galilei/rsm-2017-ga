@@ -20,4 +20,4 @@ def setup(gpio, direction):
 def output(gpio, value):
     if gpio not in exported:
         raise GPIOError('GPIO setup required')
-    write_file(gpio + "/value", value)
+    write_file(gpio + "/value", str(value))
