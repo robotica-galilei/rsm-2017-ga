@@ -30,26 +30,26 @@ class Motor:
 
     def setSpeedLeft(self, power):
         if(power<0):
-            GPIO.output(self.pins['dir_fl'],GPIO.HIGH)
-            GPIO.output(self.pins['dir_rl'],GPIO.HIGH)
-        else:
             GPIO.output(self.pins['dir_fl'],GPIO.LOW)
             GPIO.output(self.pins['dir_rl'],GPIO.LOW)
+        else:
+            GPIO.output(self.pins['dir_fl'],GPIO.HIGH)
+            GPIO.output(self.pins['dir_rl'],GPIO.HIGH)
 
-        PWM.start(self.pins['fl'], power, 25000)
-        PWM.start(self.pins['rl'], power, 25000)
+        PWM.start(self.pins['fl'], abs(power), 25000)
+        PWM.start(self.pins['rl'], abs(power), 25000)
         self.actual_l = power
 
     def setSpeedRight(self, power):
         if(power<0):
-            GPIO.output(self.pins['dir_fr'],GPIO.HIGH)
-            GPIO.output(self.pins['dir_rr'],GPIO.HIGH)
-        else:
             GPIO.output(self.pins['dir_fr'],GPIO.LOW)
             GPIO.output(self.pins['dir_rr'],GPIO.LOW)
+        else:
+            GPIO.output(self.pins['dir_fr'],GPIO.HIGH)
+            GPIO.output(self.pins['dir_rr'],GPIO.HIGH)
 
-        PWM.start(self.pins['fr'], power, 25000)
-        PWM.start(self.pins['rr'], power, 25000)
+        PWM.start(self.pins['fr'], abs(power), 25000)
+        PWM.start(self.pins['rr'], abs(power), 25000)
         self.actual_r = power
 
     def stopLeft(self):
@@ -58,7 +58,7 @@ class Motor:
     def stopRight(self):
         self.setSpeedRight(0)
 
-    def setSpeeds(self, left, right, l_power, r_power):
+    def setSpeeds(self, l_power, r_power):
         self.setSpeedLeft(l_power)
         self.setSpeedRight(r_power)
 
