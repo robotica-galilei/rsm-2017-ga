@@ -1,8 +1,8 @@
 import sys
-sys.path.append("..")
+sys.path.append("../")
 
 import Adafruit_BBIO.PWM as PWM
-import utils.GPIO
+import utils.GPIO as GPIO
 
 class Motor:
     def __init__(self, pins):
