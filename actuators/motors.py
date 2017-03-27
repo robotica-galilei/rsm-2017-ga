@@ -3,6 +3,13 @@ sys.path.append("../")
 
 import Adafruit_BBIO.PWM as PWM
 import utils.GPIO as GPIO
+import time
+
+MOTOR_CELL_TIME     =       1.8
+MOTOR_ROTATION_TIME =       1.5
+MOTOR_DEFAULT_POWER_LINEAR      =       30
+MOTOR_DEFAULT_POWER_ROTATION    =       30
+
 
 class Motor:
     def __init__(self, pins):
@@ -65,3 +72,26 @@ class Motor:
     def stop(self):
         self.stopLeft()
         self.stopRight()
+
+    """
+    Here start the simple functions for robot motion execution
+    """
+    def oneCellForward(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME):
+        self.setSpeeds(power, power)
+        time.sleep(wait)
+        self.stop()
+
+    def oneCellBack(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME):
+        self.setSpeeds(-power, -power)
+        time.sleep(wait)
+        self.stop()
+
+    def rotateRight(self, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
+        self.setSpeeds(power, -power)
+        time.sleep(wait)
+        self.stop()
+
+    def rotateLeft(self, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
+        self.setSpeeds(-power, power)
+        time.sleep(wait)
+        self.stop()
