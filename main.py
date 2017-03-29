@@ -5,9 +5,13 @@ import numpy as np
 import simulation.sensors as sm
 import algorithms.motion_planning as mp
 import algorithms.map_management as maman
+try:
+    import actuators.motors as motors
+except ModuleNotFoundError:
+    import actuators.fakemotors as motors
 
 
-def moveTo(path):
+def moveTo(path, m):
     global pos
     global orientation
     del path[1][0]
@@ -23,10 +27,17 @@ def moveTo(path):
             else:
                 new_dir=2
         if orientation!=new_dir:
+            if abs(new_dir-orientation) == 2:
+                m.rotateRight()
+                m.rotateRight()
+            elif new_dir-orientation == -3 or new_dir-orientation == 1:
+                m.rotateRight()
+            elif new_dir-orientation == 3 or new_dir-orientation == -1:
+                pass
+                m.rotateLeft()
             orientation=new_dir
-            time.sleep(0.5)
-        server.setRobotOrientation(new_dir)
-        time.sleep(0.5)
+            server.setRobotOrientation(new_dir)
+        m.oneCellForward()
         pos=i
         server.setRobotPosition(pos)
 
@@ -67,7 +78,12 @@ if __name__ == '__main__':
     server.setRobotOrientation(orientation)
     ###
 
-    input("Continue...")
+    pins = pins ={'fl':'P9_14','fr':'P9_16','rl':'P8_13','rr':'P8_19','dir_fl':'gpio60','dir_fr':'gpio48','dir_rl':'gpio49','dir_rr':'gpio20'}
+    m = motors.Motor(pins)
+    try:
+        raw_input("Continue...")
+    except:
+        input("Continue...")
     while True:
         server.setRobotStatus("Exploring")
         #Set current cell as explored
@@ -128,7 +144,7 @@ if __name__ == '__main__':
             if pos!=home:
                 server.setRobotStatus("Done! Homing...")
                 destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat) #Find the best path to reach home
-                moveTo(destination)
+                moveTo(destination, m)
             server.setRobotStatus("Done!")
             input("Press enter to continue")
             sys.exit()
@@ -136,7 +152,7 @@ if __name__ == '__main__':
         destination=mp.bestPath(orientation,[pos[0],pos[1]],unexplored_queue,mat) #Find the best path to reach the nearest cell
 
         #Move to destination
-        moveTo(destination)
+        moveTo(destination, m)
 
         #print(dijkstra([1,1],[3,3],mat))
         #available = [[7,5],[3,1]]
