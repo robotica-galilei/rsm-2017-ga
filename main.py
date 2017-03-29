@@ -5,10 +5,22 @@ import numpy as np
 import simulation.sensors as sm
 import algorithms.motion_planning as mp
 import algorithms.map_management as maman
+import threading
 try:
     import actuators.motors as motors
 except ModuleNotFoundError:
     import actuators.fakemotors as motors
+
+class timer(threading.Thread):
+    def __init__(self,threadID,startingtime, server):
+        self.threadID = threadID
+        threading.Thread.__init__(self)
+        self.startingtime = startingtime
+        self.server = server
+    def run(self):
+        while(True):
+            time.sleep(0.5)
+            self.server.setElapsedTime(int(time.time()-self.startingtime))
 
 
 def moveTo(path, m):
@@ -84,6 +96,10 @@ if __name__ == '__main__':
         raw_input("Continue...")
     except:
         input("Continue...")
+
+    timer_thread = timer("Timer", time.time(), server)
+    timer_thread.start()
+
     while True:
         server.setRobotStatus("Exploring")
         #Set current cell as explored
