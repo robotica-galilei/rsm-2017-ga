@@ -6,19 +6,21 @@ import simulation.sensors as sm
 import algorithms.motion_planning as mp
 import algorithms.map_management as maman
 import threading
+
 try:
     import actuators.motors as motors
 except ModuleNotFoundError:
     import actuators.fakemotors as motors
 
 class timer(threading.Thread):
-    def __init__(self,threadID,startingtime, server):
-        self.threadID = threadID
+    def __init__(self,threadName,startingtime, server):
         threading.Thread.__init__(self)
+        self.stop_flag = True
+        self.threadName = threadName
         self.startingtime = startingtime
         self.server = server
     def run(self):
-        while(True):
+        while(self.stop_flag):
             time.sleep(0.5)
             self.server.setElapsedTime(int(time.time()-self.startingtime))
 
@@ -53,6 +55,11 @@ def moveTo(path, m):
         pos=i
         server.setRobotPosition(pos)
 
+
+def stop_function(timer, m):
+    timer.stop_flag = False
+    m.stop()
+
 def nearcellToQueue(mat, nearcell, unexplored_queue):
     '''
     Just a function to reduce the repetition of code into the main
@@ -70,16 +77,16 @@ def nearcellToQueue(mat, nearcell, unexplored_queue):
         unexplored_queue.append(nearcell) #Add to queue
     return mat, unexplored_queue
 
-if __name__ == '__main__':
-    #Global variables
-    mat = np.matrix("0 0 0; 0 0 0; 0 0 0") #1x1 Matrix
-    pos = (1,1) #Initial position
-    home = (1,1) #Position of the initial cell
-    orientation=3 #Initial orientation, generally
-    unexplored_queue=[] #Queue containing all the unexplored cells
-    #print(mat)
 
-    server = Pyro4.Proxy("PYRONAME:robot.server") #Connect to server for graphical interface
+def main(timer_thread, m, server):
+
+    #Global variables
+    global mat; mat = np.matrix("0 0 0; 0 0 0; 0 0 0") #1x1 Matrix
+    global pos; pos = (1,1) #Initial position
+    global home; home = (1,1) #Position of the initial cell
+    global orientation; orientation = 3 #Initial orientation, generally
+    global unexplored_queue; unexplored_queue = [] #Queue containing all the unexplored cells
+    #print(mat)
 
     ###Initial settings to be displayed
     server.setRobotStatus("Waiting for start")
@@ -90,14 +97,11 @@ if __name__ == '__main__':
     server.setRobotOrientation(orientation)
     ###
 
-    pins = pins ={'fl':'P9_14','fr':'P9_16','rl':'P8_13','rr':'P8_19','dir_fl':'gpio60','dir_fr':'gpio48','dir_rl':'gpio49','dir_rr':'gpio20'}
-    m = motors.Motor(pins)
     try:
         raw_input("Continue...")
     except:
         input("Continue...")
 
-    timer_thread = timer("Timer", time.time(), server)
     timer_thread.start()
 
     while True:
@@ -173,3 +177,17 @@ if __name__ == '__main__':
         #print(dijkstra([1,1],[3,3],mat))
         #available = [[7,5],[3,1]]
         #print(best_path(1,[1,1],available,mat))
+
+
+if __name__ == '__main__':
+
+    server = Pyro4.Proxy("PYRONAME:robot.server") #Connect to server for graphical interface
+
+    pins = pins ={'fl':'P9_14','fr':'P9_16','rl':'P8_13','rr':'P8_19','dir_fl':'gpio60','dir_fr':'gpio48','dir_rl':'gpio49','dir_rr':'gpio20'}
+    m = motors.Motor(pins)
+    timer_thread = timer("Timer", time.time(), server)
+
+    try:
+        main(timer_thread=timer_thread, m=m, server=server)
+    except KeyboardInterrupt:
+        stop_function(timer=timer_thread, m=m)
