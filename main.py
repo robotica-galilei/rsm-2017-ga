@@ -43,10 +43,10 @@ def moveTo(path, m):
                 m.rotateRight()
                 m.rotateRight()
             elif new_dir-orientation == -3 or new_dir-orientation == 1:
-                m.rotateRight()
+                m.rotateLeft()
             elif new_dir-orientation == 3 or new_dir-orientation == -1:
                 pass
-                m.rotateLeft()
+                m.rotateRight()
             orientation=new_dir
             server.setRobotOrientation(new_dir)
         m.oneCellForward()
