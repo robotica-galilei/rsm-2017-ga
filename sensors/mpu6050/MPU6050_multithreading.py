@@ -84,4 +84,4 @@ class GYRO(threading.Thread):
                 self.roll_pitch_yaw = self.mpu.DMP_get_euler_roll_pitch_yaw(self.quat, self.grav)
                 self.roll = self.roll_pitch_yaw.x
                 self.pitch = self.roll_pitch_yaw.y
-                self.yaw = self.roll_pitch_yaw.z
+                self.yaw = self.roll_pitch_yaw.z*2

@@ -5,12 +5,10 @@ import numpy as np
 import simulation.sensors as sm
 import algorithms.motion_planning as mp
 import algorithms.map_management as maman
+import sensors.mpu6050.MPU6050_multithreading as gyrolib
 import threading
 
-try:
-    import actuators.motors as motors
-except ModuleNotFoundError:
-    import actuators.fakemotors as motors
+import actuators.motors as motors
 
 class timer(threading.Thread):
     def __init__(self,threadName,startingtime, server):
@@ -56,8 +54,9 @@ def moveTo(path, m):
         server.setRobotPosition(pos)
 
 
-def stop_function(timer, m):
+def stop_function(timer, m, gyro):
     timer.stop_flag = False
+    gyro.stop_flag = False
     m.stop()
 
 def nearcellToQueue(mat, nearcell, unexplored_queue):
@@ -184,10 +183,14 @@ if __name__ == '__main__':
     server = Pyro4.Proxy("PYRONAME:robot.server") #Connect to server for graphical interface
 
     pins = pins ={'fl':'P9_14','fr':'P9_16','rl':'P8_13','rr':'P8_19','dir_fl':'gpio60','dir_fr':'gpio48','dir_rl':'gpio49','dir_rr':'gpio20'}
-    m = motors.Motor(pins)
+
     timer_thread = timer("Timer", time.time(), server)
+    gyro = gyrolib.GYRO("Gyro")
+    m = motors.Motor(pins, gyro)
+    gyro.start()
 
     try:
         main(timer_thread=timer_thread, m=m, server=server)
-    except KeyboardInterrupt:
-        stop_function(timer=timer_thread, m=m)
+    except Exception as e:
+        stop_function(timer=timer_thread, m=m, gyro=gyro)
+        print(e)

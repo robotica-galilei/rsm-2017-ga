@@ -3,6 +3,7 @@ sys.path.append("../")
 
 import Adafruit_BBIO.PWM as PWM
 import utils.GPIO as GPIO
+import sensors.mpu6050.utils as gyro_utils
 import time
 
 MOTOR_CELL_TIME     =       1.8
@@ -12,7 +13,7 @@ MOTOR_DEFAULT_POWER_ROTATION    =       30
 
 
 class Motor:
-    def __init__(self, pins):
+    def __init__(self, pins, gyro):
         """
         pins are provided by a dictionary formatted like:
         {
@@ -34,6 +35,7 @@ class Motor:
         self.pins = pins
         self.actual_l = 0
         self.actual_r = 0
+        self.gyro = gyro
 
     def setSpeedLeft(self, power):
         if(power<0):
@@ -87,11 +89,9 @@ class Motor:
         self.stop()
 
     def rotateRight(self, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
-        self.setSpeeds(power, -power)
-        time.sleep(wait)
+        gyro_utils.rotate(45, self, self.gyro)
         self.stop()
 
     def rotateLeft(self, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
-        self.setSpeeds(-power, power)
-        time.sleep(wait)
+        gyro_utils.rotate(-45, self, self.gyro)
         self.stop()
