@@ -1,5 +1,6 @@
 import Pyro4
 import numpy as np
+import netifaces as ni
 
 ### THIS SERVER IS USED ONLY TO TRANSMIT DATA TO THE GRAPHICAL INTERFACE AND TO RETRIEVE PROXIMITY SENSORS DATA ###
 
@@ -72,7 +73,16 @@ class server(object):
         return 0
 
 
-daemon = Pyro4.Daemon()                # make a Pyro daemon
+ip = None
+for i in ni.interfaces():
+    j = ni.ifaddresses(i)
+    if j[2][0]['addr'][:3] == "192" or j[2][0]['addr'][:3] == "10.":
+        ip = j[2][0]['addr']
+        break
+if ip == None:
+    ip = '127.0.0.1'
+
+daemon = Pyro4.Daemon(host=ip, port=9092)                # make a Pyro daemon
 ns = Pyro4.locateNS()                  # find the name server
 uri = daemon.register(server)   # register the greeting maker as a Pyro object
 ns.register("robot.server", uri)   # register the object with a name in the name server
