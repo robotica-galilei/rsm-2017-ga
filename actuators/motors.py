@@ -13,7 +13,7 @@ MOTOR_DEFAULT_POWER_ROTATION    =       30
 
 
 class Motor:
-    def __init__(self, pins, gyro):
+    def __init__(self, pins):
         """
         pins are provided by a dictionary formatted like:
         {
@@ -35,7 +35,6 @@ class Motor:
         self.pins = pins
         self.actual_l = 0
         self.actual_r = 0
-        self.gyro = gyro
 
     def setSpeedLeft(self, power):
         if(power<0):
@@ -89,9 +88,9 @@ class Motor:
         self.stop()
 
     def rotateRight(self, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
-        gyro_utils.rotate(45, self, self.gyro)
+        gyro_utils.rotate(45, self)
         self.stop()
 
     def rotateLeft(self, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
-        gyro_utils.rotate(-45, self, self.gyro)
+        gyro_utils.rotate(-45, self)
         self.stop()
