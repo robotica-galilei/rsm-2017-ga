@@ -1,9 +1,6 @@
 import sys
 sys.path.append("../")
 
-import Adafruit_BBIO.PWM as PWM
-import utils.GPIO as GPIO
-import sensors.mpu6050.utils as gyro_utils
 import time
 
 MOTOR_CELL_TIME     =       1.8
@@ -13,7 +10,7 @@ MOTOR_DEFAULT_POWER_ROTATION    =       30
 
 
 class Motor:
-    def __init__(self, pins, gyro):
+    def __init__(self, pins):
         """
         pins are provided by a dictionary formatted like:
         {
@@ -27,38 +24,15 @@ class Motor:
             'dir_rl':dir_rl
         }
         """
-        GPIO.setup(pins['dir_fr'], GPIO.OUT)
-        GPIO.setup(pins['dir_fl'], GPIO.OUT)
-        GPIO.setup(pins['dir_rr'], GPIO.OUT)
-        GPIO.setup(pins['dir_rl'], GPIO.OUT)
 
         self.pins = pins
         self.actual_l = 0
         self.actual_r = 0
-        self.gyro = gyro
 
     def setSpeedLeft(self, power):
-        if(power<0):
-            GPIO.output(self.pins['dir_fl'],GPIO.LOW)
-            GPIO.output(self.pins['dir_rl'],GPIO.LOW)
-        else:
-            GPIO.output(self.pins['dir_fl'],GPIO.HIGH)
-            GPIO.output(self.pins['dir_rl'],GPIO.HIGH)
-
-        PWM.start(self.pins['fl'], abs(power), 25000)
-        PWM.start(self.pins['rl'], abs(power), 25000)
         self.actual_l = power
 
     def setSpeedRight(self, power):
-        if(power<0):
-            GPIO.output(self.pins['dir_fr'],GPIO.LOW)
-            GPIO.output(self.pins['dir_rr'],GPIO.LOW)
-        else:
-            GPIO.output(self.pins['dir_fr'],GPIO.HIGH)
-            GPIO.output(self.pins['dir_rr'],GPIO.HIGH)
-
-        PWM.start(self.pins['fr'], abs(power), 25000)
-        PWM.start(self.pins['rr'], abs(power), 25000)
         self.actual_r = power
 
     def stopLeft(self):
@@ -89,9 +63,11 @@ class Motor:
         self.stop()
 
     def rotateRight(self, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
-        gyro_utils.rotate(45, self, self.gyro)
+        self.setSpeeds(power, -power)
+        time.sleep(wait)
         self.stop()
 
     def rotateLeft(self, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
-        gyro_utils.rotate(-45, self, self.gyro)
+        self.setSpeeds(-power, power)
+        time.sleep(wait)
         self.stop()

@@ -1,5 +1,8 @@
 import numpy as np
-import queue
+try:
+    import Queue
+except:
+    import queue
 
 def queueCheck(mat, node, new, wall, dist, path, visited, q, dir_now, dir_then):
     '''
@@ -50,8 +53,10 @@ def dijkstra(direction,start, end ,mat):
     for i in range (1, np.shape(mat)[0]-1,2):
         for j in range (1, np.shape(mat)[1]-1,2):
             path[i][j].append((i,j))
-
-    q = queue.PriorityQueue()
+    try:
+        q = queue.PriorityQueue()
+    except:
+        q = Queue.PriorityQueue()
     q.put((0,start,direction))
     visited[start[0]][start[1]] = 1
     dist[start[0]][start[1]] = 0
