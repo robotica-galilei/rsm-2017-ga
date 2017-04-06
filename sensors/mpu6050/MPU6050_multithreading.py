@@ -27,6 +27,7 @@ import threading
 roll = 0
 pitch = 0
 yaw = 0
+yawsum = 0
 
 class GYRO(threading.Thread):
     def __init__(self,threadName):
@@ -90,4 +91,4 @@ class GYRO(threading.Thread):
                 self.roll_pitch_yaw = self.mpu.DMP_get_euler_roll_pitch_yaw(self.quat, self.grav)
                 roll = self.roll_pitch_yaw.x
                 pitch = self.roll_pitch_yaw.y
-                yaw = self.roll_pitch_yaw.z
+                yaw = self.roll_pitch_yaw.z*2

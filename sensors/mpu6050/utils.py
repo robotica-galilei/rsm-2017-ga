@@ -1,24 +1,28 @@
 import MPU6050_multithreading as gyrolib
+import time
 
 def rotate(deg, m):
     tolleranza = 2
-    gyro.refresh()
-    angolofinale = gyrolib.yaw + deg
+    angolofinale = int(gyrolib.yaw + deg)
     if deg > 0:
         if angolofinale > 179:
             angolofinale -= 360
-        m.setSpeeds(40, -40)
-        while (int(abs(angolofinale - 2)) != gyrolib.yaw and int(abs(angolofinale - 1)) != gyrolib.yaw):
+        m.setSpeeds(-20, 20)
+        while (angolofinale - 2 != int(gyrolib.yaw) and angolofinale - 1 != int(gyrolib.yaw)):
             print(angolofinale)
-            print(gyro.yaw)
+            print(int(gyrolib.yaw))
+            print("")
+            time.sleep(0.001)
         m.stop()
     else:
         if angolofinale < -180:
             angolofinale += 360
-        m.setSpeeds(-40, 40)
-        while (int(abs(angolofinale + 2)) != gyrlibo.yaw and int(abs(angolofinale + 1)) != gyrolib.yaw):
+        m.setSpeeds(20, -20)
+        while (angolofinale + 2 != int(gyrolib.yaw) and angolofinale + 1 != int(gyrolib.yaw)):
             print(angolofinale)
-            print(gyro.yaw)
+            print(int(gyrolib.yaw))
+            print("")
+            time.sleep(0.001)
         m.stop()
 
 
