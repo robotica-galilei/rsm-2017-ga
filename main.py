@@ -5,10 +5,11 @@ import numpy as np
 import simulation.sensors as sm
 import algorithms.motion_planning as mp
 import algorithms.map_management as maman
-import sensors.mpu6050.MPU6050_multithreading as gyrolib
 import threading
-
-import actuators.motors as motors
+try:
+    import actuators.motors as motors
+except Exception:
+    import actuators.fakemotors as motors
 
 class timer(threading.Thread):
     def __init__(self,threadName,startingtime, server):
@@ -26,7 +27,7 @@ class timer(threading.Thread):
 def moveTo(path, m):
     global pos
     global orientation
-    del path[1][0]
+    del path[1][0] # Delete the first element (The total distance)
     for i in path[1]:
         if pos[0]==i[0]:
             if pos[1]>i[1]:
@@ -54,9 +55,8 @@ def moveTo(path, m):
         server.setRobotPosition(pos)
 
 
-def stop_function(timer, m, gyro):
+def stop_function(timer, m):
     timer.stop_flag = False
-    gyro.stop_flag = False
     m.stop()
 
 def nearcellToQueue(mat, nearcell, unexplored_queue):
@@ -185,12 +185,10 @@ if __name__ == '__main__':
     pins = pins ={'fl':'P9_14','fr':'P9_16','rl':'P8_13','rr':'P8_19','dir_fl':'gpio60','dir_fr':'gpio48','dir_rl':'gpio49','dir_rr':'gpio20'}
 
     timer_thread = timer("Timer", time.time(), server)
-    gyro = gyrolib.GYRO("Gyro")
-    m = motors.Motor(pins, gyro)
-    gyro.start()
+    m = motors.Motor(pins)
 
     try:
         main(timer_thread=timer_thread, m=m, server=server)
     except Exception as e:
-        stop_function(timer=timer_thread, m=m, gyro=gyro)
+        stop_function(timer=timer_thread, m=m)
         print(e)
