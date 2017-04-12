@@ -103,7 +103,7 @@ def bestPath(direction,pos, possible, mat):
     np.matrix("a g m; b h n; c i o; d j p; e k q; f l r")
     '''
     best = [-1,(0,0)]
-    print("Possible cells:")
+    # print("Possible cells:")
     for i in possible:
         tmp = dijkstra(direction,pos, i, mat)
         if(tmp[0]<best[0] or best[0]==-1):
