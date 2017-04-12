@@ -28,31 +28,31 @@ def moveTo(path, m):
     global pos
     global orientation
     del path[1][0] # Delete the first element (The total distance)
-    for i in path[1]:
-        if pos[0]==i[0]:
-            if pos[1]>i[1]:
-                new_dir=3
-            else:
-                new_dir=1
+    #Move forward just one cell
+    if pos[0]==path[1][0][0]:
+        if pos[1]>path[1][0][1]:
+            new_dir=3
         else:
-            if pos[0]>i[0]:
-                new_dir=0
-            else:
-                new_dir=2
-        if orientation!=new_dir:
-            if abs(new_dir-orientation) == 2:
-                m.rotateRight()
-                m.rotateRight()
-            elif new_dir-orientation == -3 or new_dir-orientation == 1:
-                m.rotateLeft()
-            elif new_dir-orientation == 3 or new_dir-orientation == -1:
-                pass
-                m.rotateRight()
-            orientation=new_dir
-            server.setRobotOrientation(new_dir)
-        m.oneCellForward()
-        pos=i
-        server.setRobotPosition(pos)
+            new_dir=1
+    else:
+        if pos[0]>path[1][0][0]:
+            new_dir=0
+        else:
+            new_dir=2
+    if orientation!=new_dir:
+        if abs(new_dir-orientation) == 2:
+            m.rotateRight()
+            m.rotateRight()
+        elif new_dir-orientation == -3 or new_dir-orientation == 1:
+            m.rotateLeft()
+        elif new_dir-orientation == 3 or new_dir-orientation == -1:
+            pass
+            m.rotateRight()
+        orientation=new_dir
+        server.setRobotOrientation(new_dir)
+    m.oneCellForward()
+    pos=path[1][0]
+    server.setRobotPosition(pos)
 
 
 def stop_function(timer, m):
