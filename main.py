@@ -12,13 +12,13 @@ except Exception:
     import actuators.fakemotors as motors
 
 class timer(threading.Thread):
-    def __init__(self,threadName,startingtime, server):
+    def __init__(self,threadName, server):
         threading.Thread.__init__(self)
         self.stop_flag = True
         self.threadName = threadName
-        self.startingtime = startingtime
         self.server = server
     def run(self):
+        self.startingtime = time.time()
         while(self.stop_flag):
             time.sleep(0.5)
             self.server.setElapsedTime(int(time.time()-self.startingtime))
@@ -184,11 +184,12 @@ if __name__ == '__main__':
 
     pins = pins ={'fl':'P9_14','fr':'P9_16','rl':'P8_13','rr':'P8_19','dir_fl':'gpio60','dir_fr':'gpio48','dir_rl':'gpio49','dir_rr':'gpio20'}
 
-    timer_thread = timer("Timer", time.time(), server)
+    timer_thread = timer("Timer", server)
     m = motors.Motor(pins)
 
     try:
         main(timer_thread=timer_thread, m=m, server=server)
-    except Exception as e:
+    except KeyboardInterrupt as e:
         stop_function(timer=timer_thread, m=m)
+    except Exception as e:
         print(e)
