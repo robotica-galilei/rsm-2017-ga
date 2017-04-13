@@ -1,4 +1,3 @@
-__author__ = 'Geir Istad'
 """
 MPU6050 Python I2C Class - MPU6050 example usage
 Copyright (c) 2015 Geir Istad
@@ -24,6 +23,11 @@ SOFTWARE.
 
 from MPU6050 import MPU6050
 import threading
+
+roll = 0
+pitch = 0
+yaw = 0
+yawsum = 0
 
 class GYRO(threading.Thread):
     def __init__(self,threadName):
@@ -62,6 +66,9 @@ class GYRO(threading.Thread):
         self.FIFO_count_list = list()
 
     def run(self):
+        global roll
+        global pitch
+        global yaw
         while(self.stop_flag):
             self.FIFO_count = self.mpu.get_FIFO_count()
             self.mpu_int_status = self.mpu.get_int_status()
@@ -82,6 +89,6 @@ class GYRO(threading.Thread):
                 self.grav = self.mpu.DMP_get_gravity(self.quat)
 
                 self.roll_pitch_yaw = self.mpu.DMP_get_euler_roll_pitch_yaw(self.quat, self.grav)
-                self.roll = self.roll_pitch_yaw.x
-                self.pitch = self.roll_pitch_yaw.y
-                self.yaw = self.roll_pitch_yaw.z*2
+                roll = self.roll_pitch_yaw.x
+                pitch = self.roll_pitch_yaw.y
+                yaw = self.roll_pitch_yaw.z*2
