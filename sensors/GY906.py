@@ -25,7 +25,7 @@ class MLX90614():
     MLX90614_ID4=0x3F
 
 
-    def __init__(self, address=0x5a, bus_num=2):
+    def __init__(self, address=0x5a, bus_num=1):
         self.bus_num = bus_num
         self.address = address
         self.bus = smbus.SMBus(bus=bus_num)
