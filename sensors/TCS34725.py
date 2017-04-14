@@ -98,6 +98,29 @@ INTEGRATION_TIME_DELAY = {
     0x00: 0.700    # 700ms - 256 cycles - Max Count: 65535
 }
 
+def calculate_color_temperature(r, g, b):
+    """Converts the raw R/G/B values to color temperature in degrees Kelvin."""
+    # 1. Map RGB values to their XYZ counterparts.
+    # Based on 6500K fluorescent, 3000K fluorescent
+    # and 60W incandescent values for a wide range.
+    # Note: Y = Illuminance or lux
+    X = (-0.14282 * r) + (1.54924 * g) + (-0.95641 * b)
+    Y = (-0.32466 * r) + (1.57837 * g) + (-0.73191 * b)
+    Z = (-0.68202 * r) + (0.77073 * g) + ( 0.56332 * b)
+    # Check for divide by 0 (total darkness) and return None.
+    if (X + Y + Z) == 0:
+        return None
+    # 2. Calculate the chromaticity co-ordinates
+    xc = (X) / (X + Y + Z)
+    yc = (Y) / (X + Y + Z)
+    # Check for divide by 0 again and return None.
+    if (0.1858 - yc) == 0:
+        return None
+    # 3. Use McCamy's formula to determine the CCT
+    n = (xc - 0.3320) / (0.1858 - yc)
+    # Calculate the final CCT
+    cct = (449.0 * (n ** 3.0)) + (3525.0 *(n ** 2.0)) + (6823.3 * n) + 5520.33
+    return int(cct)
 
 def calculate_lux(r, g, b):
     """Converts the raw R/G/B values to luminosity in lux."""
@@ -109,14 +132,15 @@ class TCS34725(object):
     """TCS34725 color sensor."""
 
     def __init__(self, integration_time=TCS34725_INTEGRATIONTIME_2_4MS,
-                 gain=TCS34725_GAIN_4X, address=TCS34725_ADDRESS, i2c=None, **kwargs):
+                 gain=TCS34725_GAIN_4X, address=TCS34725_ADDRESS, bus_num=2, **kwargs):
         """Initialize the TCS34725 sensor."""
         # Setup I2C interface for the device.
-        self.i2c=smbus.SMBus(2)
+        self.i2c=smbus.SMBus(bus=bus_num)
         self.address = 0x29
         # Make sure we're connected to the sensor.
-        chip_id = self._readU8(TCS34725_ID)
+        chip_id = self.get_register(TCS34725_ID)
         if chip_id != 0x44:
+            print(chip_id)
             raise RuntimeError('Failed to read TCS34725 chip ID, check your wiring.')
         # Set default integration time and gain.
         self.set_integration_time(integration_time)
@@ -124,31 +148,29 @@ class TCS34725(object):
         # Enable the device (by default, the device is in power down mode on bootup).
         self.enable()
 
-    def _readU8(self, reg):
-        """Read an unsigned 8-bit register."""
-        return self._device.readU8(TCS34725_COMMAND_BIT | reg)
+    def get_register(self, register_address):
+        return self.i2c.read_byte_data(self.address, TCS34725_COMMAND_BIT | register_address) & 0xFF
 
-    def _readU16LE(self, reg):
-        """Read a 16-bit little endian register."""
-        return self._device.readU16LE(TCS34725_COMMAND_BIT | reg)
+    def get_register_16bit_LE(self, register_address):
+        return self.i2c.read_word_data(self.address,TCS34725_COMMAND_BIT | register_address) & 0xFFFF
 
-    def _write8(self, reg, value):
-        """Write a 8-bit value to a register."""
-        self._device.write8(TCS34725_COMMAND_BIT | reg, value)
+    def set_register(self, register_address, data):
+        data = data & 0xFF
+        self.i2c.write_byte_data(self.address, TCS34725_COMMAND_BIT | register_address, data)
 
     def enable(self):
         """Enable the chip."""
         # Flip on the power and enable bits.
-        self._write8(TCS34725_ENABLE, TCS34725_ENABLE_PON)
+        self.set_register(TCS34725_ENABLE, TCS34725_ENABLE_PON)
         time.sleep(0.01)
-        self._write8(TCS34725_ENABLE, (TCS34725_ENABLE_PON | TCS34725_ENABLE_AEN))
+        self.set_register(TCS34725_ENABLE, (TCS34725_ENABLE_PON | TCS34725_ENABLE_AEN))
 
     def disable(self):
         """Disable the chip (power down)."""
         # Flip off the power on and enable bits.
-        reg = self._readU8(TCS34725_ENABLE)
+        reg = self.get_register(TCS34725_ENABLE)
         reg &= ~(TCS34725_ENABLE_PON | TCS34725_ENABLE_AEN)
-        self._write8(TCS34725_ENABLE, reg)
+        self.set_register(TCS34725_ENABLE, reg)
 
     def set_integration_time(self, integration_time):
         """Sets the integration time for the TC34725.  Provide one of these
@@ -161,13 +183,13 @@ class TCS34725(object):
          - TCS34725_INTEGRATIONTIME_700MS  = 700ms - 256 cycles - Max Count: 65535
         """
         self._integration_time = integration_time
-        self._write8(TCS34725_ATIME, integration_time)
+        self.set_register(TCS34725_ATIME, integration_time)
 
     def get_integration_time(self):
         """Return the current integration time value.  This will be one of the
         constants specified in the set_integration_time doc string.
         """
-        return self._readU8(TCS34725_ATIME)
+        return self.get_register(TCS34725_ATIME)
 
     def set_gain(self, gain):
         """Adjusts the gain on the TCS34725 (adjusts the sensitivity to light).
@@ -177,13 +199,13 @@ class TCS34725(object):
          - TCS34725_GAIN_16X  = 16x gain
          - TCS34725_GAIN_60X  = 60x gain
         """
-        self._write8(TCS34725_CONTROL, gain)
+        self.set_register(TCS34725_CONTROL, gain)
 
     def get_gain(self):
         """Return the current gain value.  This will be one of the constants
         specified in the set_gain doc string.
         """
-        return self._readU8(TCS34725_CONTROL)
+        return self.get_register(TCS34725_CONTROL)
 
     def get_raw_data(self):
         """Reads the raw red, green, blue and clear channel values. Will return
@@ -191,32 +213,32 @@ class TCS34725(object):
         numbers).
         """
         # Read each color register.
-        r = self._readU16LE(TCS34725_RDATAL)
-        g = self._readU16LE(TCS34725_GDATAL)
-        b = self._readU16LE(TCS34725_BDATAL)
-        c = self._readU16LE(TCS34725_CDATAL)
+        r = self.get_register_16bit_LE(TCS34725_RDATAL)
+        g = self.get_register_16bit_LE(TCS34725_GDATAL)
+        b = self.get_register_16bit_LE(TCS34725_BDATAL)
+        c = self.get_register_16bit_LE(TCS34725_CDATAL)
         # Delay for the integration time to allow for next reading immediately.
         time.sleep(INTEGRATION_TIME_DELAY[self._integration_time])
         return (r, g, b, c)
 
     def set_interrupt(self, enabled):
         """Enable or disable interrupts by setting enabled to True or False."""
-        enable_reg = self._readU8(TCS34725_ENABLE)
+        enable_reg = self.get_register(TCS34725_ENABLE)
         if enabled:
             enable_reg |= TCS34725_ENABLE_AIEN
         else:
             enable_reg &= ~TCS34725_ENABLE_AIEN
-        self._write8(TCS34725_ENABLE, enable_reg)
+        self.set_register(TCS34725_ENABLE, enable_reg)
         time.sleep(1)
 
     def clear_interrupt(self):
         """Clear interrupt."""
-        self._device.write8(0x66 & 0xff)
+        self.set_register(0x66 & 0xff)
 
     def set_interrupt_limits(self, low, high):
         """Set the interrupt limits to provied unsigned 16-bit threshold values.
         """
-        self._device.write8(0x04, low & 0xFF)
-        self._device.write8(0x05, low >> 8)
-        self._device.write8(0x06, high & 0xFF)
-        self._device.write8(0x07, high >> 8)
+        self.set_register(0x07, high >> 8)
+        self.set_register(0x04, low & 0xFF)
+        self.set_register(0x05, low >> 8)
+        self.set_register(0x06, high & 0xFF)
