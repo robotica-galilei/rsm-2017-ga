@@ -48,7 +48,7 @@ def classify(v):
                     roismall = cv2.resize(roi,(10,10))
                     roismall = roismall.reshape((1,100))
                     roismall = np.float32(roismall)
-                    retval, results, neigh_resp, dists = model.findNearest(roismall, k = 1)
+                    retval, results, neigh_resp, dists = model.findNearest(roismall, k = 3)
                     string = labels[int((results[0][0]))]
                     cv2.putText(im,string,(x+3,y+h+3),0,2,(255,0,0),thickness=3)
 
