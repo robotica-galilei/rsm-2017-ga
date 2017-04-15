@@ -49,8 +49,8 @@ def draw_cell(draw_surface, x0, y0, x, y, cell_size, wall_map):
                        (int(x0 + (x+1)*cell_size) - 4, int(y0 + (y+1)*cell_size)),
                        (int(x0+ (x+1)*cell_size), int(y0 + (y+1)*cell_size) - 4),
                        (int(x0 + (x+1)*cell_size) - 4, int(y0 + y*cell_size))]
-    print(x, y)
-    check = wall_map[2*x+1][2*y+1] 
+    #print(x, y)
+    check = wall_map[2*x+1][2*y+1]
     walls=[]
     walls.append(3 if wall_map[2*x][2*y+1]==1 else (2 if (x>0 and ((wall_map[2*(x-1)+1][2*y+1]==1 and check==2) or (wall_map[2*(x-1)+1][2*y+1]==2 and check==1))) else 1))
     walls.append(3 if wall_map[2*x+1][2*y+2]==1 else (2 if (y<int((len(wall_map[0])-1)/2)-1 and ((wall_map[2*x+1][2*(y+1)+1]==1 and check==2) or (wall_map[2*x+1][2*(y+1)+1]==2 and check==1))) else 1))
@@ -76,16 +76,21 @@ def draw_cell(draw_surface, x0, y0, x, y, cell_size, wall_map):
                 wall_end_points[i]=(wall_end_points[i][0]+6,wall_end_points[i][1])
 
     special = 0;
-    if(wall_map[x][y] >= 128):
+
+    if(wall_map[x*2+1][y*2+1] >= 128): #Check for checkpoint
         special = 1;
-    if(wall_map[x][y] >= 256):
+    if(wall_map[x*2+1][y*2+1] >= 256): #Check black cell
         special = 2;
+    if(wall_map[x*2+1][y*2+1] >= 512): #Check victim
+        special = 3;
 
     #Cell specialties
     if(special == 1): #Checkpoint
         pygame.draw.rect(draw_surface, layout.silver, (int(x0 + x*cell_size)+3, int(y0 + y*cell_size)+3, cell_size-3, cell_size-3), 0)
     elif(special == 2): #Black cell
         pygame.draw.rect(draw_surface, layout.almost_black, (int(x0 + x*cell_size)+3, int(y0 + y*cell_size)+3, cell_size-3, cell_size-3), 0)
+    elif(special == 3): #Victim
+        pygame.draw.rect(draw_surface, layout.red, (int(x0 + x*cell_size)+3, int(y0 + y*cell_size)+3, cell_size-3, cell_size-3), 0)
 
     #Walls
     for i in range(0,4):
@@ -111,7 +116,7 @@ def draw_map(draw_surface, wall_map):
 
     x_cells = int((len(wall_map)-1)/2)
     y_cells = int((len(wall_map[0])-1)/2)
-    print(x_cells,y_cells)
+    #print(x_cells,y_cells)
     cell_width = max_map_width/x_cells
     cell_height = max_map_height/y_cells
     if min(cell_width, cell_height) < min_cell_size:
@@ -136,5 +141,5 @@ def draw_map(draw_surface, wall_map):
             for j in range(0,x_cells):
                 #Draw single cell
                 draw_cell(draw_surface, map_x_start, map_y_start, j, i, cell_size,wall_map)
-        print(n_lines)
+        #print(n_lines)
         return 1

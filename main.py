@@ -147,6 +147,7 @@ def main(timer_thread, m, server):
                 mat = maman.appendTwoLinesToMatrix(mat, 1, 1)
             mat, unexplored_queue = nearcellToQueue(mat, (pos[0]+2,pos[1]), unexplored_queue)
 
+
         if walls[3]>0: #Top wall
             mat.itemset((pos[0],pos[1]-1),1) #Set wall
         else:
@@ -154,6 +155,11 @@ def main(timer_thread, m, server):
                 mat = maman.appendTwoLinesToMatrix(mat, 0, 0)
                 pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 0)
             mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]-2), unexplored_queue)
+
+        if(sm.check_victim(pos)):
+            mat.itemset(pos, 512)
+        if(sm.check_black(pos)):
+            mat.itemset(pos, 256)
         ##########
 
         server.setMazeMap(mat.tolist()) #Update map
