@@ -2,6 +2,7 @@ import sys
 
 import cv2
 import numpy as np
+from preprocessing import preprocess
 
 def classify(v):
     #######   training part    ###############
@@ -22,17 +23,7 @@ def classify(v):
         #print(str('train' + str(i)+'.jpg'))
         #im = cv2.imread(str('train/' + str(i)+'.jpg'))
 
-        gray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
-        ret,thresh = cv2.threshold(gray,80,255,cv2.THRESH_BINARY)
-
-        kernel = np.ones((5,5), np.uint8)
-
-        ############################# preprocessing #########################
-        img = thresh
-        img = cv2.erode(img, kernel, iterations=1)
-        img = cv2.dilate(img, kernel, iterations=1)
-        img = cv2.erode(img, kernel, iterations=1)
-
+        img = preprocess(im)
         im2 = img.copy()
 
         image, contours,hierarchy = cv2.findContours(im2,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
@@ -40,7 +31,7 @@ def classify(v):
         ############################# classification #########################
         for cnt in contours:
             area = cv2.contourArea(cnt)
-            if area > 22000 and area < 80000:
+            if area > 15000 and area < 80000:
                 [x,y,w,h] = cv2.boundingRect(cnt)
                 if  h>28:
                     cv2.rectangle(im,(x,y),(x+w,y+h),(0,255,0),2)

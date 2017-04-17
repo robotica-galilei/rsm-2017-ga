@@ -2,6 +2,7 @@ This is the folder used for OCR training and testing
 
 To train the model and generate a generalresponses.data and generalsamples.data you have to import the images for classification in the training_data directory following this structure:
 
+.
 └── training_data
     ├── H
     ├── S

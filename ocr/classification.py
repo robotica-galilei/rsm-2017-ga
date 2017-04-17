@@ -5,24 +5,16 @@ import time
 import numpy as np
 import cv2
 
+from preprocessing import preprocess
+
 def classify(directory, label, samples, responses,v):
     images = os.listdir(path="./training_data/" + directory)
     for i in images:
         actual = str("./training_data/" + directory + i)
         print(actual)
         im = cv2.imread(actual)
-        im3 = im.copy()
 
-
-        gray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
-        ret,thresh = cv2.threshold(gray,90,255,cv2.THRESH_BINARY)
-
-        kernel = np.ones((5,5), np.uint8)
-
-        img = thresh
-        img = cv2.erode(img, kernel, iterations=3)
-        img = cv2.dilate(img, kernel, iterations=1)
-        img = cv2.erode(img, kernel, iterations=1)
+        img = preprocess(im)
 
         pre_processed = img.copy()
 
@@ -33,7 +25,7 @@ def classify(directory, label, samples, responses,v):
         keys = [i for i in range(48,58)]
         for cnt in contours:
             area = cv2.contourArea(cnt)
-            if area > 22000 and area < 80000:
+            if area > 15000 and area < 80000:
                 if v:
                     print("AREA: %s" % (area))
                 [x,y,w,h] = cv2.boundingRect(cnt)
