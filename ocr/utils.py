@@ -15,7 +15,7 @@ def preprocess(im):
     return img
 
 def check_rectangle(area):
-    if area > 10000 and area < 80000:
+    if area > 10000 and area < 85000:
         return True
     else:
         return False
@@ -29,7 +29,10 @@ def roismall(img,x,y,w,h):
 
 def check_ratio(x,y,w,h):
     ratio = float(h)/float(w)
-    if(ratio > 1 and ratio < 2):
+    if(ratio > 1 and ratio < 2.8):
         return True
     else:
         return False
+
+def ratio(x,y,w,h):
+    return float(h)/float(w)

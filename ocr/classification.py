@@ -32,12 +32,16 @@ def classify(directory, label, samples, responses,v):
                 if  utils.check_ratio(x,y,w,h):
                     cv2.rectangle(pre_processed,(x,y),(x+w,y+h),(0,0,255),2)
                     responses.append(label)
-                    sample = utils.roismall(img,x,y,w,h)
+                    sample = utils.roismall(pre_processed,x,y,w,h)
                     samples = np.append(samples,sample,0)
+                    if v:
+                        print("Rec: %s" % directory[:1])
+                elif v:
+                    print("Wrong Ration %s" % utils.ratio(x,y,w,h))
             elif area>5000 and area < 200000:
                 if v:
                     print("UNRECOGNIZED area: %s" % (area))
-                pass
+
     return samples, responses
 
 if __name__=='__main__':

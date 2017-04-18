@@ -36,9 +36,8 @@ def classify(v):
                 [x,y,w,h] = cv2.boundingRect(cnt)
                 if  utils.check_ratio(x,y,w,h):
                     cv2.rectangle(im,(x,y),(x+w,y+h),(0,255,0),2)
-
-                    retval, results, neigh_resp, dists = model.findNearest(utils.roismall(img,x,y,w,h), k = 3)
-                    string = labels[int((results[0][0]))]
+                    retval, results, neigh_resp, dists = model.findNearest(utils.roismall(img, x,y,w,h), k = 3)
+                    string = labels[int(results[0][0])]
                     cv2.putText(im,string,(x+3,y+h+3),0,2,(255,0,0),thickness=3)
 
         cv2.imshow('im',im)
