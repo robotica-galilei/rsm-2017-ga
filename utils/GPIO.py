@@ -1,3 +1,5 @@
+import os
+
 HIGH = 1
 LOW = 0
 OUT = "out"
@@ -17,6 +19,12 @@ def write_file(path, value):
 
 def setup(gpio, direction):
     if gpio not in exported:
+        try:
+            sys.stdout = open(os.devnull, "w")
+            os.system("echo " + gpio[4:] + " > /sys/class/gpio/export")
+            sys.stdout = sys.__stdout__
+        except:
+            pass
         exported.add(gpio)
     write_file(gpio + "/direction", direction)
 
