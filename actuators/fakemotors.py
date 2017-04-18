@@ -3,8 +3,8 @@ sys.path.append("../")
 
 import time
 
-MOTOR_CELL_TIME     =       1.8
-MOTOR_ROTATION_TIME =       1.5
+MOTOR_CELL_TIME     =       0.2
+MOTOR_ROTATION_TIME =       0.15
 MOTOR_DEFAULT_POWER_LINEAR      =       30
 MOTOR_DEFAULT_POWER_ROTATION    =       30
 

@@ -30,7 +30,7 @@ def queueCheck(mat, node, new, wall, dist, path, visited, q, dir_now, dir_then):
 
     This function returns all the matrices and the priority queue updated
     '''
-    if (not mat.item(wall) and (not visited.item(new) or dist.item(new) > dist.item(node) +1)):
+    if (not mat.item(wall) and (not visited.item(new) or dist.item(new) > dist.item(node) +1) and mat.item(new)//256 != 1):
         dist.itemset(new, dist.item(node) +1 + abs(((abs(dir_now-dir_then)+1)%4)-1))
         q.put((dist.item(new),new,dir_then))
         visited.itemset(new, True)
@@ -49,6 +49,7 @@ def dijkstra(direction,start, end ,mat):
 
     visited = np.zeros((np.shape(mat)[0],np.shape(mat)[1]))
     dist = np.zeros((np.shape(mat)[0],np.shape(mat)[1]))
+    dist.fill('Inf')
     path = [[[] for i in range(np.shape(mat)[1])] for j in range(np.shape(mat)[0])]
     for i in range (1, np.shape(mat)[0]-1,2):
         for j in range (1, np.shape(mat)[1]-1,2):

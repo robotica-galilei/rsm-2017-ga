@@ -27,7 +27,13 @@ class timer(threading.Thread):
 def moveTo(path, m):
     global pos
     global orientation
+    global mat
+    global unexplored_queue
     del path[1][0] # Delete the first element (The total distance)
+
+    old_orientation = orientation
+    old_pos = pos
+
     #Move forward just one cell
     if pos[0]==path[1][0][0]:
         if pos[1]>path[1][0][1]:
@@ -53,6 +59,20 @@ def moveTo(path, m):
     m.oneCellForward()
     pos=path[1][0]
     server.setRobotPosition(pos)
+    if (sm.check_black(pos)):
+        if pos in unexplored_queue:
+            unexplored_queue.remove(pos)
+        refresh_map(sm.scanWalls(pos,orientation))
+        mat.itemset(pos, 256)
+        server.setMazeMap(mat.tolist())
+        m.rotateRight()
+        m.rotateRight()
+        orientation = old_orientation
+        server.setRobotOrientation(new_dir)
+        pos = old_pos
+        m.oneCellForward()
+        server.setRobotPosition(pos)
+
 
 
 def stop_function(timer, m):
@@ -71,10 +91,49 @@ def nearcellToQueue(mat, nearcell, unexplored_queue):
 
     Returns the updated mat and unexplored_queue
     '''
-    if (nearcell not in unexplored_queue) and mat.item(nearcell)==0: #If the cell is not queued and not explored yet
+    if (nearcell not in unexplored_queue) and mat.item(nearcell)==0 and not sm.check_black(pos): #If the cell is not queued and not explored yet
         mat.itemset(nearcell,1) #Set as queued/explored
         unexplored_queue.append(nearcell) #Add to queue
     return mat, unexplored_queue
+
+def refresh_map(walls):
+    global mat
+    global pos
+    global home
+    global unexplored_queue
+    ##########Resize map, shift indexes, add walls and cells to queue
+    if walls[0]>0: #Left wall
+        mat.itemset((pos[0]-1,pos[1]),1) #Set wall
+    else:
+        if pos[0]==1:
+            mat = maman.appendTwoLinesToMatrix(mat, 1, 0)
+            pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 1)
+        mat, unexplored_queue = nearcellToQueue(mat, (pos[0]-2,pos[1]), unexplored_queue)
+
+
+    if walls[1]>0: #Bottom wall
+        mat.itemset((pos[0],pos[1]+1),1) #Set wall
+    else:
+        if pos[1]==np.shape(mat)[1]-2:
+            mat = maman.appendTwoLinesToMatrix(mat, 0, 1)
+        mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]+2), unexplored_queue)
+
+
+    if walls[2]>0: #Right wall
+        mat.itemset((pos[0]+1,pos[1]),1) #Set wall
+    else:
+        if pos[0]==np.shape(mat)[0]-2:
+            mat = maman.appendTwoLinesToMatrix(mat, 1, 1)
+        mat, unexplored_queue = nearcellToQueue(mat, (pos[0]+2,pos[1]), unexplored_queue)
+
+
+    if walls[3]>0: #Top wall
+        mat.itemset((pos[0],pos[1]-1),1) #Set wall
+    else:
+        if pos[1]==1:
+            mat = maman.appendTwoLinesToMatrix(mat, 0, 0)
+            pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 0)
+        mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]-2), unexplored_queue)
 
 
 def main(timer_thread, m, server):
@@ -121,57 +180,25 @@ def main(timer_thread, m, server):
             walls.append(walls[0])
             del walls[0]
 
-
-        ##########Resize map, shift indexes, add walls and cells to queue
-        if walls[0]>0: #Left wall
-            mat.itemset((pos[0]-1,pos[1]),1) #Set wall
-        else:
-            if pos[0]==1:
-                mat = maman.appendTwoLinesToMatrix(mat, 1, 0)
-                pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 1)
-            mat, unexplored_queue = nearcellToQueue(mat, (pos[0]-2,pos[1]), unexplored_queue)
-
-
-        if walls[1]>0: #Bottom wall
-            mat.itemset((pos[0],pos[1]+1),1) #Set wall
-        else:
-            if pos[1]==np.shape(mat)[1]-2:
-                mat = maman.appendTwoLinesToMatrix(mat, 0, 1)
-            mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]+2), unexplored_queue)
-
-
-        if walls[2]>0: #Right wall
-            mat.itemset((pos[0]+1,pos[1]),1) #Set wall
-        else:
-            if pos[0]==np.shape(mat)[0]-2:
-                mat = maman.appendTwoLinesToMatrix(mat, 1, 1)
-            mat, unexplored_queue = nearcellToQueue(mat, (pos[0]+2,pos[1]), unexplored_queue)
-
-
-        if walls[3]>0: #Top wall
-            mat.itemset((pos[0],pos[1]-1),1) #Set wall
-        else:
-            if pos[1]==1:
-                mat = maman.appendTwoLinesToMatrix(mat, 0, 0)
-                pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 0)
-            mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]-2), unexplored_queue)
+        refresh_map(walls)
 
         if(sm.check_victim(pos)):
             mat.itemset(pos, 512)
-        if(sm.check_black(pos)):
-            mat.itemset(pos, 256)
         ##########
 
         server.setMazeMap(mat.tolist()) #Update map
+        print(home, pos)
 
         #Decide where to go
         if len(unexplored_queue)==0: #If there is no available cell to explore, the maze is done
             if pos!=home:
                 server.setRobotStatus("Done! Homing...")
                 destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat) #Find the best path to reach home
-                moveTo(destination, m)
+                while pos != home:
+                    moveTo(destination, m)
             server.setRobotStatus("Done!")
             input("Press enter to continue")
+            stop_function(timer_thread,m)
             sys.exit()
 
         destination=mp.bestPath(orientation,[pos[0],pos[1]],unexplored_queue,mat) #Find the best path to reach the nearest cell
@@ -197,5 +224,5 @@ if __name__ == '__main__':
         main(timer_thread=timer_thread, m=m, server=server)
     except KeyboardInterrupt as e:
         stop_function(timer=timer_thread, m=m)
-    except Exception as e:
-        print(e)
+    #except Exception as e:
+    #    print(e)
