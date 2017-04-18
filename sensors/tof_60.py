@@ -188,6 +188,8 @@ class VL6180X:
         if self.wanted_address != 0x29:
             self.change_address(0x29, self.wanted_address)
 
+        self.get_distance() # This is needed because sometimes the very first measurement is 0
+
         if self.debug:
             print"Register settings:"
             print"0x0207 - %x" % self.get_register(0x0207)
