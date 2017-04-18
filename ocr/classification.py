@@ -1,11 +1,11 @@
 import sys
 import os
-import time
 
+import time
 import numpy as np
 import cv2
 
-from preprocessing import preprocess
+import utils
 
 def classify(directory, label, samples, responses,v):
     images = os.listdir(path="./training_data/" + directory)
@@ -14,7 +14,7 @@ def classify(directory, label, samples, responses,v):
         print(actual)
         im = cv2.imread(actual)
 
-        img = preprocess(im)
+        img = utils.preprocess(im)
 
         pre_processed = img.copy()
 
@@ -25,16 +25,14 @@ def classify(directory, label, samples, responses,v):
         keys = [i for i in range(48,58)]
         for cnt in contours:
             area = cv2.contourArea(cnt)
-            if area > 15000 and area < 80000:
+            if utils.check_rectangle(area):
                 if v:
                     print("AREA: %s" % (area))
                 [x,y,w,h] = cv2.boundingRect(cnt)
-                if  h>28:
+                if  utils.check_ratio(x,y,w,h):
                     cv2.rectangle(pre_processed,(x,y),(x+w,y+h),(0,0,255),2)
-                    roi = pre_processed[y:y+h,x:x+w]
-                    roismall = cv2.resize(roi,(10,10))
                     responses.append(label)
-                    sample = roismall.reshape((1,100))
+                    sample = utils.roismall(img,x,y,w,h)
                     samples = np.append(samples,sample,0)
             elif area>5000 and area < 200000:
                 if v:

@@ -2,7 +2,8 @@ import sys
 
 import cv2
 import numpy as np
-from preprocessing import preprocess
+
+import utils
 
 def classify(v):
     #######   training part    ###############
@@ -23,7 +24,7 @@ def classify(v):
         #print(str('train' + str(i)+'.jpg'))
         #im = cv2.imread(str('train/' + str(i)+'.jpg'))
 
-        img = preprocess(im)
+        img = utils.preprocess(im)
         im2 = img.copy()
 
         image, contours,hierarchy = cv2.findContours(im2,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
@@ -31,15 +32,12 @@ def classify(v):
         ############################# classification #########################
         for cnt in contours:
             area = cv2.contourArea(cnt)
-            if area > 15000 and area < 80000:
+            if utils.check_rectangle(area):
                 [x,y,w,h] = cv2.boundingRect(cnt)
-                if  h>28:
+                if  utils.check_ratio(x,y,w,h):
                     cv2.rectangle(im,(x,y),(x+w,y+h),(0,255,0),2)
-                    roi = img[y:y+h,x:x+w]
-                    roismall = cv2.resize(roi,(10,10))
-                    roismall = roismall.reshape((1,100))
-                    roismall = np.float32(roismall)
-                    retval, results, neigh_resp, dists = model.findNearest(roismall, k = 3)
+
+                    retval, results, neigh_resp, dists = model.findNearest(utils.roismall(img,x,y,w,h), k = 3)
                     string = labels[int((results[0][0]))]
                     cv2.putText(im,string,(x+3,y+h+3),0,2,(255,0,0),thickness=3)
 
