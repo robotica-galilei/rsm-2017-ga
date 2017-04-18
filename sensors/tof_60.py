@@ -1,8 +1,9 @@
-#!/usr/bin/python
+import sys
+sys.path.append("../")
 
 import time
 import smbus
-import Adafruit_BBIO.GPIO as GPIO
+import utils.GPIO as GPIO
 
 # ===========================================================================
 # ST_VL6180x ToF ranger Class
@@ -10,6 +11,8 @@ import Adafruit_BBIO.GPIO as GPIO
 # Originally written by A. Weber
 # References Arduino library by Casey Kuhns of SparkFun:
 # https://github.com/sparkfun/ToF_Range_Finder-VL6180_Library\
+#
+# Edited according to the project needs by F. Ballerin
 # ===========================================================================
 
 
@@ -183,7 +186,7 @@ class VL6180X:
 
         # Change address if requested
         if self.wanted_address != 0x29:
-            self.change_address(0x29, self.wanted_address) 
+            self.change_address(0x29, self.wanted_address)
 
         if self.debug:
             print"Register settings:"
@@ -380,8 +383,11 @@ class VL6180X:
     def set_range(self, value):
         # Change the range
         # Value can be an integer between 1 and 3 (1, 2, or 3)
+
+        # TODO The range affects the output magnitude. To correct
+
         ranges = [0,0xFD, 0x7F, 0x54]
-        sen.set_register(0x097,ranges[value-1])
+        self.set_register(0x097,ranges[value-1])
 
 
     def get_register(self, register_address):
