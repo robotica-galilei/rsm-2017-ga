@@ -65,12 +65,10 @@ def moveTo(path, m):
         refresh_map(sm.scanWalls(pos,orientation))
         mat.itemset(pos, 256)
         server.setMazeMap(mat.tolist())
-        m.rotateRight()
-        m.rotateRight()
         orientation = old_orientation
         server.setRobotOrientation(new_dir)
         pos = old_pos
-        m.oneCellForward()
+        m.oneCellBack()
         server.setRobotPosition(pos)
 
 
@@ -175,10 +173,6 @@ def main(timer_thread, m, server):
         #Read sensors
         walls = sm.scanWalls(pos,orientation)
 
-        #Rectify readings on the orientation of the robot (cyclic permutation)
-        for i in range(0,3-orientation):
-            walls.append(walls[0])
-            del walls[0]
 
         refresh_map(walls)
 
@@ -187,7 +181,6 @@ def main(timer_thread, m, server):
         ##########
 
         server.setMazeMap(mat.tolist()) #Update map
-        print(home, pos)
 
         #Decide where to go
         if len(unexplored_queue)==0: #If there is no available cell to explore, the maze is done
