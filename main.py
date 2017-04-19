@@ -48,6 +48,7 @@ def moveTo(path, m):
     if orientation!=new_dir:
         if abs(new_dir-orientation) == 2:
             m.rotateRight()
+            server.setRobotOrientation((new_dir+1)%4)
             m.rotateRight()
         elif new_dir-orientation == -3 or new_dir-orientation == 1:
             m.rotateLeft()
