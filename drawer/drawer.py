@@ -88,23 +88,23 @@ while True:
                 else:
                     print(event.key)
             else:
-                if event.key==261:
+                if event.key==261 or event.key==115:
                     maze_map = np.hstack((maze_map,np.zeros((np.shape(maze_map)[0],2))))
-                elif event.key==260:
+                elif event.key==260 or event.key==97:
                     maze_map = np.vstack((np.zeros((2,np.shape(maze_map)[1])),maze_map))
                     pos = (pos[0]+2,pos[1])
-                elif event.key==262:
+                elif event.key==262 or event.key==100:
                     wall_pos=(pos[0]+1,pos[1])
                     maze_map = np.vstack((maze_map,np.zeros((2,np.shape(maze_map)[1]))))
-                elif event.key==264:
+                elif event.key==264 or event.key==119:
                     maze_map = np.hstack((np.zeros((np.shape(maze_map)[0],2)),maze_map))
                     pos = (pos[0],pos[1]+2)
                 else:
                     print(event.key)
-                
-            
+
+
     #print(pos)
-    
+
     #Window layout
     layout.draw_layout(screen,expansion_mode)
 
