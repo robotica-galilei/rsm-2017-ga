@@ -1,5 +1,9 @@
+import sys
+sys.path.append("../")
+
 import tof_60
 import tof_200
+import config.dimensions as dim
 
 class tof:
     def __init__(self, pins, addresses):
@@ -33,9 +37,28 @@ class tof:
         return all_s
 
     def read_fix(self,dir):
-        #TODO Return the distance in a certain direction cleaned
-        pass
+        #Return the distance in a certain direction cleaned
+        s1 = None; s2 = None; s3 = None
+        for key, item in self.sens.items():
+            if key[:1] == dir:
+                if s1 == None:
+                    s1 = read_raw(key)
+                else:
+                    s2 = read_raw(key)
+            elif key == dir:
+                s3 == read_raw(key)
+        alfa = atan(dim.tof_60_distance/abs(s1-s2))
+        avg = (s1+s2)/2
+        return avg, alfa
 
     def get_trusted(self):
         #TODO Return a dictionary of the trusted directions {'N': True, 'S': False ... }
-        pass
+
+        threshold = 220
+
+        trusted = {'N':True, 'S':True, 'O':True, 'E':True}
+        for key, item in self.sens.items():
+            if len(key[:1]) == 1:
+                if read_raw(key) >= threshold:
+                    trusted[key[:1]] = False
+        return trusted
