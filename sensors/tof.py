@@ -1,8 +1,8 @@
 import sys
 sys.path.append("../")
 
-import tof_60
-import tof_200
+import modules.tof_60 as tof_60
+import modules.tof_200 as tof_200
 import config.dimensions as dim
 
 class tof:
