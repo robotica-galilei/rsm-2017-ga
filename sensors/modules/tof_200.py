@@ -1,8 +1,9 @@
-#!/usr/bin/python
+import sys
+sys.path.append("../../")
 
 import time
 import smbus
-import Adafruit_BBIO.GPIO as GPIO
+import utils.GPIO as GPIO
 
 # ===========================================================================
 # ST_VL53L0X ToF ranger Class
@@ -57,7 +58,6 @@ class VL53L0X:
 
     def deactivate(self):
         GPIO.output(self.gpio, GPIO.LOW)
-        val1 = self.set_register(VL53L0X_REG_SYSRANGE_START, 0x01)
 
 
     def activate(self):
@@ -75,10 +75,10 @@ class VL53L0X:
             return old_address
         if new_address > 127:
             return old_address
-
-        self.set_register(self.__VL53L0X_I2C_SLAVE_DEVICE_ADDRESS, new_address)
+        #self.set_register(0x8A, new_address & 0x7F)
+        self.i2c.write_byte_data(old_address, 0x8A, new_address & 0x7F)
         self.address = new_address;
-        return self.get_register(self.__VL53L0X_I2C_SLAVE_DEVICE_ADDRESS)
+        return new_address
 
 
     def get_distance(self):
