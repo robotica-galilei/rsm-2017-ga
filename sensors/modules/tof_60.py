@@ -1,5 +1,5 @@
 import sys
-sys.path.append("../")
+sys.path.append("../../")
 
 import time
 import smbus
@@ -145,10 +145,10 @@ class VL6180X:
     def activate(self):
         GPIO.output(self.gpio, GPIO.HIGH)
         if self.get_register(self.__VL6180X_SYSTEM_FRESH_OUT_OF_RESET) == 1:
-            print "ToF sensor is ready."
+            print("ToF sensor is ready.")
             self.ready = True
         else:
-            print "ToF sensor reset failure."
+            print("ToF sensor reset failure.")
             self.ready = False
 
         # Required by datasheet
