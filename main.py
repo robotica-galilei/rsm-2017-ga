@@ -209,7 +209,7 @@ if __name__ == '__main__':
 
     server = Pyro4.Proxy("PYRONAME:robot.server") #Connect to server for graphical interface
 
-    pins = pins ={'fl':'P9_14','fr':'P9_16','rl':'P8_13','rr':'P8_19','dir_fl':'gpio60','dir_fr':'gpio48','dir_rl':'gpio49','dir_rr':'gpio20'}
+    pins ={'fl':'P8_13','fr':'P8_19','rl':'P9_14','rr':'P9_16','dir_fl':'gpio31','dir_fr':'gpio48','dir_rl':'gpio60','dir_rr':'gpio30'}
 
     timer_thread = timer("Timer", server)
     m = motors.Motor(pins)

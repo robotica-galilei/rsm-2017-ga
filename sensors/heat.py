@@ -5,11 +5,11 @@ class heat:
         '''
         Init routine
         addresses is a dictionary containing the addresses of the sensor.
-        addresses = {'N':0x20; 'S':0x21 ...}
+        addresses = {'N': 0x12, 'S': 0x13, 'E': 0x11, 'O': 0x10}
         '''
         self.sens = {}
-        for item, key in addresses.items():
-            self.sens[key] = GY906.MLX90614(addresses[key])
+        for key, item in addresses.items():
+            self.sens[key] = GY906.MLX90614(item, bus_num=2)
 
     def read_raw(self, dir):
         #Read just the single sensor
