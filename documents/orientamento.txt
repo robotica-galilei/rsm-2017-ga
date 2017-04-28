@@ -1,0 +1,74 @@
+costanti:
+
+df60 = distanza "frontale" tra tof60 = 98 mm
+
+dl60 = distanza "laterale" tra tof60 = 117 mm
+
+dl200 = distanza "laterale" tra tof200 = 114 mm
+
+dim = 300 mm da settare o impostabile come variabile
+
+a = 1 determina quanto influisce l'angolo rispetto alla distanza
+
+v_standard = 50 da definire e capire se farla dipendere da anche dalla distanza dal centro della cella.
+
+interpretazione gyro per orientamento
+
+0.	cosalfa 	rotazione del robot lungo l'asse verticale
+
+1.	cosbeta		cos dell'angolo lungo E O
+
+2.	cosgamma	cos dell'angolo lungo N S
+
+interpretazione tof per orientamento
+
+funzioni
+
+le misure dei tof corrette in base a cosbeta e cosgamma
+
+0.	get_trusted(tof)	tof60 e tof 200 buoni 
+				z = 1 se buono z = 0 se marcio -> ritorna z
+
+1.	media(side)		media dei sensori "buoni" su ogni lato 
+				media = (get_trusted(tof60_1(side)) * tof60_1(side) + get_trusted(tof200(side)) * tof200(side) + get_trusted(tof60_2(side)) * tof60_2(side))/(get_trusted(tof60_1(side)) + get_trusted(tof200(side)) + get_trusted(tof60_2(side))) -> ritorna media
+
+2a.	side_miny(...)		minore fra la media di side:  N e S -> ritorna N o S
+
+2b.	side_minx(...)		minore fra la media di side: E e O -> ritorna E o O
+
+3.	side_min(...)		minore fra la media di side: N, S, E e O -> ritorna N, S, E o O
+
+5. 	differenza(side) 	differenza = (get_trusted(tof60_1(side)) * (tof60_1(side) -  get_trusted(tof 200(side)) * tof200(side)) - get_trusted(tof60_2(side)) * (tof60_2(side) - get_trusted(tof 200(side)) * tof200(side)))/(get_trusted(tof60_1(side)) + get_trusted(tof60_2(side))) -> ritorna differenza
+
+6.	cosalfa(side) 		cosalfa= 1 / sqrt(1 + ((differenza(side) / df60)^2)) -> ritorna cosalfa 
+
+7.	N_miny			numero di celle dove side=side_miny
+				N appartiene a Naturali
+				N=media(sideminy) / dim
+
+8.	N_minx			numero di celle dove side=side_minx
+				N=media(sideminx) / dim
+
+
+orientamento
+
+va deciso come utilizzare cosalfa dei tof e del gyro
+
+funzioni
+
+0.	u_dir è la direzione universale  u_dir = 1 se ... u_dir = - 1 se ...
+
+1.	et(t) = (dim (1 + N_minx) - media(sideminx) / (a + 1)*(1 + a * cosalfa)) * u_dir
+
+2.	P = k1 * et(t)
+
+3. 	D = k2 * (et(t)-et(t-1))
+
+4.	I = k3 * integrale(et) dt
+
+5. 	PID= P * I * D
+
+6.	v_right = v_standard + PID
+
+7.	v_left = v_standard - PID
+
