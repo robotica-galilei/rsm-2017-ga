@@ -12,8 +12,9 @@ dim = 300 mm da settare o impostabile come variabile
 
 a = 1 determina quanto influisce l'angolo rispetto alla distanza
 
-v_standard = 50 da definire e capire se farla dipendere da anche dalla distanza dal centro della cella.
+v_standard = 50 se go_straight, 0 se rotate da definire e capire se farla dipendere da anche dalla distanza dal centro della cella.
 
+k1, k2, k3: determinare sia quelle per il go_straight che per il rotate
 
 
 interpretazione gyro per orientamento
@@ -83,17 +84,18 @@ funzioni
 
 0.	u_dir è la direzione universale  u_dir = 1 se ... u_dir = - 1 se ...
 
-1.	et(t) = (dim (1 + N_minx) - (2 * media(sideminx) + dl) / (a + 1)*(1 + a * cosalfa)) * u_dir
+1a.	et_straight = dim (1 + N_minx) - (2 * media(sideminx) + dl) / (a + 1)*(1 + a * cosalfa) * u_dir //per go_straight
 
-2.	P = k1 * et(t)
+1b.	et_rotate = cosalfa
 
-3. 	D = k2 * (et(t)-et(t-1))
+2.	P(et) = k1 * et(t)
 
-4.	I = k3 * integrale(et) dt
+3. 	D(et) = k2 * (et(t)-et(t-1))
 
-5. 	PID= P * I * D
+4.	I(et) = k3 * integrale(et) dt
+
+5. 	PID(et) = P(et) * I(et) * D(et)
 
 6.	v_right = v_standard + PID
 
 7.	v_left = v_standard - PID
-
