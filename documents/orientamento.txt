@@ -12,17 +12,13 @@ key200={N, S, E, O}
 
 key60={NE, NO, EN, ES, SE, SO, ON, ES}
 
-side: N = (NO , N, NE);  S = (SO , S, SE); E = (EN, E, ES); O = (ON, O , OS)
+side 
+
+key.side ritorna la prima lettera di ciascun sensore.
 
 value_side(side): N=1, E=1, S=-1, O=-1
 
-value_angle(side): N=1, E=0, S=1, O=0
 
-tof200: N, S, E, O
-
-tof60_1: tof60 ES, OS, NO, SO
-
-tof60_2: tof60 EN, ON, NE, SE
 
 k(key): 1 se key =  NE, SE, 0 se key = N, S -1 se key =  NO, SO else "error"
 
@@ -64,47 +60,65 @@ interpretazione gyro per orientamento
 
 2.	cosgamma	cos rotazione del robot lungo l'asse EO
 
+3.	cosangolo 	ritorna cosbeta side è se E o O o ritorna cosgamma se side è N o S
 
 valori tof
 
 funzioni
 
 0.	get_trusted(key)       se tofraw(key) è un dato buono o no
-				z = 1 se buono z = 0 se marcio -> ritorna z	
-1.	tof(key) = (tofraw(key) -ql200*(key==key200) - ql60*(key==key60)) * ((1-value_angle(side))*cosbeta+(value_angle(side))*cosgamma)
+				z = 1 se buono z = 0 se marcio -> ritorna z
+	
+1.	tof(key) = (tofraw(key) -ql200*(key si trova in key200) - ql60*(key si trova in key60)) *cosangolo(key.side))
 
-2a.	tof60_1(side)= tof(...)
+2.	tof200(side): tof(side) [N, S, E, O]
 
-2b.	tof200(side)= tof(...)
+indicati key e side rispettivi
+//speculari lungo gli assi
+3a.	tof60_1(side)= tof(key) 	key	ES, OS, NO, SO
+					side	E ,O ,N ,S
 
-2c.	tof60_2(side)= tof(...)
+3b.	tof60_2(side)= tof(key) 	key	EN, ON, NE, SE
+					side	E, O, N, S
+
+//speculari con centro nell'origine
+
+4a.	tof60_a(side)= tof(key) 	key 	N0, OS , SE , EN
+					side	N, O, S, E
+
+4b.	tof60_b(side)= tof(key) 	key	NE, ON, SO, ES
+					side	N, O, S ,E
 
 interpretazione tof per orientamento
+
+variabili
+
+1a.	side_miny		minore fra la media di side:  N e S 
+
+1b.	side_minx		minore fra la media di side: E e O 
+
+1c.	side_min		minore fra la media di side: N, S, E e O 
+
+7.	N_miny			numero di celle in side_miny (numero minimo di celle che dista da una parete davanti o dietro)
+
+8.	N_minx			numero di celle in side_minx (numero minimo di celle che dista da una parete destra o sinistra)
 
 funzioni
 
 1.	media(side)		media dei sensori "buoni" su ogni lato 
 					media = (tof60_1(side) + tof200(side) + tof60_2(side))/(get_trusted(tof60_1(side)) + get_trusted(tof200(side)) + get_trusted(tof60_2(side))) -> ritorna media
 
-2a.	side_miny(...)		minore fra la media di side:  N e S -> ritorna N o S
+2. 	differenza(side) 	differenza =  (get_trusted(tof60_a(side)) * (tof60_a(side) -  tof200(side)) - get_trusted(tof60_b(side)) * (tof60_b(side) -  tof200(side)))/(get_trusted(tof60_a(side)) + get_trusted(tof60_b(side))) -> ritorna differenza
 
-2b.	side_minx(...)		minore fra la media di side: E e O -> ritorna E o O
+3a.	cosalfa(side) 		cosalfa= 1 / sqrt(1 + ((differenza(side) / df60)^2)) -> ritorna cosalfa 
 
-3.	side_min(...)		minore fra la media di side: N, S, E e O -> ritorna N, S, E o O
+3b.	senalfa(side)		senalfa= (differenza(side) / df60) / sqrt(1 + ((differenza(side) / df60)^2)) -> ritorna senalfa... notare come può essere positivo o negativo
 
-5. 	differenza(side) 	differenza = value_side(side) * (get_trusted(tof60_1(side)) * (tof60_1(side) -  tof200(side)) - get_trusted(tof60_2(side)) * (tof60_2(side) -  tof200(side)))/(get_trusted(tof60_1(side)) + get_trusted(tof60_2(side))) -> ritorna differenza
+4. 	dist_eff(side)		media(side) * cosalfa
 
-6b.	cosalfa(side) 		cosalfa= 1 / sqrt(1 + ((differenza(side) / df60)^2)) -> ritorna cosalfa 
-
-6b.	senalfa(side)		senalfa= (differenza(side) / df60) / sqrt(1 + ((differenza(side) / df60)^2)) -> ritorna senalfa... notare come può essere positivo o negativo
-
-7.	N_miny			numero di celle in side_miny
-					N appartiene a Naturali
+5. 	N(media)			N appartiene a Naturali
 					N=media(sideminy)*cosalfa / dim			->ritorna N
 
-8.	N_minx			numero di celle in side_minx
-					N appartiene a Naturali
-					N=media(sideminx)*cosalfa / dim			->ritorna N
 
 
 
@@ -133,9 +147,9 @@ funzioni
 esplorazione
 
 
-1.	dist_centrale = media(side_miny) * cosalfa + dl/2
+1.	dist_centrale(side) = dist_eff(side) + dl/2
 
-2.	dist_sensory(key) = dist_centrale + df * k(key) + senalfa
+2.	dist_sensory(key) = dist_centrale(key.side) + df * k(key) + senalfa
 
 
 	immaginavo di dividere ciascuna cella in 2. questo ci permette di capire se ci sono o no oggetti agli angoli delle celle.
