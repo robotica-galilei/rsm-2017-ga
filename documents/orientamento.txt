@@ -1,10 +1,49 @@
+
+va deciso come utilizzare cosalfa dei tof e del gyro
+
+
+definizioni: 
+
+relative al robot
+
+key={N, S, E, O, NE, NO, EN, ES, SE, SO, ON, ES}
+
+key200={N, S, E, O}
+
+key60={NE, NO, EN, ES, SE, SO, ON, ES}
+
+side: N = (NO , N, NE);  S = (SO , S, SE); E = (EN, E, ES); O = (ON, O , OS)
+
+value_side(side): N=1, E=1, S=-1, O=-1
+
+value_angle(side): N=1, E=0, S=1, O=0
+
+tof200: N, S, E, O
+
+tof60_1: tof60 ES, OS, NO, SO
+
+tof60_2: tof60 EN, ON, NE, SE
+
+k(key): 1 se key =  NE, SE, 0 se key = N, S -1 se key =  NO, SO else "error"
+
+
+
+
+relative al campo
+
+dir= {0,1,2,3}
+
+value_dir(dir): 1 se dir = 2, 3, -1 se dir = 0, 1
+
+
+
 costanti:
 
 df60 = distanza "frontale" tra tof60 = 98 mm
 
-dl = distanza "laterale" tra tof = 120 
+dl = distanza "laterale" tra tof = 130 
 
-ql60 = errore "laterale" tra tof60 = 1.5 mm
+ql60 = errore "laterale" tra tof60 = 1 mm
 
 ql200 = errore "laterale" tra tof200 = 3 mm
 
@@ -19,41 +58,33 @@ k1, k2, k3: determinare sia quelle per il go_straight che per il rotate
 
 interpretazione gyro per orientamento
 
-0.	cosalfa 	rotazione del robot lungo l'asse verticale
+0.	cosalfa 	cos rotazione del robot lungo l'asse verticale
 
-1.	cosbeta		cos dell'angolo lungo E O
+1.	cosbeta		cos rotazione del robot lungo l'asse NS
 
-2.	cosgamma	cos dell'angolo lungo N S
-
+2.	cosgamma	cos rotazione del robot lungo l'asse EO
 
 
 valori tof
 
 funzioni
 
-0.	get_trusted(tof)	tof60 e tof200 buoni 
-						z = 1 se buono z = 0 se marcio -> ritorna z
+0.	get_trusted(key)       se tofraw(key) è un dato buono o no
+				z = 1 se buono z = 0 se marcio -> ritorna z	
+1.	tof(key) = (tofraw(key) -ql200*(key==key200) - ql60*(key==key60)) * ((1-value_angle(side))*cosbeta+(value_angle(side))*cosgamma)
 
-1a.	tof60_1(side)		if side è N o S	cosangolo=cosgamma
-						if side è E o O	cosangolo=cosbeta
-						tof60_1 = (READTOF - ql60) * cosangolo	->ritorna tof60_1
-						
-1b.	tof60_2(side)		if side è N o S	cosangolo=cosgamma
-						if side è E o O	cosangolo=cosbeta
-						tof60_2 = (READTOF - ql60) * cosangolo	->ritorna tof60_2
+2a.	tof60_1(side)= tof(...)
 
-1c.	tof200(side)		if side è N o S	cosangolo=cosgamma
-						if side è E o O	cosangolo=cosbeta
-						tof200 = (READTOF - ql200) * cosangolo	->ritorna tof200	
+2b.	tof200(side)= tof(...)
 
-
+2c.	tof60_2(side)= tof(...)
 
 interpretazione tof per orientamento
 
 funzioni
 
 1.	media(side)		media dei sensori "buoni" su ogni lato 
-					media = (get_trusted(tof60_1(side)) * tof60_1(side) + get_trusted(tof200(side)) * tof200(side) + get_trusted(tof60_2(side)) * tof60_2(side))/(get_trusted(tof60_1(side)) + get_trusted(tof200(side)) + get_trusted(tof60_2(side))) -> ritorna media
+					media = (tof60_1(side) + tof200(side) + tof60_2(side))/(get_trusted(tof60_1(side)) + get_trusted(tof200(side)) + get_trusted(tof60_2(side))) -> ritorna media
 
 2a.	side_miny(...)		minore fra la media di side:  N e S -> ritorna N o S
 
@@ -61,30 +92,28 @@ funzioni
 
 3.	side_min(...)		minore fra la media di side: N, S, E e O -> ritorna N, S, E o O
 
-5. 	differenza(side) 	differenza = (get_trusted(tof60_1(side)) * (tof60_1(side) -  get_trusted(tof 200(side)) * tof200(side)) - get_trusted(tof60_2(side)) * (tof60_2(side) - get_trusted(tof 200(side)) * tof200(side)))/(get_trusted(tof60_1(side)) + get_trusted(tof60_2(side))) -> ritorna differenza
+5. 	differenza(side) 	differenza = value_side(side) * (get_trusted(tof60_1(side)) * (tof60_1(side) -  tof200(side)) - get_trusted(tof60_2(side)) * (tof60_2(side) -  tof200(side)))/(get_trusted(tof60_1(side)) + get_trusted(tof60_2(side))) -> ritorna differenza
 
-6.	cosalfa(side) 		cosalfa= 1 / sqrt(1 + ((differenza(side) / df60)^2)) -> ritorna cosalfa 
+6b.	cosalfa(side) 		cosalfa= 1 / sqrt(1 + ((differenza(side) / df60)^2)) -> ritorna cosalfa 
 
-7.	N_miny			numero di celle dove side=side_miny
+6b.	senalfa(side)		senalfa= (differenza(side) / df60) / sqrt(1 + ((differenza(side) / df60)^2)) -> ritorna senalfa... notare come può essere positivo o negativo
+
+7.	N_miny			numero di celle in side_miny
 					N appartiene a Naturali
-					N=media(sideminy) / dim			->ritorna N
+					N=media(sideminy)*cosalfa / dim			->ritorna N
 
-8.	N_minx			numero di celle dove side=side_minx
+8.	N_minx			numero di celle in side_minx
 					N appartiene a Naturali
-					N=media(sideminx) / dim			->ritorna N
+					N=media(sideminx)*cosalfa / dim			->ritorna N
 
 
 
 
 orientamento
 
-va deciso come utilizzare cosalfa dei tof e del gyro
-
 funzioni
 
-0.	u_dir è la direzione universale  u_dir = 1 se ... u_dir = - 1 se ...
-
-1a.	et_straight = dim (1 + N_minx) - (2 * media(sideminx) + dl) / (a + 1)*(1 + a * cosalfa) * u_dir //per go_straight
+1a.	et_straight = dim (1 + N_minx) - (2 * media(sideminx) + dl) / (a + 1)*(1 + a * cosalfa) * value_dir //per go_straight
 
 1b.	et_rotate = cosalfa
 
@@ -99,3 +128,25 @@ funzioni
 6.	v_right = v_standard + PID
 
 7.	v_left = v_standard - PID
+
+
+esplorazione
+
+
+1.	dist_centrale = media(side_miny) * cosalfa + dl/2
+
+2.	dist_sensory(key) = dist_centrale + df * k(key) + senalfa
+
+
+	immaginavo di dividere ciascuna cella in 2. questo ci permette di capire se ci sono o no oggetti agli angoli delle celle.
+	misuriamo poi la frequenza dei risultati delle misurazioni
+	se nelle due metà di una cella i vari sensori su una frequenza dominante di visione del muro, allora muro, se invece vedono lungo allora no_muro
+	se nella prima metà della cella attuale e nella seconda metà della cella precedente compare una frequenza cospiqua ( ho calcolato con i fati forniti dal regolamento il valore), allora ostacolo.
+	questo vale sia per fronte che per i due lati. 
+	per i due lati utilizziamo la misurazione di un tof(key) e per determinare la posizione dist_sensorx(key)
+	per il fronte è più semplice.
+
+	
+ 	
+
+funzioni
