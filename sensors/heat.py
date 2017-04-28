@@ -1,3 +1,7 @@
+import sys
+sys.path.append("../")
+
+import config.params as params
 import modules.GY906 as GY906
 
 class heat:
@@ -14,3 +18,13 @@ class heat:
     def read_raw(self, dir):
         #Read just the single sensor
         return self.sens[dir].get_obj_temp()
+
+    def isThereSomeVictim(self, temp=params.victim):
+        '''
+        Returns if something has been seen by the sensors
+        '''
+        victims = []
+        for i in params.directions:
+            if(self.read_raw(i) >= temp):
+                victims.append(i)
+        return len(victims) >= 1, victims
