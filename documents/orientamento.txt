@@ -2,15 +2,19 @@ costanti:
 
 df60 = distanza "frontale" tra tof60 = 98 mm
 
-dl60 = distanza "laterale" tra tof60 = 117 mm
+dl = distanza "laterale" tra tof = 120 
 
-dl200 = distanza "laterale" tra tof200 = 114 mm
+ql60 = errore "laterale" tra tof60 = 1.5 mm
+
+ql200 = errore "laterale" tra tof200 = 3 mm
 
 dim = 300 mm da settare o impostabile come variabile
 
 a = 1 determina quanto influisce l'angolo rispetto alla distanza
 
 v_standard = 50 da definire e capire se farla dipendere da anche dalla distanza dal centro della cella.
+
+
 
 interpretazione gyro per orientamento
 
@@ -20,17 +24,35 @@ interpretazione gyro per orientamento
 
 2.	cosgamma	cos dell'angolo lungo N S
 
+
+
+valori tof
+
+funzioni
+
+0.	get_trusted(tof)	tof60 e tof200 buoni 
+						z = 1 se buono z = 0 se marcio -> ritorna z
+
+1a.	tof60_1(side)		if side è N o S	cosangolo=cosgamma
+						if side è E o O	cosangolo=cosbeta
+						tof60_1 = (READTOF - ql60) * cosangolo	->ritorna tof60_1
+						
+1b.	tof60_2(side)		if side è N o S	cosangolo=cosgamma
+						if side è E o O	cosangolo=cosbeta
+						tof60_2 = (READTOF - ql60) * cosangolo	->ritorna tof60_2
+
+1c.	tof200(side)		if side è N o S	cosangolo=cosgamma
+						if side è E o O	cosangolo=cosbeta
+						tof200 = (READTOF - ql200) * cosangolo	->ritorna tof200	
+
+
+
 interpretazione tof per orientamento
 
 funzioni
 
-le misure dei tof corrette in base a cosbeta e cosgamma
-
-0.	get_trusted(tof)	tof60 e tof 200 buoni 
-				z = 1 se buono z = 0 se marcio -> ritorna z
-
 1.	media(side)		media dei sensori "buoni" su ogni lato 
-				media = (get_trusted(tof60_1(side)) * tof60_1(side) + get_trusted(tof200(side)) * tof200(side) + get_trusted(tof60_2(side)) * tof60_2(side))/(get_trusted(tof60_1(side)) + get_trusted(tof200(side)) + get_trusted(tof60_2(side))) -> ritorna media
+					media = (get_trusted(tof60_1(side)) * tof60_1(side) + get_trusted(tof200(side)) * tof200(side) + get_trusted(tof60_2(side)) * tof60_2(side))/(get_trusted(tof60_1(side)) + get_trusted(tof200(side)) + get_trusted(tof60_2(side))) -> ritorna media
 
 2a.	side_miny(...)		minore fra la media di side:  N e S -> ritorna N o S
 
@@ -43,11 +65,14 @@ le misure dei tof corrette in base a cosbeta e cosgamma
 6.	cosalfa(side) 		cosalfa= 1 / sqrt(1 + ((differenza(side) / df60)^2)) -> ritorna cosalfa 
 
 7.	N_miny			numero di celle dove side=side_miny
-				N appartiene a Naturali
-				N=media(sideminy) / dim
+					N appartiene a Naturali
+					N=media(sideminy) / dim			->ritorna N
 
 8.	N_minx			numero di celle dove side=side_minx
-				N=media(sideminx) / dim
+					N appartiene a Naturali
+					N=media(sideminx) / dim			->ritorna N
+
+
 
 
 orientamento
@@ -58,7 +83,7 @@ funzioni
 
 0.	u_dir è la direzione universale  u_dir = 1 se ... u_dir = - 1 se ...
 
-1.	et(t) = (dim (1 + N_minx) - media(sideminx) / (a + 1)*(1 + a * cosalfa)) * u_dir
+1.	et(t) = (dim (1 + N_minx) - (2 * media(sideminx) + dl) / (a + 1)*(1 + a * cosalfa)) * u_dir
 
 2.	P = k1 * et(t)
 
