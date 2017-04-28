@@ -1,10 +1,11 @@
 import sys
 sys.path.append("../")
+import time
 
 import Adafruit_BBIO.PWM as PWM
 import utils.GPIO as GPIO
 import sensors.mpu6050.utils as gyro_utils
-import time
+import config.params
 
 MOTOR_CELL_TIME     =       1.8
 MOTOR_ROTATION_TIME =       1.5
@@ -13,7 +14,7 @@ MOTOR_DEFAULT_POWER_ROTATION    =       30
 
 
 class Motor:
-    def __init__(self, pins):
+    def __init__(self, pins = params.motors_pins):
         """
         pins are provided by a dictionary formatted like:
         {

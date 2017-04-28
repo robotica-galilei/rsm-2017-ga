@@ -5,7 +5,7 @@ import config.params as params
 import modules.GY906 as GY906
 
 class heat:
-    def __init__(self, addresses):
+    def __init__(self, addresses = heat_addresses):
         '''
         Init routine
         addresses is a dictionary containing the addresses of the sensor.
