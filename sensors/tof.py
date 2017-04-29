@@ -5,7 +5,7 @@ import time
 import modules.tof_60 as tof_60
 import modules.tof_200 as tof_200
 import config.dimensions as dim
-import config.params
+import config.params as params
 
 class Tof:
     def __init__(self, pins = params.tof_pins, addresses = params.tof_addresses):
@@ -26,8 +26,7 @@ class Tof:
         self.sens['E'] = tof_200.VL53L0X(pins['200_E'], addresses['200_E'])
         self.sens['O'] = tof_200.VL53L0X(pins['200_O'], addresses['200_O'])
 
-        time.sleep(1)
-
+    def activate_all(self):
         for key, item in self.sens.items():
             print(key)
             i = 0
@@ -37,7 +36,10 @@ class Tof:
                     break
                 except:
                     i += 1
-            print(i)
+            if i < 3:
+                print(i)
+            else:
+                print("ERROR")
             time.sleep(0.1)
 
     def read_raw(self, string):
