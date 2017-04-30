@@ -1,11 +1,15 @@
 import sys
 sys.path.append("../")
 import time
+import math
 
 import modules.tof_60 as tof_60
 import modules.tof_200 as tof_200
 import config.dimensions as dim
 import config.params as params
+
+def real_distance(dist, cosalfa):
+    return dist*cosalfa
 
 class Tof:
     def __init__(self, pins = params.tof_pins, addresses = params.tof_addresses):
@@ -55,27 +59,79 @@ class Tof:
 
     def read_fix(self,dir):
         #Return the distance in a certain direction cleaned
+        alfa_dict = {'N': ('NE','N','NO'), 'E': ('ES','E','EN'), 'S':('SO','S','SE'), 'O':('ON','O','OS')}
         s1 = None; s2 = None; s3 = None
-        for key, item in self.sens.items():
-            if key[:1] == dir:
+        for key in alfa_dict[dir]:
+            if len(key) == 2:
                 if s1 == None:
                     s1 = read_raw(key)
                 else:
-                    s2 = read_raw(key)
-            elif key == dir:
-                s3 == read_raw(key)
-        alfa = atan(dim.tof_60_distance/abs(s1-s2))
-        avg = (s1+s2)/2
-        return avg, alfa
+                    s3 = read_raw(key)
+            else:
+                s2 == read_raw(key)
 
-    def get_trusted(self):
-        #TODO Return a dictionary of the trusted directions {'N': True, 'S': False ... }
+        s1 *= self.trust(value=s1) - dim.tof_60_error
+        s2 *= self.trust(value=s2) - dim.tof_200_error
+        s3 *= self.trust(value=s3) - dim.tof_60_error
 
-        threshold = 220
+        s_sum = s1 + s2 + s3
+        s_div = self.trust(value=s1) + self.trust(value=s2) + self.trust(value=s3)
+
+        if s_div != 0:
+            avg = s_sum/s_div
+        else:
+            avg = -1
+
+        d = self.diff(s1, s2, s3)
+
+        cosalfa = 1./math.sqrt(1+(d/dim.tof_60_distance)**2)
+        senalfa = (d/dim.tof_60_distance)/math.sqrt(1+(d/dim.tof_60_distance)**2)
+        return avg, cosalfa, senalfa
+
+    def best_side(self, side1, side2):
+        avg1, cosalfa1, senalfa1 = self.read_fix(side1)
+        avg2, cosalfa2, senalfa2 = self.read_fix(side2)
+
+        if avg1 == -1:
+            return side2, avg2, cosalfa2, senalfa2
+        elif avg2 == -1:
+            return side1, avg1, cosalfa1, senalfa1
+        elif avg1 < avg2:
+            return side1, avg1, cosalfa1, senalfa1
+        else:
+            return side2, avg2, cosalfa2, senalfa2
+
+    def n_cells(self, avg, cosalfa):
+        r = int(math.floor(real_distance(avg, cosalfa)/dim.cell_dimension))
+
+    def trust(self, key = None, value = None):
+        #Return trust(reliability) of a sensor given the key
+        if value == None:
+            self.read_raw(key)
+        trust = True
+        if value == -1:
+            trust = False
+        return trust
+
+    def get_trusted_directions_all(self):
+        #Return a dictionary of the trusted directions {'N': True, 'S': False ... }
 
         trusted = {'N':True, 'S':True, 'O':True, 'E':True}
         for key, item in self.sens.items():
             if len(key[:1]) == 1:
-                if read_raw(key) >= threshold:
+                if self.read_raw(key) == -1:
                     trusted[key[:1]] = False
         return trusted
+
+    def error(self, a=1):
+        side, avg, cosalfa, senalfa = self.best_side('E','O')
+        dim.cell_dimension-(1/(a+1))*(2*avg+robot_width)*(1+a*cosalfa)
+
+    def diff(self, s1, s2, s3):
+        t1 = self.trust(value=s1)
+        t2 = self.trust(value=s2)
+        t3 = self.trust(value=s3)
+        if t1 == False and t3 == False:
+            return -1
+        else:
+            return float(2*(t1*(s1-s2)+t3*(s2-s3)))/float(t1+t3)
