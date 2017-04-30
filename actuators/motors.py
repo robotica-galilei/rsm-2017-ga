@@ -6,6 +6,7 @@ import Adafruit_BBIO.PWM as PWM
 import utils.GPIO as GPIO
 import sensors.mpu6050.utils as gyro_utils
 import config.params
+import motors_pid as pid
 
 MOTOR_CELL_TIME     =       1.8
 MOTOR_ROTATION_TIME =       1.5
@@ -78,10 +79,21 @@ class Motor:
     """
     Here start the simple functions for robot motion execution
     """
-    def oneCellForward(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME):
-        self.setSpeeds(power, power)
-        time.sleep(wait)
-        self.stop()
+    def oneCellForward(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME, mode= 'time', tof= None):
+        if mode == 'time':
+            self.setSpeeds(power, power)
+            time.sleep(wait)
+            self.stop()
+        elif mode == 'tof':
+            front = tof.read_raw('N')
+            while(front-tof.read_raw('N') < 200):
+                error=tof.error()
+                if error != -1:
+                    correction = pid.get_pid()
+                    mot.setSpeeds(power+correction,power-correction)
+                else:
+                    mot.setSpeeds(power,power)
+
 
     def oneCellBack(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME):
         self.setSpeeds(-power, -power)
