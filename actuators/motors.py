@@ -5,7 +5,7 @@ import time
 import Adafruit_BBIO.PWM as PWM
 import utils.GPIO as GPIO
 import sensors.mpu6050.utils as gyro_utils
-import config.params
+import config.params as params
 
 MOTOR_CELL_TIME     =       1.8
 MOTOR_ROTATION_TIME =       1.5
