@@ -41,7 +41,7 @@ def queueCheck(mat, node, new, wall, dist, path, visited, q, dir_now, dir_then):
     return mat, dist, path, visited, q
 
 
-def dijkstra(direction,start, end ,mat):
+def dijkstra(direction,start, end ,mat, bridge):
     '''
     This function gets the starting cell, the final cell and the matrix.
     It returns the distance between the starting cell and the final cell.
@@ -61,11 +61,24 @@ def dijkstra(direction,start, end ,mat):
     q.put((0,start,direction))
     visited[start[0]][start[1]] = 1
     dist[start[0]][start[1]] = 0
-
     while(not q.empty()):
         top = q.get()
         val = top[0]
         node = (top[1][0],top[1][1])
+        if(mat.item(node)//1024 == 1):
+            if node == bridge[0] and visited.item(bridge[1]) == False:
+                q.put((val+15, bridge[1], top[2]))
+                visited.itemset(bridge[1], True)
+                tmp = [bridge[1][0],bridge[1][1]]
+                tmp.extend(path[node[0]][node[1]])
+                path[bridge[1][0]][bridge[1][1]] = tmp
+            elif visited.item(bridge[0]) == False:
+                q.put((val+15, bridge[0], top[2]))
+                visited.itemset(bridge[0], True)
+                tmp = [bridge[0][0],bridge[0][1]]
+                tmp.extend(path[node[0]][node[1]])
+                path[bridge[0][0]][bridge[0][1]] = tmp
+
         if(val <= dist.item(node)):
             if(node[0]>2): #Check left
                 new = (node[0]-2,node[1])
@@ -86,7 +99,7 @@ def dijkstra(direction,start, end ,mat):
     return dist[end[0]][end[1]], path[end[0]][end[1]][::-1] #Return the distance and the list of cells
 
 
-def bestPath(direction,pos, possible, mat):
+def bestPath(direction,pos, possible, mat, bridge):
     '''
     Function that given the starting position and the list of all the possible
     cells to see, select the nearest thanks to dijkstra algorithm
@@ -104,9 +117,9 @@ def bestPath(direction,pos, possible, mat):
     np.matrix("a g m; b h n; c i o; d j p; e k q; f l r")
     '''
     best = [-1,(0,0)]
-    # print("Possible cells:")
+
     for i in possible:
-        tmp = dijkstra(direction,pos, i, mat)
+        tmp = dijkstra(direction,pos, i, mat, bridge)
         if(tmp[0]<best[0] or best[0]==-1):
             best=tmp
 

@@ -63,7 +63,7 @@ def moveTo(path, m):
     if (sm.check_black(pos)):
         if pos in unexplored_queue:
             unexplored_queue.remove(pos)
-        refresh_map(sm.scanWalls(pos,orientation))
+        refresh_map(sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation))
         mat.itemset(pos, 256)
         server.setMazeMap(mat.tolist())
         orientation = old_orientation
@@ -81,7 +81,7 @@ def stop_function(timer, m):
 def nearcellToQueue(mat, nearcell, unexplored_queue):
     '''
     Just a function to reduce the repetition of code into the main
-    @param mat
+    @param m
         The matrix of the maze
     @param nearcell (tuple)
         The cell to check and add
@@ -100,6 +100,7 @@ def refresh_map(walls):
     global pos
     global home
     global unexplored_queue
+    global sim_pos
     ##########Resize map, shift indexes, add walls and cells to queue
     if walls[0]>0: #Left wall
         mat.itemset((pos[0]-1,pos[1]),1) #Set wall
@@ -143,6 +144,8 @@ def main(timer_thread, m, server):
     global home; home = (1,1) #Position of the initial cell
     global orientation; orientation = 3 #Initial orientation, generally
     global unexplored_queue; unexplored_queue = [] #Queue containing all the unexplored cells
+    global sim_pos; sim_pos = (0,0)
+    bridge = []
     #print(mat)
 
     ###Initial settings to be displayed
@@ -170,15 +173,35 @@ def main(timer_thread, m, server):
         if pos in unexplored_queue:
             unexplored_queue.remove(pos)
 
-
         #Read sensors
-        walls = sm.scanWalls(pos,orientation)
-
-
+        walls = sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation)
         refresh_map(walls)
+
 
         if(sm.check_victim(pos)):
             mat.itemset(pos, 512)
+
+        if(sm.check_bridge((pos[0]+sim_pos[0],pos[1]+sim_pos[1])) or sm.check_bridge(pos)):
+            mat.itemset(pos, 1024)
+            if sim_pos == (0,0):
+                print("Rampa in salita")
+                bridge = [pos, (pos[0]+20, pos[1])]
+                pos = (pos[0]+20, pos[1])
+                sim_pos = (-20,0)
+                for i  in range(10):
+                    mat = np.vstack((mat,np.zeros((2,np.shape(mat)[1]))))
+                mat.itemset(pos,1024)
+            else:
+                print("Rampa in discesa")
+                pos = (pos[0]-20, pos[1])
+                sim_pos = (0,0)
+
+            #Read sensors
+            walls = sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation)
+            refresh_map(walls)
+
+
+
         ##########
 
         server.setMazeMap(mat.tolist()) #Update map
@@ -187,7 +210,7 @@ def main(timer_thread, m, server):
         if len(unexplored_queue)==0: #If there is no available cell to explore, the maze is done
             if pos!=home:
                 server.setRobotStatus("Done! Homing...")
-                destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat) #Find the best path to reach home
+                destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat, bridge) #Find the best path to reach home
                 while pos != home:
                     moveTo(destination, m)
             server.setRobotStatus("Done!")
@@ -195,7 +218,7 @@ def main(timer_thread, m, server):
             stop_function(timer_thread,m)
             sys.exit()
 
-        destination=mp.bestPath(orientation,[pos[0],pos[1]],unexplored_queue,mat) #Find the best path to reach the nearest cell
+        destination=mp.bestPath(orientation,[pos[0],pos[1]],unexplored_queue,mat, bridge) #Find the best path to reach the nearest cell
 
         #Move to destination
         moveTo(destination, m)
