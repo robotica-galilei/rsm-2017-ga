@@ -93,16 +93,16 @@ class Tof:
         avg2, cosalfa2, senalfa2 = self.read_fix(side2)
 
         if avg1 == -1:
-            return side2, avg2, cosalfa2, senalfa2
+            return side2, avg2, cosalfa2, senalfa2, -1
         elif avg2 == -1:
-            return side1, avg1, cosalfa1, senalfa1
+            return side1, avg1, cosalfa1, senalfa1, 1
         elif avg1 < avg2:
-            return side1, avg1, cosalfa1, senalfa1
+            return side1, avg1, cosalfa1, senalfa1, 1
         else:
-            return side2, avg2, cosalfa2, senalfa2
+            return side2, avg2, cosalfa2, senalfa2, -1
 
     def n_cells(self, avg, cosalfa):
-        r = int(math.floor(real_distance(avg, cosalfa)/dim.cell_dimension))
+        return int(math.floor(real_distance(avg, cosalfa)/dim.cell_dimension))
 
     def trust(self, key = None, value = None):
         #Return trust(reliability) of a sensor given the key
@@ -124,8 +124,8 @@ class Tof:
         return trusted
 
     def error(self, a=1):
-        side, avg, cosalfa, senalfa = self.best_side('E','O')
-        dim.cell_dimension-(1/(a+1))*(2*avg+robot_width)*(1+a*cosalfa)
+        side, avg, cosalfa, senalfa, z = self.best_side('E','O')
+        return z*(dim.cell_dimension*(1+self.n_cells(avg, cosalfa))-(1/(a+1))*(2*avg+robot_width)*(1+a*cosalfa))
 
     def diff(self, s1, s2, s3):
         t1 = self.trust(value=s1)
