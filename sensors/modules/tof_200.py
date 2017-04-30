@@ -94,7 +94,10 @@ class VL53L0X:
                 cnt += 1
 
         data = self.i2c.read_i2c_block_data(self.address, 0x14, 12)
-        return makeuint16(data[11], data[10])
+        distance = makeuint16(data[11], data[10])
+        if distance == 20:
+            distance = -1
+        return distance
 
 
     def set_range(self, value):

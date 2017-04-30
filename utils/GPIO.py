@@ -1,10 +1,11 @@
+import sys
 import os
 
 HIGH = 1
 LOW = 0
 OUT = "out"
 IN = "in"
-exported = set()
+exported = []
 
 class GPIOError(Exception):
      def __init__(self, message, errors):
@@ -23,9 +24,9 @@ def setup(gpio, direction):
             sys.stdout = open(os.devnull, "w")
             os.system("echo " + gpio[4:] + " > /sys/class/gpio/export")
             sys.stdout = sys.__stdout__
-        except:
-            pass
-        exported.add(gpio)
+        except Exception as e:
+            print(e)
+        exported.append(gpio)
     write_file(gpio + "/direction", direction)
 
 

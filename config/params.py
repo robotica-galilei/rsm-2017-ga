@@ -17,3 +17,11 @@ tof_addresses = {'60_NO' : 0x20, '60_NE' : 0x21 ,'60_SO' : 0x22, '60_SE' : 0x23,
 heat_addresses = {'N': 0x12, 'S': 0x13, 'E': 0x11, 'O': 0x10}
 
 motors_pins = {'fl':'P8_13','fr':'P8_19','rl':'P9_14','rr':'P9_16','dir_fl':'gpio31','dir_fr':'gpio48','dir_rl':'gpio60','dir_rr':'gpio30'}
+
+'''
+PID costants
+'''
+
+PID_p = 1
+PID_i = 0
+PID_d = 0

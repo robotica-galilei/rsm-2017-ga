@@ -21,6 +21,7 @@ blue = (0, 0, 255)
 light_blue = (102, 178, 255)
 silver = (211,211,211)
 almost_black = (15, 15, 15)
+light_green = (153, 255, 204)
 
 #Settings
 screen_width = 800

@@ -2,7 +2,7 @@ import layout
 import pygame
 from pygame import gfxdraw
 
-min_cell_size = 30 #pixels
+min_cell_size = 1 #pixels
 max_cell_size = 100 #pixels
 max_map_width = int(layout.divider-layout.margin*2) #pixels
 max_map_height = int(layout.screen_height-layout.margin*2) #pixels
@@ -83,6 +83,8 @@ def draw_cell(draw_surface, x0, y0, x, y, cell_size, wall_map):
         special = 2;
     if(wall_map[x*2+1][y*2+1] >= 512): #Check victim
         special = 3;
+    if(wall_map[x*2+1][y*2+1] >= 1024): #Check victim
+        special = 4;
 
     #Cell specialties
     if(special == 1): #Checkpoint
@@ -91,6 +93,8 @@ def draw_cell(draw_surface, x0, y0, x, y, cell_size, wall_map):
         pygame.draw.rect(draw_surface, layout.almost_black, (int(x0 + x*cell_size)+3, int(y0 + y*cell_size)+3, cell_size-3, cell_size-3), 0)
     elif(special == 3): #Victim
         pygame.draw.rect(draw_surface, layout.red, (int(x0 + x*cell_size)+3, int(y0 + y*cell_size)+3, cell_size-3, cell_size-3), 0)
+    elif(special == 4): #Victim
+        pygame.draw.rect(draw_surface, layout.light_green, (int(x0 + x*cell_size)+3, int(y0 + y*cell_size)+3, cell_size-3, cell_size-3), 0)
 
     #Walls
     for i in range(0,4):

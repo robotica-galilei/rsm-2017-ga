@@ -132,7 +132,7 @@ class TCS34725(object):
     """TCS34725 color sensor."""
 
     def __init__(self, integration_time=TCS34725_INTEGRATIONTIME_2_4MS,
-                 gain=TCS34725_GAIN_4X, address=TCS34725_ADDRESS, bus_num=2, **kwargs):
+                 gain=TCS34725_GAIN_4X, address=TCS34725_ADDRESS, bus_num=1, **kwargs):
         """Initialize the TCS34725 sensor."""
         # Setup I2C interface for the device.
         self.i2c=smbus.SMBus(bus=bus_num)
