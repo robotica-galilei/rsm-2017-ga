@@ -68,14 +68,16 @@ def dijkstra(direction,start, end ,mat, bridge):
         if(mat.item(node)//1024 == 1):
             if node == bridge[0] and visited.item(bridge[1]) == False:
                 q.put((val+15, bridge[1], top[2]))
+                dist.itemset(bridge[1],val+15)
                 visited.itemset(bridge[1], True)
-                tmp = [bridge[1][0],bridge[1][1]]
+                tmp = [(bridge[1][0],bridge[1][1])]
                 tmp.extend(path[node[0]][node[1]])
                 path[bridge[1][0]][bridge[1][1]] = tmp
             elif visited.item(bridge[0]) == False:
                 q.put((val+15, bridge[0], top[2]))
+                dist.itemset(bridge[0],val+15)
                 visited.itemset(bridge[0], True)
-                tmp = [bridge[0][0],bridge[0][1]]
+                tmp = [(bridge[0][0],bridge[0][1])]
                 tmp.extend(path[node[0]][node[1]])
                 path[bridge[0][0]][bridge[0][1]] = tmp
 
