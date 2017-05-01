@@ -102,8 +102,9 @@ def refresh_map(walls):
     global unexplored_queue
     global sim_pos
     ##########Resize map, shift indexes, add walls and cells to queue
-    if walls[0]>0: #Left wall
-        mat.itemset((pos[0]-1,pos[1]),1) #Set wall
+    if walls[0]>0 or mat.item((pos[0]-1,pos[1]))>500: #Left wall
+        if(mat.item((pos[0]-1,pos[1]))<500):
+            mat.itemset((pos[0]-1,pos[1]),1) #Set wall
     else:
         if pos[0]==1:
             mat = maman.appendTwoLinesToMatrix(mat, 1, 0)
@@ -111,24 +112,27 @@ def refresh_map(walls):
         mat, unexplored_queue = nearcellToQueue(mat, (pos[0]-2,pos[1]), unexplored_queue)
 
 
-    if walls[1]>0: #Bottom wall
-        mat.itemset((pos[0],pos[1]+1),1) #Set wall
+    if walls[1]>0 or mat.item((pos[0],pos[1]+1))>500: #Bottom wall
+        if(mat.item((pos[0],pos[1]+1))<500):
+            mat.itemset((pos[0],pos[1]+1),1) #Set wall
     else:
         if pos[1]==np.shape(mat)[1]-2:
             mat = maman.appendTwoLinesToMatrix(mat, 0, 1)
         mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]+2), unexplored_queue)
 
 
-    if walls[2]>0: #Right wall
-        mat.itemset((pos[0]+1,pos[1]),1) #Set wall
+    if walls[2]>0 or mat.item((pos[0]+1,pos[1]))>500: #Right wall
+        if(mat.item((pos[0]+1,pos[1]))<500):
+            mat.itemset((pos[0]+1,pos[1]),1) #Set wall
     else:
         if pos[0]==np.shape(mat)[0]-2:
             mat = maman.appendTwoLinesToMatrix(mat, 1, 1)
         mat, unexplored_queue = nearcellToQueue(mat, (pos[0]+2,pos[1]), unexplored_queue)
 
 
-    if walls[3]>0: #Top wall
-        mat.itemset((pos[0],pos[1]-1),1) #Set wall
+    if walls[3]>0 or mat.item((pos[0],pos[1]-1))>500: #Top wall
+        if(mat.item((pos[0],pos[1]-1))<500):
+            mat.itemset((pos[0],pos[1]-1),1) #Set wall
     else:
         if pos[1]==1:
             mat = maman.appendTwoLinesToMatrix(mat, 0, 0)
@@ -175,7 +179,6 @@ def main(timer_thread, m, server):
 
         #Read sensors
         walls = sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation)
-        refresh_map(walls)
 
 
         if(sm.check_victim(pos)):
@@ -185,21 +188,41 @@ def main(timer_thread, m, server):
             mat.itemset(pos, 1024)
             if sim_pos == (0,0):
                 print("Rampa in salita")
+                if orientation == 0:
+                    mat.itemset(pos[0]-1,pos[1], 512)
+                elif orientation == 1:
+                    mat.itemset(pos[0],pos[1]+1, 512)
+                elif orientation == 2:
+                    mat.itemset(pos[0]+1,pos[1], 512)
+                elif orientation == 3:
+                    mat.itemset(pos[0],pos[1]-1, 512)
+                refresh_map(walls)
                 bridge = [pos, (pos[0]+20, pos[1])]
                 pos = (pos[0]+20, pos[1])
+                server.setRobotPosition(pos)
                 sim_pos = (-20,0)
                 for i  in range(10):
                     mat = np.vstack((mat,np.zeros((2,np.shape(mat)[1]))))
                 mat.itemset(pos,1024)
+                if orientation == 0: #TODO invert this when racing. The robot does not teleport like in the simulation
+                    mat.itemset(pos[0]-1,pos[1], 512)
+                elif orientation == 1:
+                    mat.itemset(pos[0],pos[1]+1, 512)
+                elif orientation == 2:
+                    mat.itemset(pos[0]+1,pos[1], 512)
+                elif orientation == 3:
+                    mat.itemset(pos[0],pos[1]-1, 512)
             else:
                 print("Rampa in discesa")
                 pos = (pos[0]-20, pos[1])
+                server.setRobotPosition(pos)
                 sim_pos = (0,0)
 
             #Read sensors
             walls = sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation)
             refresh_map(walls)
-
+        else:
+            refresh_map(walls)
 
 
         ##########
@@ -212,6 +235,7 @@ def main(timer_thread, m, server):
                 server.setRobotStatus("Done! Homing...")
                 destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat, bridge) #Find the best path to reach home
                 while pos != home:
+                    destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat, bridge)
                     moveTo(destination, m)
             server.setRobotStatus("Done!")
             input("Press enter to continue")
