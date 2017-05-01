@@ -4,7 +4,7 @@ import time
 
 import Adafruit_BBIO.PWM as PWM
 import utils.GPIO as GPIO
-import sensors.mpu6050.utils as gyro_utils
+import sensors.imu as gyro_utils
 import config.params as params
 import motors_pid as pid
 
@@ -83,10 +83,14 @@ class Motor:
         if mode == 'time':
             self.setSpeeds(power, power)
             time.sleep(wait)
-            self.stop()
-        elif mode == 'tof':
+        elif mode == 'tof_raw':
+            mot.setSpeeds(30,30)
             front = tof.read_raw('N')
-            while(tof.read_raw('N') > 50):
+            while(front-tof.read_raw('N') < 300):
+                pass
+        elif mode == 'tof_fixed':
+            front = tof.read_raw('N')
+            while(front-tof.read_raw('N') < 300):
                 error=tof.error()
                 if error != -1:
                     correction = pid.get_pid(error)
