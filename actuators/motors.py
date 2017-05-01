@@ -92,16 +92,9 @@ class Motor:
             front = tof.read_raw('N')
             while(front-tof.read_raw('N') < 300):
                 error=tof.error()
-                if error != -1:
+                    if (tof.diff)
                     correction = pid.get_pid(error)
-                    if correction>20:
-                        correction = 20
-                    if correction < -20:
-                        correction = -20
-
-                    self.setSpeeds(power+correction,power-correction)
-                else:
-                    self.setSpeeds(power,power)
+                    self.setSpeeds(power(1+correction),power(1-correction))
         self.stop()
 
 
