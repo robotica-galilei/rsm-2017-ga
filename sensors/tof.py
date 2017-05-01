@@ -77,21 +77,29 @@ class Tof:
         s2 = (s2-ps2)* self.trust(value=s2)
         s3 = (s2-ps2)* self.trust(value=s3)
 
+        #calculate average and the cos and sin of angle
         s_sum = s1 + s2 + s3
         s_div = self.trust(value=s1) + self.trust(value=s2) + self.trust(value=s3)
+        d = self.diff(s1, s2, s3)
 
         if s_div != 0:
             avg = s_sum/s_div
+
         else:
             avg = -1
 
-        d = self.diff(s1, s2, s3)
+        if d != None
+            cosalfa = 1./math.sqrt(1+(d/dim.tof_60_distance)**2)
+            senalfa = (d/dim.tof_60_distance)/math.sqrt(1+(d/dim.tof_60_distance)**2)
+        else
+            cosalfa = None
+            senalfa = None
 
-        cosalfa = 1./math.sqrt(1+(d/dim.tof_60_distance)**2)
-        senalfa = (d/dim.tof_60_distance)/math.sqrt(1+(d/dim.tof_60_distance)**2)
         return avg, cosalfa, senalfa
 
     def best_side(self, side1, side2):
+        #choose the best side
+
         avg1, cosalfa1, senalfa1 = self.read_fix(side1)
         avg2, cosalfa2, senalfa2 = self.read_fix(side2)
 
@@ -132,13 +140,18 @@ class Tof:
         print(cosalfa)
         print(senalfa)
         print(self.n_cells(avg, cosalfa))
-        return z*(dim.cell_dimension*(1+self.n_cells(avg, cosalfa))-(1./(a+1))*(2*avg+dim.robot_width)*(1+a*cosalfa))
+
+        if (avg is not -1) and (cosalfa is not None)
+            N = self.n_cells(avg, cosalfa)
+            return (z*(dim.cell_dimension*(1+N)-(1./(a+1))*(2*avg+dim.robot_width)*(1+a*cosalfa)))/(dim.cell_dimension*(1+N)
+        else
+            return None
 
     def diff(self, s1, s2, s3):
         t1 = self.trust(value=s1)
         t2 = self.trust(value=s2)
         t3 = self.trust(value=s3)
         if t1 == False and t3 == False:
-            return -1
+            return None
         else:
             return float(2*(t1*(s1-s2)+t3*(s2-s3)))/float(t1+t3)
