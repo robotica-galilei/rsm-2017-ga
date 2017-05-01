@@ -234,22 +234,25 @@ def main(timer_thread, m, server):
             if pos!=home:
                 server.setRobotStatus("Done! Homing...")
                 destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat, bridge) #Find the best path to reach home
-                while pos != home:
-                    destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat, bridge)
-                    moveTo(destination, m)
+                if(destination[0] != float('Inf')):
+                    while pos != home:
+                        destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat, bridge)
+                        moveTo(destination, m)
+                else:
+                    server.setRobotStatus('Lost. Roaming...')
             server.setRobotStatus("Done!")
             input("Press enter to continue")
             stop_function(timer_thread,m)
             sys.exit()
+        else:
+            destination=mp.bestPath(orientation,[pos[0],pos[1]],unexplored_queue,mat, bridge) #Find the best path to reach the nearest cell
 
-        destination=mp.bestPath(orientation,[pos[0],pos[1]],unexplored_queue,mat, bridge) #Find the best path to reach the nearest cell
+            #Move to destination
+            if(destination[0] != float('Inf')):
+                moveTo(destination, m)
+            else:
+                server.setRobotStatus('Lost')
 
-        #Move to destination
-        moveTo(destination, m)
-
-        #print(dijkstra([1,1],[3,3],mat))
-        #available = [[7,5],[3,1]]
-        #print(best_path(1,[1,1],available,mat))
 
 
 if __name__ == '__main__':
