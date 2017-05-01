@@ -86,13 +86,19 @@ class Motor:
             self.stop()
         elif mode == 'tof':
             front = tof.read_raw('N')
-            while(front-tof.read_raw('N') < 200):
+            while(tof.read_raw('N') > 50):
                 error=tof.error()
                 if error != -1:
-                    correction = pid.get_pid()
-                    mot.setSpeeds(power+correction,power-correction)
+                    correction = pid.get_pid(error)
+                    if correction>20:
+                        correction = 20
+                    if correction < -20:
+                        correction = -20
+
+                    self.setSpeeds(power+correction,power-correction)
                 else:
-                    mot.setSpeeds(power,power)
+                    self.setSpeeds(power,power)
+        self.stop()
 
 
     def oneCellBack(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME):

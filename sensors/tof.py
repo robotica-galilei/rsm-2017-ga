@@ -64,15 +64,18 @@ class Tof:
         for key in alfa_dict[dir]:
             if len(key) == 2:
                 if s1 == None:
-                    s1 = read_raw(key)
+                    s1 = self.read_raw(key)
+                    ps1 = params.tof_calibration[key]
                 else:
-                    s3 = read_raw(key)
+                    s3 = self.read_raw(key)
+                    ps3 = params.tof_calibration[key]
             else:
-                s2 == read_raw(key)
+                s2 = self.read_raw(key)
+                ps2 = params.tof_calibration[key]
 
-        s1 *= self.trust(value=s1) - dim.tof_60_error
-        s2 *= self.trust(value=s2) - dim.tof_200_error
-        s3 *= self.trust(value=s3) - dim.tof_60_error
+        s1 = (s1-ps1)* self.trust(value=s1)
+        s2 = (s2-ps2)* self.trust(value=s2)
+        s3 = (s2-ps2)* self.trust(value=s3)
 
         s_sum = s1 + s2 + s3
         s_div = self.trust(value=s1) + self.trust(value=s2) + self.trust(value=s3)
@@ -93,13 +96,13 @@ class Tof:
         avg2, cosalfa2, senalfa2 = self.read_fix(side2)
 
         if avg1 == -1:
-            return side2, avg2, cosalfa2, senalfa2, -1
+            return side2, avg2, cosalfa2, senalfa2, 1
         elif avg2 == -1:
-            return side1, avg1, cosalfa1, senalfa1, 1
+            return side1, avg1, cosalfa1, senalfa1, -1
         elif avg1 < avg2:
-            return side1, avg1, cosalfa1, senalfa1, 1
+            return side1, avg1, cosalfa1, senalfa1, -1
         else:
-            return side2, avg2, cosalfa2, senalfa2, -1
+            return side2, avg2, cosalfa2, senalfa2, 1
 
     def n_cells(self, avg, cosalfa):
         return int(math.floor(real_distance(avg, cosalfa)/dim.cell_dimension))
@@ -125,7 +128,11 @@ class Tof:
 
     def error(self, a=1):
         side, avg, cosalfa, senalfa, z = self.best_side('E','O')
-        return z*(dim.cell_dimension*(1+self.n_cells(avg, cosalfa))-(1/(a+1))*(2*avg+robot_width)*(1+a*cosalfa))
+        print(avg)
+        print(cosalfa)
+        print(senalfa)
+        print(self.n_cells(avg, cosalfa))
+        return z*(dim.cell_dimension*(1+self.n_cells(avg, cosalfa))-(1./(a+1))*(2*avg+dim.robot_width)*(1+a*cosalfa))
 
     def diff(self, s1, s2, s3):
         t1 = self.trust(value=s1)
