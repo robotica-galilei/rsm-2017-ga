@@ -22,12 +22,15 @@ def P(k=params.PID_p):
     return error_now*k
 
 def I(k=params.PID_i):
-    error_sum = error_now
+    error_sum = 0
     num = 0
     for i in error_prec:
         if(i != None):
             error_sum += i
             num += 1
+
+    if error_now != None:
+        error_sum+= error_now
 
     return error_sum*k
 

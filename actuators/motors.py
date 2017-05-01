@@ -4,14 +4,13 @@ import time
 
 import Adafruit_BBIO.PWM as PWM
 import utils.GPIO as GPIO
-import sensors.imu as gyro_utils
 import config.params as params
 import motors_pid as pid
 
 MOTOR_CELL_TIME     =       1.8
 MOTOR_ROTATION_TIME =       1.5
-MOTOR_DEFAULT_POWER_LINEAR      =       30
-MOTOR_DEFAULT_POWER_ROTATION    =       30
+MOTOR_DEFAULT_POWER_LINEAR      =       20
+MOTOR_DEFAULT_POWER_ROTATION    =       40
 
 
 class Motor:
@@ -79,22 +78,33 @@ class Motor:
     """
     Here start the simple functions for robot motion execution
     """
-    def oneCellForward(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME, mode= 'time', tof= None):
+    def oneCellForward(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME, mode= 'time', tof= None, gyro=None):
         if mode == 'time':
             self.setSpeeds(power, power)
             time.sleep(wait)
         elif mode == 'tof_raw':
-            mot.setSpeeds(30,30)
+            self.setSpeeds(30,30)
             front = tof.read_raw('N')
-            while(front-tof.read_raw('N') < 300):
-                pass
+            while(front-tof.read_raw('N') <= 300):
+                self.setSpeeds(power, power)
+        elif mode == 'gyro':
+            self.setSpeeds(30,30)
+            front = tof.read_raw('N')
+            gyro.update()
+            deg = gyro.yawsum
+            while(front-tof.read_raw('N') <= 300):
+                gyro.update()
+                correction = deg - gyro.yawsum
+                self.setSpeeds(power - correction, power + correction)
         elif mode == 'tof_fixed':
             front = tof.read_raw('N')
-            while(front-tof.read_raw('N') < 300):
+            now = tof.read_raw('N')
+            while(front-now <= 300 and now > 100):
+                now = tof.read_raw('N')
                 error=tof.error()
-                    if (tof.diff)
+                if error is not None:
                     correction = pid.get_pid(error)
-                    self.setSpeeds(power(1+correction),power(1-correction))
+                self.setSpeeds(power*(1+correction),power*(1-correction))
         self.stop()
 
 
@@ -103,10 +113,22 @@ class Motor:
         time.sleep(wait)
         self.stop()
 
-    def rotateRight(self, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
-        gyro_utils.rotate(45, self)
+    def rotateRight(self, gyro, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
+        self.rotateDegrees(gyro=gyro, degrees=-90)
         self.stop()
 
-    def rotateLeft(self, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
-        gyro_utils.rotate(-45, self)
+    def rotateLeft(self, gyro, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
+        self.rotateDegrees(gyro=gyro, degrees=90)
+        self.stop()
+
+    def rotateDegrees(self, gyro, degrees):
+        now = gyro.update().yawsum
+        if degrees > 0:
+            self.setSpeeds(-40,40)
+            while(gyro.update().yawsum <= now+degrees):
+                pass
+        else:
+            self.setSpeeds(40,-40)
+            while(gyro.update().yawsum >= now+degrees):
+                pass
         self.stop()

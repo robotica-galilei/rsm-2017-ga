@@ -18,12 +18,13 @@ class Imu:
 
     def update(self):
         if self.ser.isOpen():
-            ser.flushInput()
-            while ser.read() != '#':
+            self.ser.flushInput()
+            while self.ser.read() != '#':
                 pass
-            value = ser.readline()[4:][:-2].split(',');
+            value = self.ser.readline()[4:][:-2].split(',');
             value = [int(float(i)) for i in value]
-            yaw = value[0]
-            pitch = value[1]
-            roll = value[2]
-            yawsum = value[3]
+            self.yaw = value[0]
+            self.pitch = value[1]
+            self.yawsum = value[3]
+            self.roll = value[2]
+            return self

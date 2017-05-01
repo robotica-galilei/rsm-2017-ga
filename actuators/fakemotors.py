@@ -52,22 +52,22 @@ class Motor:
     """
     Here start the simple functions for robot motion execution
     """
-    def oneCellForward(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME):
+    def oneCellForward(self, tof=None, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME):
         self.setSpeeds(power, power)
         time.sleep(wait)
         self.stop()
 
-    def oneCellBack(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME):
+    def oneCellBack(self, tof=None, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME):
         self.setSpeeds(-power, -power)
         time.sleep(wait)
         self.stop()
 
-    def rotateRight(self, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
+    def rotateRight(self, gyro=None, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
         self.setSpeeds(power, -power)
         time.sleep(wait)
         self.stop()
 
-    def rotateLeft(self, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
+    def rotateLeft(self, gyro=None, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
         self.setSpeeds(-power, power)
         time.sleep(wait)
         self.stop()
