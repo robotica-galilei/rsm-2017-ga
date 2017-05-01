@@ -12,10 +12,18 @@ class GPIOError(Exception):
          super(GPIOError, self).__init__(message)
          self.errors = errors
 
+
 def write_file(path, value):
     file = open("/sys/class/gpio/" + path, "w")
     file.write(value)
     file.close()
+
+
+def read_file(path):
+    file = open("/sys/class/gpio/" + path, "r")
+    value = bool(int(file.read()[:1]))
+    file.close()
+    return value
 
 
 def setup(gpio, direction):
@@ -34,3 +42,9 @@ def output(gpio, value):
     if gpio not in exported:
         raise GPIOError('GPIO setup required','Cannot use gpio before init')
     write_file(gpio + "/value", str(value))
+
+
+def input(gpio):
+    if gpio not in exported:
+        raise GPIOError('GPIO setup required','Cannot use gpio before init')
+    return read_file(gpio + "/value")

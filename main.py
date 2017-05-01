@@ -25,7 +25,7 @@ class timer(threading.Thread):
             #self.#server.setElapsedTime(int(time.time()-self.startingtime))
 
 
-def moveTo(path, m, t, gyro):
+def moveTo(path, m, t, ch, gyro):
     global pos
     global orientation
     global mat
@@ -58,7 +58,7 @@ def moveTo(path, m, t, gyro):
             m.rotateRight(gyro)
         orientation=new_dir
         #server.setRobotOrientation(new_dir)
-    m.oneCellForward( mode = 'gyro', tof = t , gyro=gyro)
+    m.oneCellForward( mode = 'gyro', tof = t , ch=ch, gyro=gyro)
     pos=path[1][0]
     #server.setRobotPosition(pos)
     if (sm.check_black(pos)):
@@ -91,7 +91,6 @@ def nearcellToQueue(mat, nearcell, unexplored_queue):
 
     Returns the updated mat and unexplored_queue
     '''
-    print(mat)
     if (nearcell not in unexplored_queue) and mat.item(nearcell)==0 and not sm.check_black(pos): #If the cell is not queued and not explored yet
         mat.itemset(nearcell,1) #Set as queued/explored
         unexplored_queue.append(nearcell) #Add to queue
@@ -103,9 +102,6 @@ def refresh_map(walls):
     global home
     global unexplored_queue
     global sim_pos
-    print("MAT")
-    print(mat)
-    print("FINEMAT")
     ##########Resize map, shift indexes, add walls and cells to queue
     if walls[0]>0 or mat.item((pos[0]-1,pos[1]))>500: #Left wall
         if(mat.item((pos[0]-1,pos[1]))<500):
@@ -113,7 +109,7 @@ def refresh_map(walls):
     else:
         if pos[0]==1:
             mat = maman.appendTwoLinesToMatrix(mat, 1, 0)
-            pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 1)
+            pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 0)
         mat, unexplored_queue = nearcellToQueue(mat, (pos[0]-2,pos[1]), unexplored_queue)
 
 
@@ -123,6 +119,7 @@ def refresh_map(walls):
     else:
         if pos[1]==np.shape(mat)[1]-2:
             mat = maman.appendTwoLinesToMatrix(mat, 0, 1)
+
         mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]+2), unexplored_queue)
 
 
@@ -141,14 +138,11 @@ def refresh_map(walls):
     else:
         if pos[1]==1:
             mat = maman.appendTwoLinesToMatrix(mat, 0, 0)
-            pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 0)
+            pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 1)
         mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]-2), unexplored_queue)
-    print("MAT")
-    print(mat)
-    print("FINEMAT")
 
 
-def main(timer_thread, m, t, gyro, server):
+def main(timer_thread, m, t, gyro, ch, server):
 
     #Global variables
     global mat; mat = np.matrix("0 0 0; 0 0 0; 0 0 0") #1x1 Matrix
@@ -187,9 +181,6 @@ def main(timer_thread, m, t, gyro, server):
 
         #Read sensors
         walls = sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t)
-        print("WAAAAAAAAAAAALS")
-        print(walls)
-        print("FINEH")
 
 
         if(sm.check_victim(pos)):
@@ -248,7 +239,7 @@ def main(timer_thread, m, t, gyro, server):
                 if(destination[0] != float('Inf')):
                     while pos != home:
                         destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat, bridge)
-                        moveTo(destination, m, t, gyro)
+                        moveTo(destination, m, t, ch, gyro)
                 else:
                     #server.setRobotStatus('Lost. Roaming...')
                     pass
@@ -264,7 +255,7 @@ def main(timer_thread, m, t, gyro, server):
 
             #Move to destination
             if(destination[0] != float('Inf')):
-                moveTo(destination, m, t, gyro)
+                moveTo(destination, m, t, ch, gyro)
             else:
                 #server.setRobotStatus('Lost')
                 pass
@@ -273,17 +264,19 @@ def main(timer_thread, m, t, gyro, server):
 
 if __name__ == '__main__':
     if sys.argv[1] == 'r':
-        print("LEL sto partendo")
         import sensors.sensors_handler as sm
         import sensors.tof as tof
         t = tof.Tof()
         t.activate_all()
         import sensors.imu as imu
         gyro = imu.Imu()
+        import sensors.touch as touch
+        ch = touch.Touch()
     else:
         import simulation.sensors as sm
         t = None
         gyro = None
+        ch = None
 
     #server = Pyro4.Proxy("PYRONAME:robot.#server") #Connect to #server for graphical interface
     server = None
@@ -293,7 +286,7 @@ if __name__ == '__main__':
     m = motors.Motor(pins)
 
     try:
-        main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, server=server)
+        main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, server=server)
     except KeyboardInterrupt as e:
         stop_function(timer=timer_thread, m=m)
     #except Exception as e:

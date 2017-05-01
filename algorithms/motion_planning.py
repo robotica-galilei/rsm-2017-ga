@@ -59,7 +59,7 @@ def dijkstra(direction,start, end ,mat, bridge):
     except:
         q = Queue.PriorityQueue()
     q.put((0,start,direction))
-    visited[start[0]][start[1]] = 1
+    visited.itemset(tuple(start), 1)
     dist[start[0]][start[1]] = 0
     while(not q.empty()):
         top = q.get()
