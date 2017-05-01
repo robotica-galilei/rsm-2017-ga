@@ -35,7 +35,7 @@ victim = [(5,5)]
 bridge = [(5,1)]
 
 
-def scanWalls(pos, orient):
+def scanWalls(pos, orient, tof=None):
     walls=[]
     walls.append(mat.item((pos[0]-1,pos[1])))
     walls.append(mat.item((pos[0],pos[1]+1)))

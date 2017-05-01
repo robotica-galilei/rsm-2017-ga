@@ -1,8 +1,8 @@
 import Pyro4
 import sys
 import time
+import importlib
 import numpy as np
-import simulation.sensors as sm
 import algorithms.motion_planning as mp
 import algorithms.map_management as maman
 import threading
@@ -140,7 +140,7 @@ def refresh_map(walls):
         mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]-2), unexplored_queue)
 
 
-def main(timer_thread, m, server):
+def main(timer_thread, m, t, server):
 
     #Global variables
     global mat; mat = np.matrix("0 0 0; 0 0 0; 0 0 0") #1x1 Matrix
@@ -256,6 +256,13 @@ def main(timer_thread, m, server):
 
 
 if __name__ == '__main__':
+    if sys.argv[0] == 'r':
+        import sensors.sensors_handler as sm
+        import sensors.tof as tof
+        t = tof.Tof()
+    else:
+        import simulation.sensors as sm
+        t = None
 
     server = Pyro4.Proxy("PYRONAME:robot.server") #Connect to server for graphical interface
 
@@ -265,7 +272,7 @@ if __name__ == '__main__':
     m = motors.Motor(pins)
 
     try:
-        main(timer_thread=timer_thread, m=m, server=server)
+        main(timer_thread=timer_thread, m=m, t=t, server=server)
     except KeyboardInterrupt as e:
         stop_function(timer=timer_thread, m=m)
     #except Exception as e:

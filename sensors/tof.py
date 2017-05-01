@@ -91,6 +91,10 @@ class Tof:
         senalfa = (d/dim.tof_60_distance)/math.sqrt(1+(d/dim.tof_60_distance)**2)
         return avg, cosalfa, senalfa
 
+    def is_there_a_wall(self, dir):
+        if self.read_fix(dir) < params.is_there_a_wall_threshold:
+            return True
+
     def best_side(self, side1, side2):
         avg1, cosalfa1, senalfa1 = self.read_fix(side1)
         avg2, cosalfa2, senalfa2 = self.read_fix(side2)
