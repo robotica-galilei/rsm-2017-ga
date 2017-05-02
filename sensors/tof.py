@@ -74,12 +74,12 @@ class Tof:
                 ps2 = params.tof_calibration[key]
 
         print(s1, s2, s3)
-        t1 = (s1-ps1)* self.trust(value=s1)
-        t2 = (s2-ps2)* self.trust(value=s2)
-        t3 = (s2-ps2)* self.trust(value=s3)
-        s1 *= t1
-        s2 *= t2
-        s3 *= t3
+        t1 = self.trust(value=s1)
+        t2 = self.trust(value=s2)
+        t3 = self.trust(value=s3)
+        s1 = (s1-ps1)*t1
+        s2 = (s2-ps2)*t2
+        s3 = (s2-ps2)*t3
 
 
         #calculate average and the cos and sin of angle
