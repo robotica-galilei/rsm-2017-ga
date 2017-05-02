@@ -46,8 +46,11 @@ class Motor:
             GPIO.output(self.pins['dir_fl'],GPIO.HIGH)
             GPIO.output(self.pins['dir_rl'],GPIO.HIGH)
 
-        PWM.start(self.pins['fl'], abs(power), 25000)
-        PWM.start(self.pins['rl'], abs(power), 25000)
+        power = abs(power)
+        if power > 100:
+            power = 100
+        PWM.start(self.pins['fl'], power, 25000)
+        PWM.start(self.pins['rl'], power, 25000)
         self.actual_l = power
 
     def setSpeedRight(self, power):
@@ -58,8 +61,11 @@ class Motor:
             GPIO.output(self.pins['dir_fr'],GPIO.HIGH)
             GPIO.output(self.pins['dir_rr'],GPIO.HIGH)
 
-        PWM.start(self.pins['fr'], abs(power), 25000)
-        PWM.start(self.pins['rr'], abs(power), 25000)
+        power = abs(power)
+        if power > 100:
+            power = 100
+        PWM.start(self.pins['fr'], power, 25000)
+        PWM.start(self.pins['rr'], power, 25000)
         self.actual_r = power
 
     def stopLeft(self):
@@ -77,6 +83,42 @@ class Motor:
         self.stopRight()
 
     def parallel(self, tof = None):
+        side, avg, cosalfa, senalfa, z = tof.best_side('E','O')
+        side2, avg2, cosalfa2, senalfa2, z2 = tof.best_side('N','S')
+        if avg2 < avg and avg2 != -1:
+            side = side2
+            cosalfa = cosalfa2
+            senalfa = senalfa2
+            avg = avg2
+            z = z2
+        all_m = [None, None, None, None, None, None, None, None, None, None]
+        while True:
+            del(all_m[0])
+            measurement = tof.diff(dir = side)
+            print(measurement)
+            all_m.append(measurement)
+            e = 0
+            sum_m = 0
+            for i in range(10):
+                if all_m[i] != None:
+                    e += 1
+                    sum_m += all_m[i]
+            correction = float(sum_m)/float(e)
+            print(all_m)
+            print(correction)
+            print()
+
+            if correction > 0:
+                z = -1
+            else:
+                z = 1
+            if ((correction < 5 and correction > -5) or (measurement < 1 and measurement > -1)):
+                break
+
+            self.setSpeeds(30*z, -30*z)
+
+
+        '''
         while True:
             side, avg, cosalfa, senalfa, z = tof.best_side('E','O')
             side2, avg2, cosalfa2, senalfa2, z2 = tof.best_side('N','S')
@@ -87,11 +129,13 @@ class Motor:
                 senalfa = senalfa2
                 avg = avg2
                 z = z2
-            print("Cosalfa:", cosalfa)
+            print("Cosalfa: ", cosalfa)
             error=tof.error(avg, cosalfa, z)
-            self.setSpeeds(pid.get_pid(error), -pid.get_pid(error))
+            print("PID: ", pid.get_pid(error))
+            self.setSpeeds(-40*z, 40*z)
             if cosalfa >= params.ERROR_COSALFA:
                 break
+        '''
         self.stop()
 
     """
@@ -112,11 +156,13 @@ class Motor:
             gyro.update()
             deg = gyro.yawsum
             now = tof.read_raw('N')
+            avg = tof.read_fix('N')
             if now > 600 or now == -1:
                 front = tof.read_raw('S')
-                now = now = tof.read_raw('S')
-                while(now-front<= 300):
+                now = tof.read_raw('S')
+                while(now-front<= 300 or (avg<30 and avg !=-1)):
                     now = tof.read_raw('S')
+                    avg = tof.read_fix('N')
                     print(now)
                     if ch.is_something_touched():
                         time.sleep(0.3)
@@ -132,8 +178,9 @@ class Motor:
                     correction = deg - gyro.yawsum
                     self.setSpeeds(power - correction, power + correction)
             else:
-                while(front- now<= 300):
+                while(front- now<= 300 or (avg<30 and avg !=-1)):
                     now = tof.read_raw('N')
+                    avg = tof.read_fix('N')
                     print(now)
                     if ch.is_something_touched():
                         time.sleep(0.3)

@@ -130,7 +130,7 @@ class Tof:
 
     def n_cells(self, avg, cosalfa):
 
-        return int(math.floor((real_distance(avg, cosalfa)+robot_width)/dim.cell_dimension-0.5))
+        return int(math.floor((real_distance(avg, cosalfa)+dim.robot_width)/dim.cell_dimension-0.5))
 
     def trust(self, key = None, value = None):
         #Return trust(reliability) of a sensor given the key
@@ -161,11 +161,22 @@ class Tof:
         else:
             return None
 
-    def diff(self, s1, s2, s3):
-        t1 = self.trust(value=s1)
-        t2 = self.trust(value=s2)
-        t3 = self.trust(value=s3)
-        if t1 == False and t3 == False:
-            return None
+    def diff(self, s1 = None, s2 = None, s3 = None, dir = None):
+        if s1 != None and s2 != None and s3 != None:
+            t1 = self.trust(value=s1)
+            t2 = self.trust(value=s2)
+            t3 = self.trust(value=s3)
+            if t1 == False and t3 == False:
+                return None
+            else:
+                return float((t1*(s1)-t3*(s3)))
         else:
-            return float(2.*(t1*(s1-s2)+t3*(s2-s3)))/float(t1+t3)
+            alfa_dict = {'N': ('NE','N','NO'), 'E': ('ES','E','EN'), 'S':('SO','S','SE'), 'O':('ON','O','OS')}
+            s1 = None; s2 = None
+            for key in alfa_dict[dir]:
+                if len(key) == 2:
+                    if s1 == None:
+                        s1 = self.read_raw(key)
+                    else:
+                        s2 = self.read_raw(key)
+            return s1-s2

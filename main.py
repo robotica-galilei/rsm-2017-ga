@@ -59,6 +59,8 @@ def moveTo(path, m, t, ch, gyro):
         orientation=new_dir
         server.setRobotOrientation(new_dir)
     m.oneCellForward( mode = 'gyro', tof = t , ch=ch, gyro=gyro)
+    m.parallel(t)
+    m.parallel(t)
     pos=path[1][0]
     server.setRobotPosition(pos)
     if (sm.check_black(pos)):
@@ -170,6 +172,9 @@ def main(timer_thread, m, t, gyro, ch, server):
 
     timer_thread.start()
 
+    m.parallel(t)
+    m.parallel(t)
+
     while True:
         server.setRobotStatus("Exploring")
         #Set current cell as explored
@@ -182,7 +187,6 @@ def main(timer_thread, m, t, gyro, ch, server):
         #Read sensors
         walls = sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t)
 
-        #motors.parallel()
 
         if(sm.check_victim(pos)):
             mat.itemset(pos, 512)
@@ -280,7 +284,7 @@ if __name__ == '__main__':
         ch = None
 
     server = Pyro4.Proxy("PYRONAME:robot.server") #Connect to server for graphical interface
-    
+
     pins ={'fl':'P8_13','fr':'P8_19','rl':'P9_14','rr':'P9_16','dir_fl':'gpio31','dir_fr':'gpio48','dir_rl':'gpio60','dir_rr':'gpio30'}
 
     timer_thread = timer("Timer", server)
