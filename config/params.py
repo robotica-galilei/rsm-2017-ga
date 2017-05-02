@@ -2,7 +2,6 @@
 Configuration file for thresholds and parameters
 '''
 directions = ['N', 'S', 'E', 'O']
-victim = 25
 
 '''
 Pins and ports
@@ -26,6 +25,12 @@ ToF calibration
 '''
 tof_calibration = {'NO' : 25, 'NE' : 25, 'SO' : 25, 'SE' : 25, 'EN' : 25, 'ES' : 25, 'ON' : 25, 'OS' : 25, 'N': 30, 'S': 30, 'E': 30, 'O': 30}
 is_there_a_wall_threshold = 200
+
+'''
+Heat calibration
+'''
+HEAT_THRESHOLD = 26
+
 
 '''
 PID costants

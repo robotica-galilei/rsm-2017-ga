@@ -19,12 +19,14 @@ class Heat:
         #Read just the single sensor
         return self.sens[dir].get_obj_temp()
 
-    def isThereSomeVictim(self, temp=params.victim):
+    def isThereSomeVictim(self, temp=params.HEAT_THRESHOLD):
         '''
         Returns if something has been seen by the sensors
         '''
         victims = []
         for i in params.directions:
-            if(self.read_raw(i) >= temp):
+            now = self.read_raw(i)
+            if( now >= temp):
+                print("Heat: ", now)
                 victims.append(i)
         return len(victims) >= 1, victims

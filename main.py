@@ -25,7 +25,7 @@ class timer(threading.Thread):
             self.server.setElapsedTime(int(time.time()-self.startingtime))
 
 
-def moveTo(path, m, t, ch, gyro):
+def moveTo(path, m, t, ch, h, gyro):
     global pos
     global orientation
     global mat
@@ -74,6 +74,13 @@ def moveTo(path, m, t, ch, gyro):
         pos = old_pos
         m.oneCellBack()
         server.setRobotPosition(pos)
+    if (h.isThereSomeVictim()[0]):
+        m.stop()
+        for i in range(3):
+            m.setSpeeds(40,40)
+            time.sleep(0.1)
+            m.setSpeeds(-40,-40)
+            time.sleep(0.1)
 
 
 
@@ -144,7 +151,7 @@ def refresh_map(walls):
         mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]-2), unexplored_queue)
 
 
-def main(timer_thread, m, t, gyro, ch, server):
+def main(timer_thread, m, t, gyro, ch, h, server):
 
     #Global variables
     global mat; mat = np.matrix("0 0 0; 0 0 0; 0 0 0") #1x1 Matrix
@@ -244,23 +251,24 @@ def main(timer_thread, m, t, gyro, ch, server):
                 if(destination[0] != float('Inf')):
                     while pos != home:
                         destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat, bridge)
-                        moveTo(destination, m, t, ch, gyro)
+                        moveTo(destination, m, t, ch, h, gyro)
                 else:
                     server.setRobotStatus('Lost. Roaming...')
+                    print('Lost. Roaming...')
                     pass
             server.setRobotStatus("Done!")
+            stop_function(timer_thread,m)
             try:
                 raw_input("Press enter to continue")
             except:
                 input("Press enter to continue")
-            stop_function(timer_thread,m)
             sys.exit()
         else:
             destination=mp.bestPath(orientation,[pos[0],pos[1]],unexplored_queue,mat, bridge) #Find the best path to reach the nearest cell
 
             #Move to destination
             if(destination[0] != float('Inf')):
-                moveTo(destination, m, t, ch, gyro)
+                moveTo(destination, m, t, ch, h, gyro)
             else:
                 server.setRobotStatus('Lost')
                 pass
@@ -277,11 +285,14 @@ if __name__ == '__main__':
         gyro = imu.Imu()
         import sensors.touch as touch
         ch = touch.Touch()
+        import sensors.heat as heat
+        h = heat.Heat()
     else:
         import simulation.sensors as sm
         t = None
         gyro = None
         ch = None
+        h = None
 
     server = Pyro4.Proxy("PYRONAME:robot.server") #Connect to server for graphical interface
 
@@ -291,7 +302,7 @@ if __name__ == '__main__':
     m = motors.Motor(pins)
 
     try:
-        main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, server=server)
+        main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, h=h, server=server)
     except KeyboardInterrupt as e:
         stop_function(timer=timer_thread, m=m)
     #except Exception as e:

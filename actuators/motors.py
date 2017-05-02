@@ -185,6 +185,9 @@ class Motor:
                     if ch.is_something_touched():
                         time.sleep(0.3)
                         if ch.read('E') and ch.read('O'):
+                            self.setSpeeds(-30,-30)
+                            time.sleep(0.1)
+                            self.stop()
                             break
                         if ch.read('E'):
                             self.disincagna(gyro, -1, deg)
