@@ -22,7 +22,7 @@ class timer(threading.Thread):
         self.startingtime = time.time()
         while(self.stop_flag):
             time.sleep(0.5)
-            #self.#server.setElapsedTime(int(time.time()-self.startingtime))
+            self.server.setElapsedTime(int(time.time()-self.startingtime))
 
 
 def moveTo(path, m, t, ch, gyro):
@@ -49,7 +49,7 @@ def moveTo(path, m, t, ch, gyro):
     if orientation!=new_dir:
         if abs(new_dir-orientation) == 2:
             m.rotateRight(gyro)
-            #server.setRobotOrientation((new_dir+1)%4)
+            server.setRobotOrientation((new_dir+1)%4)
             m.rotateRight(gyro)
         elif new_dir-orientation == -3 or new_dir-orientation == 1:
             m.rotateLeft(gyro)
@@ -57,21 +57,21 @@ def moveTo(path, m, t, ch, gyro):
             pass
             m.rotateRight(gyro)
         orientation=new_dir
-        #server.setRobotOrientation(new_dir)
+        server.setRobotOrientation(new_dir)
     m.oneCellForward( mode = 'gyro', tof = t , ch=ch, gyro=gyro)
     pos=path[1][0]
-    #server.setRobotPosition(pos)
+    server.setRobotPosition(pos)
     if (sm.check_black(pos)):
         if pos in unexplored_queue:
             unexplored_queue.remove(pos)
         refresh_map(sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t))
         mat.itemset(pos, 256)
-        #server.setMazeMap(mat.tolist())
+        server.setMazeMap(mat.tolist())
         orientation = old_orientation
-        #server.setRobotOrientation(new_dir)
+        server.setRobotOrientation(new_dir)
         pos = old_pos
         m.oneCellBack()
-        #server.setRobotPosition(pos)
+        server.setRobotPosition(pos)
 
 
 
@@ -155,12 +155,12 @@ def main(timer_thread, m, t, gyro, ch, server):
     #print(mat)
 
     ###Initial settings to be displayed
-    #server.setRobotStatus("Waiting for start")
-    #server.setRobotPosition(pos)
-    #server.setVictimsNumber(0)
-    #server.setElapsedTime(0)
-    #server.setMazeMap(mat.tolist())
-    #server.setRobotOrientation(orientation)
+    server.setRobotStatus("Waiting for start")
+    server.setRobotPosition(pos)
+    server.setVictimsNumber(0)
+    server.setElapsedTime(0)
+    server.setMazeMap(mat.tolist())
+    server.setRobotOrientation(orientation)
     ###
 
     try:
@@ -171,7 +171,7 @@ def main(timer_thread, m, t, gyro, ch, server):
     timer_thread.start()
 
     while True:
-        #server.setRobotStatus("Exploring")
+        server.setRobotStatus("Exploring")
         #Set current cell as explored
         mat.itemset(pos,2)
 
@@ -201,7 +201,7 @@ def main(timer_thread, m, t, gyro, ch, server):
                 refresh_map(walls)
                 bridge = [pos, (pos[0]+20, pos[1])]
                 pos = (pos[0]+20, pos[1])
-                #server.setRobotPosition(pos)
+                server.setRobotPosition(pos)
                 sim_pos = (-20,0)
                 for i  in range(10):
                     mat = np.vstack((mat,np.zeros((2,np.shape(mat)[1]))))
@@ -217,7 +217,7 @@ def main(timer_thread, m, t, gyro, ch, server):
             else:
                 print("Rampa in discesa")
                 pos = (pos[0]-20, pos[1])
-                #server.setRobotPosition(pos)
+                server.setRobotPosition(pos)
                 sim_pos = (0,0)
 
             #Read sensors
@@ -229,21 +229,21 @@ def main(timer_thread, m, t, gyro, ch, server):
 
         ##########
 
-        #server.setMazeMap(mat.tolist()) #Update map
+        server.setMazeMap(mat.tolist()) #Update map
 
         #Decide where to go
         if len(unexplored_queue)==0: #If there is no available cell to explore, the maze is done
             if pos!=home:
-                #server.setRobotStatus("Done! Homing...")
+                server.setRobotStatus("Done! Homing...")
                 destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat, bridge) #Find the best path to reach home
                 if(destination[0] != float('Inf')):
                     while pos != home:
                         destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat, bridge)
                         moveTo(destination, m, t, ch, gyro)
                 else:
-                    #server.setRobotStatus('Lost. Roaming...')
+                    server.setRobotStatus('Lost. Roaming...')
                     pass
-            #server.setRobotStatus("Done!")
+            server.setRobotStatus("Done!")
             try:
                 raw_input("Press enter to continue")
             except:
@@ -257,7 +257,7 @@ def main(timer_thread, m, t, gyro, ch, server):
             if(destination[0] != float('Inf')):
                 moveTo(destination, m, t, ch, gyro)
             else:
-                #server.setRobotStatus('Lost')
+                server.setRobotStatus('Lost')
                 pass
 
 
@@ -278,8 +278,8 @@ if __name__ == '__main__':
         gyro = None
         ch = None
 
-    #server = Pyro4.Proxy("PYRONAME:robot.#server") #Connect to #server for graphical interface
-    server = None
+    server = Pyro4.Proxy("PYRONAME:robot.server") #Connect to server for graphical interface
+    
     pins ={'fl':'P8_13','fr':'P8_19','rl':'P9_14','rr':'P9_16','dir_fl':'gpio31','dir_fr':'gpio48','dir_rl':'gpio60','dir_rr':'gpio30'}
 
     timer_thread = timer("Timer", server)
