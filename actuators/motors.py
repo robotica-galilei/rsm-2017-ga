@@ -10,7 +10,7 @@ import motors_pid as pid
 
 MOTOR_CELL_TIME     =       1.8
 MOTOR_ROTATION_TIME =       1.5
-MOTOR_DEFAULT_POWER_LINEAR      =       20
+MOTOR_DEFAULT_POWER_LINEAR      =       50
 MOTOR_DEFAULT_POWER_ROTATION    =       40
 
 
@@ -97,7 +97,7 @@ class Motor:
     """
     Here start the simple functions for robot motion execution
     """
-    def oneCellForward(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME, mode= 'time', tof= None, gyro=None):
+    def oneCellForward(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME, mode= 'time', ch=None, tof= None, gyro=None):
         if mode == 'time':
             self.setSpeeds(power, power)
             time.sleep(wait)
@@ -112,6 +112,14 @@ class Motor:
             gyro.update()
             deg = gyro.yawsum
             while(front-tof.read_raw('N') <= 300):
+                if ch.is_something_touched():
+                    time.sleep(0.3)
+                    if ch.read('E') and ch.read('O'):
+                        break
+                    if ch.read('E'):
+                        self.disincagna(gyro, -1)
+                    else:
+                        self.disincagna(gyro, 1)
                 gyro.update()
                 correction = deg - gyro.yawsum
                 self.setSpeeds(power - correction, power + correction)
@@ -206,3 +214,13 @@ class Motor:
             while(gyro.update().yawsum >= now+degrees):
                 pass
         self.stop()
+
+    def disincagna(self, gyro, dir): #Best name ever
+        self.setSpeeds(-20,-20)
+        time.sleep(0.2)
+        self.rotateDegrees(gyro, 35*dir)
+        self.setSpeeds(-MOTOR_DEFAULT_POWER_LINEAR, -MOTOR_DEFAULT_POWER_LINEAR)
+        time.sleep(0.2)
+        self.rotateDegrees(gyro, -35*dir)
+        self.setSpeeds(20,20)
+        time.sleep(0.2)
