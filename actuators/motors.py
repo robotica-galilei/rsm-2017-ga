@@ -87,9 +87,9 @@ class Motor:
                 senalfa = senalfa2
                 avg = avg2
                 z = z2
-
+            print("Cosalfa:", cosalfa)
             error=tof.error(avg, cosalfa, z)
-            self.setSpeeds(pid.pid(error), -pid.pid(error))
+            self.setSpeeds(pid.get_pid(error), -pid.get_pid(error))
             if cosalfa >= params.ERROR_COSALFA:
                 break
         self.stop()

@@ -130,7 +130,7 @@ class Tof:
 
     def n_cells(self, avg, cosalfa):
 
-        return int(math.floor((real_distance(avg, cosalfa)+robot_width)/dim.cell_dimension-0.5))
+        return int(math.floor((real_distance(avg, cosalfa)+dim.robot_width)/dim.cell_dimension-0.5))
 
     def trust(self, key = None, value = None):
         #Return trust(reliability) of a sensor given the key
@@ -168,4 +168,4 @@ class Tof:
         if t1 == False and t3 == False:
             return None
         else:
-            return float(2,*(t1*(s1-s2)+t3*(s2-s3)))/float(t1+t3)
+            return float(2.*(t1*(s1-s2)+t3*(s2-s3)))/float(t1+t3)
