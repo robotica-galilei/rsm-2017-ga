@@ -129,7 +129,8 @@ class Tof:
             return side2, avg2, cosalfa2, senalfa2, 1
 
     def n_cells(self, avg, cosalfa):
-        return int(math.floor(real_distance(avg, cosalfa)/dim.cell_dimension))
+
+        return int(math.floor((real_distance(avg, cosalfa)+robot_width)/dim.cell_dimension-0.5))
 
     def trust(self, key = None, value = None):
         #Return trust(reliability) of a sensor given the key
@@ -150,8 +151,9 @@ class Tof:
                     trusted[key[:1]] = False
         return trusted
 
-    def error(self, a=1):
-        side, avg, cosalfa, senalfa, z = self.best_side('E','O')
+    def error(self, avg = None, cosalfa = None, z = None,  a=1):
+        if avg==None and cosalfa==None and z==None:
+            side, avg, cosalfa, senalfa, z = self.best_side('E','O')
 
         if (avg is not -1) and (cosalfa is not None):
             N = self.n_cells(avg, cosalfa)

@@ -182,6 +182,7 @@ def main(timer_thread, m, t, gyro, ch, server):
         #Read sensors
         walls = sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t)
 
+        #motors.parallel()
 
         if(sm.check_victim(pos)):
             mat.itemset(pos, 512)
