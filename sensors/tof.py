@@ -103,8 +103,13 @@ class Tof:
         return avg, cosalfa, senalfa
 
     def is_there_a_wall(self, dir):
-        if self.read_raw(dir) < params.is_there_a_wall_threshold:
-            return True
+        d = self.read_raw(dir)
+        if  d < params.is_there_a_wall_threshold and d != -1:
+            d = self.read_raw(dir)
+            if  d < params.is_there_a_wall_threshold and d != -1:
+                return True
+            else:
+                return False
         else:
             return False
 

@@ -92,18 +92,44 @@ class Motor:
             front = tof.read_raw('N')
             gyro.update()
             deg = gyro.yawsum
-            while(front-tof.read_raw('N') <= 300):
-                if ch.is_something_touched():
-                    time.sleep(0.3)
-                    if ch.read('E') and ch.read('O'):
-                        break
-                    if ch.read('E'):
-                        self.disincagna(gyro, -1)
-                    else:
-                        self.disincagna(gyro, 1)
-                gyro.update()
-                correction = deg - gyro.yawsum
-                self.setSpeeds(power - correction, power + correction)
+            now = tof.read_raw('N')
+            if now > 600 or now == -1:
+                front = tof.read_raw('S')
+                now = now = tof.read_raw('S')
+                while(now-front<= 300):
+                    now = tof.read_raw('S')
+                    print(now)
+                    if ch.is_something_touched():
+                        time.sleep(0.3)
+                        if ch.read('E') and ch.read('O'):
+                            break
+                        if ch.read('E'):
+                            self.disincagna(gyro, -1)
+                            print("Disincagna E")
+                        else:
+                            self.disincagna(gyro, 1)
+                            print("Disincagna O")
+                    gyro.update()
+                    correction = deg - gyro.yawsum
+                    self.setSpeeds(power - correction, power + correction)
+            else:
+                while(front- now<= 300):
+                    now = tof.read_raw('N')
+                    print(now)
+                    if ch.is_something_touched():
+                        time.sleep(0.3)
+                        if ch.read('E') and ch.read('O'):
+                            break
+                        if ch.read('E'):
+                            self.disincagna(gyro, -1)
+                            print("Disincagna E")
+                        else:
+                            self.disincagna(gyro, 1)
+                            print("Disincagna O")
+                    gyro.update()
+                    correction = deg - gyro.yawsum
+                    self.setSpeeds(power - correction, power + correction)
+            print("FINECELLA")
         elif mode == 'tof_fixed':
             front = tof.read_raw('N')
             now = tof.read_raw('N')
@@ -133,11 +159,18 @@ class Motor:
         now = gyro.update().yawsum
         if degrees > 0:
             self.setSpeeds(-40,40)
-            while(gyro.update().yawsum <= now+degrees):
+            while(gyro.update().yawsum <= now+degrees-4):
+                pass
+            self.setSpeeds(-20,20)
+            while(gyro.update().yawsum <= now+degrees-2):
                 pass
         else:
             self.setSpeeds(40,-40)
-            while(gyro.update().yawsum >= now+degrees):
+            while(gyro.update().yawsum >= now+degrees+4):
+                pass
+
+            self.setSpeeds(20,-20)
+            while(gyro.update().yawsum >= now+degrees+2):
                 pass
         self.stop()
 
