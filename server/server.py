@@ -76,11 +76,14 @@ class server(object):
 ip = None
 for i in ni.interfaces():
     j = ni.ifaddresses(i)
-    if j[2][0]['addr'][:3] == "192" or j[2][0]['addr'][:3] == "10.":
-        ip = j[2][0]['addr']
-        break
+    try:
+        if j[2][0]['addr'][:9] == "192.168.1" or j[2][0]['addr'][:3] == "10.":
+            ip = j[2][0]['addr']
+            break
+    except Exception as e:
+        print(e)
 if ip == None:
-    ip = '127.0.0.1'
+    ip = '192.168.7.2'
 
 daemon = Pyro4.Daemon(host=ip, port=9092)                # make a Pyro daemon
 ns = Pyro4.locateNS()                  # find the name server
