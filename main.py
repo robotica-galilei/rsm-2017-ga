@@ -191,6 +191,7 @@ def main(timer_thread, m, t, gyro, server):
         print(walls)
         print("FINEH")
 
+        #motors.parallel()
 
         if(sm.check_victim(pos)):
             mat.itemset(pos, 512)

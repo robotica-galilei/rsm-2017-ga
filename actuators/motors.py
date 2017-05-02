@@ -7,6 +7,7 @@ import utils.GPIO as GPIO
 import config.params as params
 import motors_pid as pid
 
+
 MOTOR_CELL_TIME     =       1.8
 MOTOR_ROTATION_TIME =       1.5
 MOTOR_DEFAULT_POWER_LINEAR      =       20
@@ -75,6 +76,24 @@ class Motor:
         self.stopLeft()
         self.stopRight()
 
+    def parallel(self, tof = None):
+        while True:
+            side, avg, cosalfa, senalfa, z = tof.best_side('E','O')
+            side2, avg2, cosalfa2, senalfa2, z2 = tof.best_side('N','S')
+
+            if avg2 < avg and avg2 != -1:
+                side = side2
+                cosalfa = cosalfa2
+                senalfa = senalfa2
+                avg = avg2
+                z = z2
+
+            error=tof.error(avg, cosalfa, z)
+            self.setSpeeds(pid.pid(error), -pid.pid(error))
+            if cosalfa >= params.ERROR_COSALFA:
+                break
+        self.stop()
+
     """
     Here start the simple functions for robot motion execution
     """
@@ -97,15 +116,70 @@ class Motor:
                 correction = deg - gyro.yawsum
                 self.setSpeeds(power - correction, power + correction)
         elif mode == 'tof_fixed':
-            front = tof.read_raw('N')
-            now = tof.read_raw('N')
-            while(front-now <= 300 and now > 100):
-                now = tof.read_raw('N')
-                error=tof.error()
-                if error is not None:
-                    correction = pid.get_pid(error)
-                self.setSpeeds(power*(1+correction),power*(1-correction))
+            side, avg, cosalfa, senalfa, z = tof.best_side('E','O')
+            side2, avg2, cosalfa2, senalfa2, z2 = tof.best_side('N','S')
+
+            if avg2 < avg and avg2 != -1:
+                cosalfa = cosalfa2
+                senalfa = senalfa2
+
+            N_prec = tof.n_cells(avg2, cosalfa)*z2
+            N_now = N_prec
+
+            while(N_now -  N_prec - 1 < 0):
+                side, avg, cosalfa, senalfa, z = tof.best_side('E','O')
+                side2, avg2, cosalfa2, senalfa2, z2 = tof.best_side('N','S')
+
+
+                if avg2 < avg and avg2 != -1:
+                    cosalfa = cosalfa2
+                    senalfa = senalfa2
+
+            error=tof.error(avg_eo, cosalfa, z_eo)
+
+            if error != None:
+                correction = pid.get_pid(error)
+
+            else:
+                correction = 0
+
+            self.setSpeeds(power*(1+correction),power*(1-correction))
+
+            N_now = z2*tof.n_cells(avg2, cosalfa)
+
+        """
+        elif mode == 'complete':
+            side1, avg1, cosalfa1, senalfa1, z1 = self.best_side('E','O')
+            side2, avg2, cosalfa2, senalfa2, z2 = self.best_side('N','S')
+            if avg1 == -1:
+                '''use gyro and time'''
+                if avg2 == -1:
+                    '''only gyro'''
+                     pass
+
+                else:
+                    cosalfa = cosalfa2
+
+            else
+                elif avg1 < avg2:
+                    cosalfa = cosalfa1
+
+                elif avg2 <= avg1:
+                    cosalfa = cosalfa2
+
+            if :
+                    parallel(cosalfa)
+
+
+
+
+            print (cosalfa)
+
+
+
+        """
         self.stop()
+
 
 
     def oneCellBack(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME):

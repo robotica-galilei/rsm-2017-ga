@@ -29,6 +29,12 @@ is_there_a_wall_threshold = 200
 PID costants
 '''
 
-PID_p = 1
+PID_p = 0.2
 PID_i = 0
 PID_d = 0
+
+'''
+ERROR_COSTANTS
+'''
+
+ERROR_COSALFA = 0.02
