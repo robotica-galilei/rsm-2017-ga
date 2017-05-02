@@ -93,7 +93,7 @@ class Tof:
         else:
             avg = -1
 
-        if d is not None:
+        if d != None:
             cosalfa = 1./(math.sqrt(1+(d/dim.tof_60_distance)**2))
             senalfa = (d/dim.tof_60_distance)/(math.sqrt(1+(d/dim.tof_60_distance)**2))
         else:
@@ -130,7 +130,7 @@ class Tof:
 
     def n_cells(self, avg, cosalfa):
 
-        return int(math.floor((real_distance(avg, cosalfa)+dim.robot_width)/dim.cell_dimension-0.5))
+        return int(math.floor((real_distance(avg, cosalfa)+robot_width)/dim.cell_dimension-0.5))
 
     def trust(self, key = None, value = None):
         #Return trust(reliability) of a sensor given the key
@@ -155,7 +155,7 @@ class Tof:
         if avg==None and cosalfa==None and z==None:
             side, avg, cosalfa, senalfa, z = self.best_side('E','O')
 
-        if (avg is not -1) and (cosalfa is not None):
+        if (avg != -1) and (cosalfa != None):
             N = self.n_cells(avg, cosalfa)
             return (z*(dim.cell_dimension*(1+N)-(1./(a+1))*(2*avg+dim.robot_width)*(1+a*cosalfa)))/(dim.cell_dimension*(1+N))
         else:
