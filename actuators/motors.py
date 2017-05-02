@@ -123,10 +123,10 @@ class Motor:
                         if ch.read('E') and ch.read('O'):
                             break
                         if ch.read('E'):
-                            self.disincagna(gyro, -1)
+                            self.disincagna(gyro, -1, deg)
                             print("Disincagna E")
                         else:
-                            self.disincagna(gyro, 1)
+                            self.disincagna(gyro, 1, deg)
                             print("Disincagna O")
                     gyro.update()
                     correction = deg - gyro.yawsum
@@ -140,10 +140,10 @@ class Motor:
                         if ch.read('E') and ch.read('O'):
                             break
                         if ch.read('E'):
-                            self.disincagna(gyro, -1)
+                            self.disincagna(gyro, -1, deg)
                             print("Disincagna E")
                         else:
-                            self.disincagna(gyro, 1)
+                            self.disincagna(gyro, 1, deg)
                             print("Disincagna O")
                     gyro.update()
                     correction = deg - gyro.yawsum
@@ -248,12 +248,21 @@ class Motor:
                 pass
         self.stop()
 
-    def disincagna(self, gyro, dir): #Best name ever
+    def set_degrees(self, gyro, degrees):
+        now = gyro.update().yawsum
+        diff = now-degrees
+        self.rotateDegrees(gyro, -diff)
+
+
+    def disincagna(self, gyro, dir, deg = None): #Best name ever
         self.setSpeeds(-20,-20)
         time.sleep(0.2)
         self.rotateDegrees(gyro, 35*dir)
         self.setSpeeds(-MOTOR_DEFAULT_POWER_LINEAR, -MOTOR_DEFAULT_POWER_LINEAR)
         time.sleep(0.2)
-        self.rotateDegrees(gyro, -35*dir)
+        if deg != None:
+            self.set_degrees(gyro, deg)
+        else:
+            self.rotateDegrees(gyro, -35*dir)
         self.setSpeeds(20,20)
         time.sleep(0.2)
