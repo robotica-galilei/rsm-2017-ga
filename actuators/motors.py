@@ -148,12 +148,7 @@ class Motor:
             logging.debug("Going by time")
             self.setSpeeds(power, power)
             time.sleep(wait)
-        elif mode == 'tof_raw':
-            logging.debug("Going by tof_raw")
-            self.setSpeeds(30,30)
-            front = tof.read_raw('N')
-            while(front-tof.read_raw('N') <= 300):
-                self.setSpeeds(power, power)
+
         elif mode == 'gyro':
             logging.debug("Going by gyro")
             self.setSpeeds(30,30)
@@ -195,8 +190,9 @@ class Motor:
 
             N_prec = tof.n_cells(avg2, cosalfa)*z2
             N_now = N_prec
+            x=0
 
-            while(N_now -  N_prec - 1 < 0):
+            while(N_prec +1 < N_now):
                 side, avg, cosalfa, senalfa, z = tof.best_side('E','O')
                 side2, avg2, cosalfa2, senalfa2, z2 = tof.best_side('N','S')
 
@@ -205,17 +201,35 @@ class Motor:
                     cosalfa = cosalfa2
                     senalfa = senalfa2
 
-            error=tof.error(avg, cosalfa, z)
+                    error=tof.error(avg, cosalfa, z)
 
-            if error != None:
-                correction = pid.get_pid(error)
+                if error != None:
+                    correction = pid.get_pid(error)
 
-            else:
-                correction = 0
+                else:
+                    correction = 0
 
-            self.setSpeeds(power*(1+correction),power*(1-correction))
+                self.setSpeeds(power*(1+correction),power*(1-correction))
 
-            N_now = z2*tof.n_cells(avg2, cosalfa)
+                distance=tof.real_distance(avg2,cosalfa)
+                if(distance<=(N_prec*dim.cell_dimension)):
+                    #la cella attuale è ancora la stessa
+                    x=0
+
+                else:
+                    if x==0:
+                        x=1
+                        #non sono sicuro della cella
+                    if x==1:
+                        x=2
+                        #confermo la cella
+                        logging.info('Now we are in the next cell')
+                    else:
+                        pass
+                        #la cella è la successiva
+
+                N_now = z2*tof.n_cells(avg2, cosalfa)
+            self.parallel()
 
         """
         elif mode == 'complete':
@@ -248,7 +262,7 @@ class Motor:
 
 
         """
-        logging.info("End of the cell")
+        logging.info("Arrived in centre of the cell")
         self.stop()
 
 
