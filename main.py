@@ -187,11 +187,10 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
 
     m.parallel(t)
     m.parallel(t)
-    GPIO.setup(params.START_STOP_BUTTON_PIN, GPIO.IN)
-    GPIO.add_event_detect(params.START_STOP_BUTTON_PIN, GPIO.RISING) #Attaching interrupt for start and stop
+
     while True:
         if GPIO.event_detected(params.START_STOP_BUTTON_PIN):
-            raise KeyboardInterrupt
+            sys.exit()
         server.setRobotStatus("Exploring")
         #Set current cell as explored
         mat.itemset(pos,2)
@@ -206,7 +205,9 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
 
         if(sm.check_victim(pos,h)):
             mat.itemset(pos, 512)
-
+            
+        # If no part of the map is covered by another floor then the ramp can be ignored
+        '''
         if(sm.check_bridge((pos[0]+sim_pos[0],pos[1]+sim_pos[1])) or sm.check_bridge(pos)):
             mat.itemset(pos, 1024)
             if sim_pos == (0,0):
@@ -248,6 +249,7 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
             refresh_map(walls)
         else:
             refresh_map(walls)
+        '''
 
 
         ##########
@@ -311,6 +313,8 @@ if __name__ == '__main__':
         h = heat.Heat()
         import sensors.color as color
         col = color.Color()
+        import actuators.kit as kit
+        k = kit.Kit()
         import Adafruit_BBIO.GPIO as GPIO
     else:
         logging.info("Starting in simulation mode")
@@ -320,6 +324,7 @@ if __name__ == '__main__':
         ch = None
         h = None
         col = None
+        k = None
 
     server = Pyro4.Proxy("PYRONAME:robot.server") #Connect to server for graphical interface
 
@@ -329,16 +334,29 @@ if __name__ == '__main__':
     m = motors.Motor(pins)
     print("Starting main loop")
     logging.info("Starting main loop")
-
-    try:
-        main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, h=h, col=col, server=server)
-    except KeyboardInterrupt as e:
-        print("KeyboardInterrupt")
-        logging.warning("KeyboardInterrupt")
-        stop_function(timer=timer_thread, m=m)
-    '''
-    except Exception as e:
-        logging.critical("%s", e)
-        stop_function(timer=timer_thread, m=m)
-        raise e
-    '''
+    GPIO.setup(params.START_STOP_BUTTON_PIN, GPIO.IN)
+    GPIO.add_event_detect(params.START_STOP_BUTTON_PIN, GPIO.RISING) #Attaching interrupt for start and stop
+    while True:
+        while True:
+            if GPIO.event_detected(params.START_STOP_BUTTON_PIN):
+                break
+            else:
+                k.blink()
+                time.sleep(0.5)
+        try:
+            main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, h=h, col=col, server=server)
+        except KeyboardInterrupt as e:
+            print("KeyboardInterrupt")
+            logging.warning("KeyboardInterrupt")
+            stop_function(timer=timer_thread, m=m)
+            break
+        except SystemExit as e:
+            print("SystemExit")
+            logging.warning("SystemExit")
+            stop_function(timer=timer_thread, m=m)
+        '''
+        except Exception as e:
+            logging.critical("%s", e)
+            stop_function(timer=timer_thread, m=m)
+            raise e
+        '''

@@ -213,7 +213,7 @@ class Motor:
 
                 distance=tof.real_distance(avg2,cosalfa)
                 if(distance<=(N_prec*dim.cell_dimension)):
-                    #la cella attuale è ancora la stessa
+                    # I'm still in the same cell
                     x=0
 
                 else:
@@ -226,7 +226,7 @@ class Motor:
                         logging.info('Now we are in the next cell')
                     else:
                         pass
-                        #la cella è la successiva
+                        #Next cell
 
                 N_now = z2*tof.n_cells(avg2, cosalfa)
             self.parallel()
