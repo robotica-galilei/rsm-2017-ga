@@ -129,11 +129,11 @@ class Motor:
                 senalfa = senalfa2
                 avg = avg2
                 z = z2
-            print("Cosalfa: ", cosalfa)
-            error=tof.error(avg, cosalfa, z)
+            print("Cosalfa, senalfa: ", cosalfa, senalfa)
+            error = z * senalfa
             print("PID: ", pid.get_pid(error))
-            self.setSpeeds(-40*z, 40*z)
-            if cosalfa >= params.ERROR_COSALFA:
+            self.setSpeeds(-40*error, 40*error)
+            if senalfa <= params.ERROR_SENALFA and senalfa>= -params.ERROR_SENALFA:
                 break
         '''
         self.stop()
@@ -152,17 +152,17 @@ class Motor:
                 self.setSpeeds(power, power)
         elif mode == 'gyro':
             self.setSpeeds(30,30)
-            front = tof.read_raw('N')
+            front = tof.read_fix('N')[0]
             gyro.update()
             deg = gyro.yawsum
-            now = tof.read_raw('N')
-            avg = tof.read_fix('N')
+            now = tof.read_fix('N')[0]
+            avg = tof.read_fix('N')[0]
             if now > 600 or now == -1:
-                front = tof.read_raw('S')
-                now = tof.read_raw('S')
+                front = tof.read_fix('S')[0]
+                now = tof.read_fix('S')[0]
                 while(now-front<= 300 or (avg<30 and avg !=-1)):
-                    now = tof.read_raw('S')
-                    avg = tof.read_fix('N')
+                    now = tof.read_fix('S')[0]
+                    avg = tof.read_fix('N')[0]
                     print(now)
                     if ch.is_something_touched():
                         time.sleep(0.3)
@@ -179,8 +179,8 @@ class Motor:
                     self.setSpeeds(power - correction, power + correction)
             else:
                 while(front- now<= 300 or (avg<30 and avg !=-1)):
-                    now = tof.read_raw('N')
-                    avg = tof.read_fix('N')
+                    now = tof.read_fix('N')[0]
+                    avg = tof.read_fix('N')[0]
                     print(now)
                     if ch.is_something_touched():
                         time.sleep(0.3)
@@ -219,7 +219,7 @@ class Motor:
                     cosalfa = cosalfa2
                     senalfa = senalfa2
 
-            error=tof.error(avg_eo, cosalfa, z_eo)
+            error=tof.error(avg, cosalfa, z)
 
             if error != None:
                 correction = pid.get_pid(error)

@@ -36,7 +36,7 @@ HEAT_THRESHOLD = 26
 PID costants
 '''
 
-PID_p = 0.2
+PID_p = 0.4
 PID_i = 0
 PID_d = 0
 
@@ -44,4 +44,6 @@ PID_d = 0
 ERROR_COSTANTS
 '''
 
+ERROR_OBSTACLE= 50
+ERROR_SENALFA= 0.01
 ERROR_COSALFA = 0.98

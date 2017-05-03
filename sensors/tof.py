@@ -81,18 +81,22 @@ class Tof:
         s2 = (s2-ps2)*t2
         s3 = (s2-ps2)*t3
 
-
-        #calculate average and the cos and sin of angle
-        s_sum = s1 + s2 + s3
-        s_div = t1 + t2 + t3
-        d = self.diff(s1, s2, s3)
-
-        if s_div != 0:
-            avg = s_sum/s_div
+        if max(s1, s3) + params.ERROR_OBSTACLE >= s2:
+            s2=0
+            avg=-2
 
         else:
-            avg = -1
+            #calculate average and the cos and sin of angle
+            s_sum = s1 + s2 + s3
+            s_div = t1 + t2 + t3
 
+            if s_div != 0:
+                avg = s_sum/s_div
+
+            else:
+                avg = -1
+
+        d = self.diff(s1, s2, s3)
         if d != None:
             cosalfa = 1./(math.sqrt(1+(d/dim.tof_60_distance)**2))
             senalfa = (d/dim.tof_60_distance)/(math.sqrt(1+(d/dim.tof_60_distance)**2))
@@ -100,12 +104,13 @@ class Tof:
             cosalfa = None
             senalfa = None
 
+
         return avg, cosalfa, senalfa
 
     def is_there_a_wall(self, dir):
-        d = self.read_raw(dir)
+        d = self.read_fix(dir)[0]
         if  d < params.is_there_a_wall_threshold and d != -1:
-            d = self.read_raw(dir)
+            d = self.read_fix(dir)[0]
             if  d < params.is_there_a_wall_threshold and d != -1:
                 return True
             else:
@@ -169,7 +174,7 @@ class Tof:
             if t1 == False and t3 == False:
                 return None
             else:
-                return float((t1*(s1)-t3*(s3)))
+                return float(2*(t1*(s1-s2*t2)-t3*(s3+s2*t2)))/(t1+t2)
         else:
             alfa_dict = {'N': ('NE','N','NO'), 'E': ('ES','E','EN'), 'S':('SO','S','SE'), 'O':('ON','O','OS')}
             s1 = None; s2 = None
