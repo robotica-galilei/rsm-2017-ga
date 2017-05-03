@@ -1,6 +1,7 @@
 import sys
 sys.path.append("../")
 import time
+import logging
 
 import Adafruit_BBIO.PWM as PWM
 import utils.GPIO as GPIO
@@ -142,15 +143,19 @@ class Motor:
     Here start the simple functions for robot motion execution
     """
     def oneCellForward(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME, mode= 'time', ch=None, tof= None, gyro=None):
+        logging.info("Going one cell forward")
         if mode == 'time':
+            logging.debug("Going by time")
             self.setSpeeds(power, power)
             time.sleep(wait)
         elif mode == 'tof_raw':
+            logging.debug("Going by tof_raw")
             self.setSpeeds(30,30)
             front = tof.read_raw('N')
             while(front-tof.read_raw('N') <= 300):
                 self.setSpeeds(power, power)
         elif mode == 'gyro':
+            logging.debug("Going by gyro")
             self.setSpeeds(30,30)
             front = tof.read_fix('N')[0]
             gyro.update()
@@ -158,6 +163,7 @@ class Motor:
             now = tof.read_fix('N')[0]
             avg = tof.read_fix('N')[0]
             if now > 600 or now == -1:
+                logging.debug("Using SOUTH sensor")
                 front = tof.read_fix('S')[0]
                 now = tof.read_fix('S')[0]
                 while(now-front<= 300 or (avg<30 and avg !=-1)):
@@ -170,14 +176,13 @@ class Motor:
                             break
                         if ch.read('E'):
                             self.disincagna(gyro, -1, deg)
-                            print("Disincagna E")
                         else:
                             self.disincagna(gyro, 1, deg)
-                            print("Disincagna O")
                     gyro.update()
                     correction = deg - gyro.yawsum
                     self.setSpeeds(power - correction, power + correction)
             else:
+                logging.debug("Using NORTH sensor")
                 while(front- now<= 300 or (avg<30 and avg !=-1)):
                     now = tof.read_fix('N')[0]
                     avg = tof.read_fix('N')[0]
@@ -191,14 +196,11 @@ class Motor:
                             break
                         if ch.read('E'):
                             self.disincagna(gyro, -1, deg)
-                            print("Disincagna E")
                         else:
                             self.disincagna(gyro, 1, deg)
-                            print("Disincagna O")
                     gyro.update()
                     correction = deg - gyro.yawsum
                     self.setSpeeds(power - correction, power + correction)
-            print("FINECELLA")
         elif mode == 'tof_fixed':
             side, avg, cosalfa, senalfa, z = tof.best_side('E','O')
             side2, avg2, cosalfa2, senalfa2, z2 = tof.best_side('N','S')
@@ -262,6 +264,7 @@ class Motor:
 
 
         """
+        logging.info("End of the cell")
         self.stop()
 
 
@@ -305,14 +308,20 @@ class Motor:
 
 
     def disincagna(self, gyro, dir, deg = None): #Best name ever
+        dir_lib = {1:'O', -1:'E'}
+        logging.debug('Disincagna %s', dir_lib[dir])
         self.setSpeeds(-20,-20)
         time.sleep(0.2)
-        self.rotateDegrees(gyro, 35*dir)
         self.setSpeeds(-MOTOR_DEFAULT_POWER_LINEAR, -MOTOR_DEFAULT_POWER_LINEAR)
-        time.sleep(0.2)
+        self.rotateDegrees(gyro, 20*dir)
+        time.sleep(0.15)
+        self.rotateDegrees(gyro, -40*dir)
+        self.setSpeeds(MOTOR_DEFAULT_POWER_LINEAR, MOTOR_DEFAULT_POWER_LINEAR)
+        time.sleep(0.15)
+
         if deg != None:
             self.set_degrees(gyro, deg)
         else:
-            self.rotateDegrees(gyro, -35*dir)
+            self.rotateDegrees(gyro, 20*dir)
         self.setSpeeds(20,20)
         time.sleep(0.2)

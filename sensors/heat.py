@@ -1,5 +1,6 @@
 import sys
 sys.path.append("../")
+import logging
 
 import config.params as params
 import modules.GY906 as GY906

@@ -2,6 +2,7 @@ import sys
 sys.path.append("../")
 import time
 import math
+import logging
 
 import modules.tof_60 as tof_60
 import modules.tof_200 as tof_200

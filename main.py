@@ -6,6 +6,7 @@ import numpy as np
 import algorithms.motion_planning as mp
 import algorithms.map_management as maman
 import threading
+import logging
 try:
     import actuators.motors as motors
 except Exception as e:
@@ -202,6 +203,7 @@ def main(timer_thread, m, t, gyro, ch, h, server):
             mat.itemset(pos, 1024)
             if sim_pos == (0,0):
                 print("Rampa in salita")
+                logging.info("Rampa in salita")
                 if orientation == 0:
                     mat.itemset(pos[0]-1,pos[1], 512)
                 elif orientation == 1:
@@ -228,6 +230,7 @@ def main(timer_thread, m, t, gyro, ch, h, server):
                     mat.itemset(pos[0],pos[1]-1, 512)
             else:
                 print("Rampa in discesa")
+                logging.info("Rampa in discesa")
                 pos = (pos[0]-20, pos[1])
                 server.setRobotPosition(pos)
                 sim_pos = (0,0)
@@ -247,14 +250,23 @@ def main(timer_thread, m, t, gyro, ch, h, server):
         if len(unexplored_queue)==0: #If there is no available cell to explore, the maze is done
             if pos!=home:
                 server.setRobotStatus("Done! Homing...")
+                logging.info("Maze finished...")
                 destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat, bridge) #Find the best path to reach home
-                if(destination[0] != float('Inf')):
+                lost = False
+                if destination[0] != float('Inf'):
+                    logging.info("Returning home")
                     while pos != home:
                         destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat, bridge)
+                        if destination[0] == float('Inf'):
+                            lost = True
+                            break
                         moveTo(destination, m, t, ch, h, gyro)
                 else:
+                    lost = True
+                if lost == True:
                     server.setRobotStatus('Lost. Roaming...')
                     print('Lost. Roaming...')
+                    logging.warning("Lost")
                     pass
             server.setRobotStatus("Done!")
             stop_function(timer_thread,m)
@@ -276,7 +288,9 @@ def main(timer_thread, m, t, gyro, ch, h, server):
 
 
 if __name__ == '__main__':
-    if sys.argv[1] == 'r':
+    logging.basicConfig(filename='log_robot.log',level=logging.DEBUG)
+    if len(sys.argv) >= 2 and sys.argv[1] == 'r':
+        logging.info("Starting in race mode")
         import sensors.sensors_handler as sm
         import sensors.tof as tof
         t = tof.Tof()
@@ -288,6 +302,7 @@ if __name__ == '__main__':
         import sensors.heat as heat
         h = heat.Heat()
     else:
+        logging.info("Starting in simulation mode")
         import simulation.sensors as sm
         t = None
         gyro = None
@@ -304,6 +319,9 @@ if __name__ == '__main__':
     try:
         main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, h=h, server=server)
     except KeyboardInterrupt as e:
+        logging.warning("KeyboardInterrupt")
         stop_function(timer=timer_thread, m=m)
-    #except Exception as e:
-    #    print(e)
+    except Exception as e:
+        logging.critical("%s", e)
+        stop_function(timer=timer_thread, m=m)
+        print(e)
