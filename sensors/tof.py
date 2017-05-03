@@ -9,9 +9,6 @@ import modules.tof_200 as tof_200
 import config.dimensions as dim
 import config.params as params
 
-def real_distance(dist, cosalfa):
-    return dist*cosalfa
-
 class Tof:
     def __init__(self, pins = params.tof_pins, addresses = params.tof_addresses):
         #Init routine
@@ -136,7 +133,12 @@ class Tof:
 
     def n_cells(self, avg, cosalfa):
 
-        return int(math.floor(abs((2*real_distance(avg, cosalfa)+dim.robot_width)/(2*dim.cell_dimension)-0.5)))
+        #return int(math.floor(real_distance(avg,cosalfa)/dim.cell_dimension))  #approssimazione
+
+        return int(math.floor((real_distance(avg,cosalfa) - (dim.cell_dimension - dim.robot_width)/2.) / dim.cell_dimension)) #con il robot piazzato al centro della cella
+
+    def real_distance(self, dist, cosalfa):
+        return dist*cosalfa
 
     def trust(self, key = None, value = None):
         #Return trust(reliability) of a sensor given the key
