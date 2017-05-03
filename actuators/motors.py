@@ -6,6 +6,7 @@ import logging
 import Adafruit_BBIO.PWM as PWM
 import utils.GPIO as GPIO
 import config.params as params
+import config.dimensions as dim
 import motors_pid as pid
 
 
@@ -158,12 +159,14 @@ class Motor:
             now = tof.read_fix('N')[0]
             avg = tof.read_fix('N')[0]
             best_dir = 'N'
+            boost = 0
             if now > 600 or now == -1:
                 logging.debug("Using SOUTH sensor")
                 front = tof.read_fix('S')[0]
                 best_dir = 'S'
                 now = tof.read_fix('S')[0]
-            while(now-front<= 300 and (avg>30 and avg !=-1)):
+            started_time = tme()
+            while now-front<= dim.cell_dimension and (avg>30 or avg ==-1) and time.time()-started_time < MOTOR_CELL_TIME+0.5:
                 now = tof.read_fix(best_dir)[0]
                 avg = tof.read_fix('N')[0]
                 print(now)
@@ -177,7 +180,26 @@ class Motor:
                         self.disincagna(gyro, 1, deg)
                 gyro.update()
                 correction = deg - gyro.yawsum
-                self.setSpeeds(power - correction, power + correction)
+
+                if gyro.pitch > 15:
+                    if boost < 20:
+                        boost += 1
+                        time.sleep(0.05)
+                    started_time = time.time()
+                else if gyro.pitch < -15:
+                    if boost < -30:
+                        boost -= 1
+                        time.sleep(0.05)
+                    started_time = time.time()
+                else:
+                    if boost > 0:
+                        boost -= 1
+                        time.sleep(0.05)
+                    else if boost < 0:
+                        boost += 1
+                        time.sleep(0.05)
+
+                self.setSpeeds(power - correction + boost, power + correction + boost)
 
 
         elif mode == 'tof_fixed':
