@@ -79,20 +79,16 @@ class Tof:
         s2 = (s2-ps2)*t2
         s3 = (s2-ps2)*t3
 
-        if max(s1, s3) + params.ERROR_OBSTACLE >= s2:
-            s2=0
-            avg=-2
+
+        #calculate average and the cos and sin of angle
+        s_sum = s1 + s2 + s3
+        s_div = t1 + t2 + t3
+
+        if s_div != 0:
+            avg = s_sum/s_div
 
         else:
-            #calculate average and the cos and sin of angle
-            s_sum = s1 + s2 + s3
-            s_div = t1 + t2 + t3
-
-            if s_div != 0:
-                avg = s_sum/s_div
-
-            else:
-                avg = -1
+            avg = -1
 
         d = self.diff(s1, s2, s3)
         if d != None:
@@ -135,7 +131,7 @@ class Tof:
 
         #return int(math.floor(real_distance(avg,cosalfa)/dim.cell_dimension))  #approssimazione
 
-        return int(math.floor((real_distance(avg,cosalfa) - (dim.cell_dimension - dim.robot_width)/2.) / dim.cell_dimension)) #con il robot piazzato al centro della cella
+        return int(math.floor(abs((self.real_distance(avg,cosalfa) - (dim.cell_dimension - dim.robot_width)/2.)) / dim.cell_dimension)) #con il robot piazzato al centro della cella
 
     def real_distance(self, dist, cosalfa):
         return dist*cosalfa

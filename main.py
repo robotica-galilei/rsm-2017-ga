@@ -61,12 +61,12 @@ def moveTo(path, m, t, ch, h, col, gyro):
             m.rotateRight(gyro)
         orientation=new_dir
         server.setRobotOrientation(new_dir)
-    m.oneCellForward( mode = 'gyro', tof = t , ch=ch, gyro=gyro)
+    m.oneCellForward( mode = 'tof_fixed', tof = t , ch=ch, gyro=gyro)
     m.parallel(t)
     m.parallel(t)
     pos=path[1][0]
     server.setRobotPosition(pos)
-    if (sm.check_black(pos, col)):
+    if (sm.check_black(pos, col)) and False: #To commentut
         if pos in unexplored_queue:
             unexplored_queue.remove(pos)
         refresh_map(sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t))
@@ -163,6 +163,7 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
     global orientation; orientation = 3 #Initial orientation, generally
     global unexplored_queue; unexplored_queue = [] #Queue containing all the unexplored cells
     global sim_pos; sim_pos = (0,0)
+    global interrupt_time
     bridge = []
     #print(mat)
 
@@ -178,18 +179,22 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
     server.setRobotOrientation(orientation)
     ###
 
+    #Commented because the thread should start with the button
+    '''
     try:
         raw_input("Continue...")
     except:
         input("Continue...")
+    '''
 
-    timer_thread.start()
 
     m.parallel(t)
     m.parallel(t)
 
     while True:
-        if GPIO.event_detected(params.START_STOP_BUTTON_PIN):
+        if GPIO.event_detected(params.START_STOP_BUTTON_PIN) and time.time() - interrupt_time > 4:
+            interrupt_time = time.time()
+            print("Stopped by user")
             sys.exit()
         server.setRobotStatus("Exploring")
         #Set current cell as explored
@@ -201,11 +206,11 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
 
         #Read sensors
         walls = sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t)
-
+        print("Walls", walls)
 
         if(sm.check_victim(pos,h)):
             mat.itemset(pos, 512)
-            
+
         # If no part of the map is covered by another floor then the ramp can be ignored
         '''
         if(sm.check_bridge((pos[0]+sim_pos[0],pos[1]+sim_pos[1])) or sm.check_bridge(pos)):
@@ -250,7 +255,7 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
         else:
             refresh_map(walls)
         '''
-
+        refresh_map(walls) #To comment when activated advanced ramp
 
         ##########
 
@@ -280,10 +285,14 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
                     pass
             server.setRobotStatus("Done!")
             stop_function(timer_thread,m)
+            #Commented because the thread should start with the button
+            '''
             try:
                 raw_input("Press enter to continue")
             except:
                 input("Press enter to continue")
+            '''
+            print("finished")
             sys.exit()
         else:
             destination=mp.bestPath(orientation,[pos[0],pos[1]],unexplored_queue,mat, bridge) #Find the best path to reach the nearest cell
@@ -298,6 +307,7 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
 
 
 if __name__ == '__main__':
+    global interrupt_time; interrupt_time = time.time()
     logging.basicConfig(filename='log_robot.log',level=logging.DEBUG)
     if len(sys.argv) >= 2 and sys.argv[1] == 'r':
         logging.info("Starting in race mode")
@@ -331,6 +341,7 @@ if __name__ == '__main__':
     pins ={'fl':'P8_13','fr':'P8_19','rl':'P9_14','rr':'P9_16','dir_fl':'gpio31','dir_fr':'gpio48','dir_rl':'gpio60','dir_rr':'gpio30'}
 
     timer_thread = timer("Timer", server)
+    timer_thread.start()
     m = motors.Motor(pins)
     print("Starting main loop")
     logging.info("Starting main loop")
@@ -338,7 +349,8 @@ if __name__ == '__main__':
     GPIO.add_event_detect(params.START_STOP_BUTTON_PIN, GPIO.RISING) #Attaching interrupt for start and stop
     while True:
         while True:
-            if GPIO.event_detected(params.START_STOP_BUTTON_PIN):
+            if GPIO.event_detected(params.START_STOP_BUTTON_PIN) and time.time() - interrupt_time > 0.5:
+                interrupt_time = time.time()
                 break
             else:
                 k.blink()

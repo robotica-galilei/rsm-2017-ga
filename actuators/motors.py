@@ -10,7 +10,7 @@ import config.dimensions as dim
 import motors_pid as pid
 
 
-MOTOR_CELL_TIME     =       1.8
+MOTOR_CELL_TIME     =       2.5
 MOTOR_ROTATION_TIME =       1.5
 MOTOR_DEFAULT_POWER_LINEAR      =       50
 MOTOR_DEFAULT_POWER_ROTATION    =       40
@@ -152,7 +152,7 @@ class Motor:
 
         elif mode == 'gyro':
             logging.debug("Going by gyro")
-            self.setSpeeds(30,30)
+            self.setSpeeds(power, power)
             front = tof.read_fix('N')[0]
             gyro.update()
             deg = gyro.yawsum
@@ -161,12 +161,24 @@ class Motor:
             best_dir = 'N'
             boost = 0
             if now > 600 or now == -1:
-                logging.debug("Using SOUTH sensor")
+                print("Using SOUTH sensor")
                 front = tof.read_fix('S')[0]
                 best_dir = 'S'
                 now = tof.read_fix('S')[0]
-            started_time = tme()
-            while now-front<= dim.cell_dimension and (avg>30 or avg ==-1) and time.time()-started_time < MOTOR_CELL_TIME+0.5:
+            else:
+                print("Using NORTH sensor")
+            started_time = time.time()
+            while True:
+                print("Cell difference", (now,front))
+                if  (best_dir == 'N' and front-now > dim.cell_dimension) or (best_dir == 'S' and now-front > dim.cell_dimension):
+                    print("Front tof has recorded cell difference", (now,front))
+                    break
+                if not (avg>100 or avg ==-1):
+                    print("Front avg recorded wall", avg)
+                    break
+                if not time.time()-started_time < MOTOR_CELL_TIME+0.5:
+                    print("Max time passed")
+                    break
                 now = tof.read_fix(best_dir)[0]
                 avg = tof.read_fix('N')[0]
                 print(now)
@@ -180,13 +192,13 @@ class Motor:
                         self.disincagna(gyro, 1, deg)
                 gyro.update()
                 correction = deg - gyro.yawsum
-
+                '''
                 if gyro.pitch > 15:
                     if boost < 20:
                         boost += 1
                         time.sleep(0.05)
                     started_time = time.time()
-                else if gyro.pitch < -15:
+                elif gyro.pitch < -15:
                     if boost < -30:
                         boost -= 1
                         time.sleep(0.05)
@@ -195,10 +207,10 @@ class Motor:
                     if boost > 0:
                         boost -= 1
                         time.sleep(0.05)
-                    else if boost < 0:
+                    elif boost < 0:
                         boost += 1
                         time.sleep(0.05)
-
+                '''
                 self.setSpeeds(power - correction + boost, power + correction + boost)
 
 
@@ -214,7 +226,8 @@ class Motor:
             N_now = N_prec
             x=0
 
-            while(N_prec +1 < N_now):
+            while(N_prec == N_now):
+                print("N", (N_prec, N_now))
                 side, avg, cosalfa, senalfa, z = tof.best_side('E','O')
                 side2, avg2, cosalfa2, senalfa2, z2 = tof.best_side('N','S')
 
@@ -223,7 +236,7 @@ class Motor:
                     cosalfa = cosalfa2
                     senalfa = senalfa2
 
-                    error=tof.error(avg, cosalfa, z)
+                error=tof.error(avg, cosalfa, z)
 
                 if error != None:
                     correction = pid.get_pid(error)
@@ -251,7 +264,7 @@ class Motor:
                         #Next cell
 
                 N_now = z2*tof.n_cells(avg2, cosalfa)
-            self.parallel()
+            self.parallel(tof)
 
         """
         elif mode == 'complete':
@@ -308,16 +321,19 @@ class Motor:
             self.setSpeeds(-40,40)
             while(gyro.update().yawsum <= now+degrees-4):
                 pass
-            self.setSpeeds(-20,20)
-            while(gyro.update().yawsum <= now+degrees-2):
+
+            start = time.time()
+            self.setSpeeds(-30,30)
+            while(gyro.update().yawsum <= now+degrees-2 and time.time()-start > 3):
                 pass
         else:
             self.setSpeeds(40,-40)
             while(gyro.update().yawsum >= now+degrees+4):
                 pass
 
-            self.setSpeeds(20,-20)
-            while(gyro.update().yawsum >= now+degrees+2):
+            self.setSpeeds(30,-30)
+            start = time.time()
+            while gyro.update().yawsum >= now+degrees+2 and time.time()-start > 3:
                 pass
         self.stop()
 
@@ -331,17 +347,17 @@ class Motor:
         dir_lib = {1:'O', -1:'E'}
         logging.debug('Disincagna %s', dir_lib[dir])
         self.setSpeeds(-20,-20)
-        time.sleep(0.2)
-        self.setSpeeds(-MOTOR_DEFAULT_POWER_LINEAR, -MOTOR_DEFAULT_POWER_LINEAR)
-        self.rotateDegrees(gyro, 20*dir)
-        time.sleep(0.15)
-        self.rotateDegrees(gyro, -40*dir)
-        self.setSpeeds(MOTOR_DEFAULT_POWER_LINEAR, MOTOR_DEFAULT_POWER_LINEAR)
-        time.sleep(0.15)
+        time.sleep(0.4)
+        self.rotateDegrees(gyro, 30*dir)
+        self.setSpeeds(-20, -20)
+        time.sleep(0.8)
+        self.rotateDegrees(gyro, -60*dir)
+        self.setSpeeds(20, 20)
+        time.sleep(0.8)
 
         if deg != None:
             self.set_degrees(gyro, deg)
         else:
-            self.rotateDegrees(gyro, 20*dir)
+            self.rotateDegrees(gyro, 30*dir)
         self.setSpeeds(20,20)
-        time.sleep(0.2)
+        time.sleep(0.4)
