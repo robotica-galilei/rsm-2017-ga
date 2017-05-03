@@ -39,6 +39,13 @@ Color calibration
 BLACK_THRESHOLD = 30
 
 '''
+Led parameters
+'''
+
+LED_PIN = 'gpio61'
+LED_BLINK_DELAY = 0.5
+
+'''
 PID costants
 '''
 

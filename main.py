@@ -77,7 +77,7 @@ def moveTo(path, m, t, ch, h, col, gyro):
         pos = old_pos
         m.oneCellBack()
         server.setRobotPosition(pos)
-    if (sm.check_victim(h)):
+    if (sm.check_victim(pos,h)):
         m.stop()
         for i in range(3):
             m.setSpeeds(40,40)
@@ -103,7 +103,7 @@ def nearcellToQueue(mat, nearcell, unexplored_queue):
 
     Returns the updated mat and unexplored_queue
     '''
-    if (nearcell not in unexplored_queue) and mat.item(nearcell)==0 and not sm.check_black(pos): #If the cell is not queued and not explored yet
+    if (nearcell not in unexplored_queue) and mat.item(nearcell)==0 and not mat.item(pos)//256 == 1: #If the cell is not queued and not explored yet
         mat.itemset(nearcell,1) #Set as queued/explored
         unexplored_queue.append(nearcell) #Add to queue
     return mat, unexplored_queue
@@ -167,9 +167,7 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
     #print(mat)
 
 
-    GPIO.add_event_detect("P9_12", GPIO.RISING) #Attaching interrupt for start and stop
-    if GPIO.event_detected("P9_12"):
-        raise KeyboardInterrupt
+
 
     ###Initial settings to be displayed
     server.setRobotStatus("Waiting for start")
@@ -189,8 +187,11 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
 
     m.parallel(t)
     m.parallel(t)
-
+    GPIO.setup(params.START_STOP_BUTTON_PIN, GPIO.IN)
+    GPIO.add_event_detect(params.START_STOP_BUTTON_PIN, GPIO.RISING) #Attaching interrupt for start and stop
     while True:
+        if GPIO.event_detected(params.START_STOP_BUTTON_PIN):
+            raise KeyboardInterrupt
         server.setRobotStatus("Exploring")
         #Set current cell as explored
         mat.itemset(pos,2)
@@ -203,7 +204,7 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
         walls = sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t)
 
 
-        if(sm.check_victim(pos)):
+        if(sm.check_victim(pos,h)):
             mat.itemset(pos, 512)
 
         if(sm.check_bridge((pos[0]+sim_pos[0],pos[1]+sim_pos[1])) or sm.check_bridge(pos)):
@@ -328,13 +329,16 @@ if __name__ == '__main__':
     m = motors.Motor(pins)
     print("Starting main loop")
     logging.info("Starting main loop")
+
     try:
         main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, h=h, col=col, server=server)
     except KeyboardInterrupt as e:
         print("KeyboardInterrupt")
         logging.warning("KeyboardInterrupt")
         stop_function(timer=timer_thread, m=m)
+    '''
     except Exception as e:
         logging.critical("%s", e)
         stop_function(timer=timer_thread, m=m)
-        print(e)
+        raise e
+    '''
