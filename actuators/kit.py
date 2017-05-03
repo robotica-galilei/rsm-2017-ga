@@ -14,8 +14,17 @@ class Kit:
 
     def retract(self):
         PWM.start(self.servo_pin, 95, 60, 1)
-        
+
     def release_one_kit(self):
         self.release()
         time.sleep(1)
         self.retract()
+
+    def release_n_kits(self, n_kit = 2):
+        if n_kit > 2:
+            print ('ERROR RELEASING KITS')
+
+        else:
+            for i in range[n_kit]:
+                self.release_one_kit()
+                time.sleep(1);
