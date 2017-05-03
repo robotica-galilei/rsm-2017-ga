@@ -1,4 +1,4 @@
-def scanWalls(pos, orient, tof):
+def scanWalls(pos, orient, tof = None):
     walls=[]
     walls.append(tof.is_there_a_wall('O'))
     walls.append(tof.is_there_a_wall('S'))
@@ -12,11 +12,11 @@ def scanWalls(pos, orient, tof):
     return walls
 
 
-def check_black(pos, col):
+def check_black(pos, col = None):
     return col.is_cell_black()
 
-def check_victim(pos):
-    return False
+def check_victim(pos, h = None):
+    return h.isThereSomeVictim()[0]
 
 def check_bridge(pos):
     return False

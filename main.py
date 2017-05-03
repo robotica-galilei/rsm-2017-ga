@@ -77,7 +77,7 @@ def moveTo(path, m, t, ch, h, col, gyro):
         pos = old_pos
         m.oneCellBack()
         server.setRobotPosition(pos)
-    if (h.isThereSomeVictim()[0]):
+    if (sm.check_victim(h)):
         m.stop()
         for i in range(3):
             m.setSpeeds(40,40)
