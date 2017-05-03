@@ -196,6 +196,8 @@ class Motor:
                     gyro.update()
                     correction = deg - gyro.yawsum
                     self.setSpeeds(power - correction, power + correction)
+
+
         elif mode == 'tof_fixed':
             side, avg, cosalfa, senalfa, z = tof.best_side('E','O')
             side2, avg2, cosalfa2, senalfa2, z2 = tof.best_side('N','S')
@@ -206,7 +208,8 @@ class Motor:
 
             N_prec = tof.n_cells(avg2, cosalfa)*z2
             N_now = N_prec
-
+            x=0
+            
             while(N_prec +1 < N_now):
                 side, avg, cosalfa, senalfa, z = tof.best_side('E','O')
                 side2, avg2, cosalfa2, senalfa2, z2 = tof.best_side('N','S')
@@ -227,7 +230,6 @@ class Motor:
                 self.setSpeeds(power*(1+correction),power*(1-correction))
 
                 distance=tof.real_distance(avg2,cosalfa)
-                x=0
                 if(distance<=(N_prec*dim.cell_dimension)):
                     #la cella attuale è ancora la stessa
                     x=0
@@ -241,11 +243,11 @@ class Motor:
                         #confermo la cella
                         logging.info('Now we are in the next cell')
                     else:
-
-
-                    #la cella è la successiva
+                        pass
+                        #la cella è la successiva
 
                 N_now = z2*tof.n_cells(avg2, cosalfa)
+            self.parallel()
 
         """
         elif mode == 'complete':
