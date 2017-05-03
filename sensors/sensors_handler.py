@@ -12,8 +12,8 @@ def scanWalls(pos, orient, tof):
     return walls
 
 
-def check_black(pos):
-    return False
+def check_black(pos, col):
+    return col.is_cell_black()
 
 def check_victim(pos):
     return False

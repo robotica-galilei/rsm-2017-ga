@@ -26,7 +26,7 @@ class timer(threading.Thread):
             self.server.setElapsedTime(int(time.time()-self.startingtime))
 
 
-def moveTo(path, m, t, ch, h, gyro):
+def moveTo(path, m, t, ch, h, col, gyro):
     global pos
     global orientation
     global mat
@@ -64,7 +64,7 @@ def moveTo(path, m, t, ch, h, gyro):
     m.parallel(t)
     pos=path[1][0]
     server.setRobotPosition(pos)
-    if (sm.check_black(pos)):
+    if (sm.check_black(pos, col)):
         if pos in unexplored_queue:
             unexplored_queue.remove(pos)
         refresh_map(sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t))
@@ -152,7 +152,7 @@ def refresh_map(walls):
         mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]-2), unexplored_queue)
 
 
-def main(timer_thread, m, t, gyro, ch, h, server):
+def main(timer_thread, m, t, gyro, ch, h, col, server):
 
     #Global variables
     global mat; mat = np.matrix("0 0 0; 0 0 0; 0 0 0") #1x1 Matrix
@@ -260,7 +260,7 @@ def main(timer_thread, m, t, gyro, ch, h, server):
                         if destination[0] == float('Inf'):
                             lost = True
                             break
-                        moveTo(destination, m, t, ch, h, gyro)
+                        moveTo(destination, m, t, ch, h, col, gyro)
                 else:
                     lost = True
                 if lost == True:
@@ -280,7 +280,7 @@ def main(timer_thread, m, t, gyro, ch, h, server):
 
             #Move to destination
             if(destination[0] != float('Inf')):
-                moveTo(destination, m, t, ch, h, gyro)
+                moveTo(destination, m, t, ch, h, col, gyro)
             else:
                 server.setRobotStatus('Lost')
                 pass
@@ -301,6 +301,8 @@ if __name__ == '__main__':
         ch = touch.Touch()
         import sensors.heat as heat
         h = heat.Heat()
+        import sensors.color as color
+        col = color.Color()
     else:
         logging.info("Starting in simulation mode")
         import simulation.sensors as sm
@@ -308,6 +310,7 @@ if __name__ == '__main__':
         gyro = None
         ch = None
         h = None
+        col = None
 
     server = Pyro4.Proxy("PYRONAME:robot.server") #Connect to server for graphical interface
 
@@ -317,7 +320,7 @@ if __name__ == '__main__':
     m = motors.Motor(pins)
 
     try:
-        main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, h=h, server=server)
+        main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, h=h, col=col, server=server)
     except KeyboardInterrupt as e:
         logging.warning("KeyboardInterrupt")
         stop_function(timer=timer_thread, m=m)
