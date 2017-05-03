@@ -162,45 +162,29 @@ class Motor:
             deg = gyro.yawsum
             now = tof.read_fix('N')[0]
             avg = tof.read_fix('N')[0]
+            best_dir = 'N'
             if now > 600 or now == -1:
                 logging.debug("Using SOUTH sensor")
                 front = tof.read_fix('S')[0]
+                best_dir = 'S'
                 now = tof.read_fix('S')[0]
-                while(now-front<= 300 or (avg<30 and avg !=-1)):
-                    now = tof.read_fix('S')[0]
-                    avg = tof.read_fix('N')[0]
-                    print(now)
-                    if ch.is_something_touched():
-                        time.sleep(0.3)
-                        if ch.read('E') and ch.read('O'):
-                            break
-                        if ch.read('E'):
-                            self.disincagna(gyro, -1, deg)
-                        else:
-                            self.disincagna(gyro, 1, deg)
-                    gyro.update()
-                    correction = deg - gyro.yawsum
-                    self.setSpeeds(power - correction, power + correction)
-            else:
-                logging.debug("Using NORTH sensor")
-                while(front- now<= 300 or (avg<30 and avg !=-1)):
-                    now = tof.read_fix('N')[0]
-                    avg = tof.read_fix('N')[0]
-                    print(now)
-                    if ch.is_something_touched():
-                        time.sleep(0.3)
-                        if ch.read('E') and ch.read('O'):
-                            self.setSpeeds(-30,-30)
-                            time.sleep(0.1)
-                            self.stop()
-                            break
-                        if ch.read('E'):
-                            self.disincagna(gyro, -1, deg)
-                        else:
-                            self.disincagna(gyro, 1, deg)
-                    gyro.update()
-                    correction = deg - gyro.yawsum
-                    self.setSpeeds(power - correction, power + correction)
+            while(now-front<= 300 and (avg>30 and avg !=-1)):
+                now = tof.read_fix(best_dir)[0]
+                avg = tof.read_fix('N')[0]
+                print(now)
+                if ch.is_something_touched():
+                    time.sleep(0.3)
+                    if ch.read('E') and ch.read('O'):
+                        break
+                    if ch.read('E'):
+                        self.disincagna(gyro, -1, deg)
+                    else:
+                        self.disincagna(gyro, 1, deg)
+                gyro.update()
+                correction = deg - gyro.yawsum
+                self.setSpeeds(power - correction, power + correction)
+
+
         elif mode == 'tof_fixed':
             side, avg, cosalfa, senalfa, z = tof.best_side('E','O')
             side2, avg2, cosalfa2, senalfa2, z2 = tof.best_side('N','S')

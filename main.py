@@ -7,10 +7,12 @@ import algorithms.motion_planning as mp
 import algorithms.map_management as maman
 import threading
 import logging
+import config.params as params
 try:
     import actuators.motors as motors
 except Exception as e:
     print(e)
+    logging.critical(e)
     import actuators.fakemotors as motors
 
 class timer(threading.Thread):
@@ -164,6 +166,11 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
     bridge = []
     #print(mat)
 
+
+    GPIO.add_event_detect("P9_12", GPIO.RISING) #Attaching interrupt for start and stop
+    if GPIO.event_detected("P9_12"):
+        raise KeyboardInterrupt
+
     ###Initial settings to be displayed
     server.setRobotStatus("Waiting for start")
     server.setRobotPosition(pos)
@@ -303,6 +310,7 @@ if __name__ == '__main__':
         h = heat.Heat()
         import sensors.color as color
         col = color.Color()
+        import Adafruit_BBIO.GPIO as GPIO
     else:
         logging.info("Starting in simulation mode")
         import simulation.sensors as sm
@@ -318,10 +326,12 @@ if __name__ == '__main__':
 
     timer_thread = timer("Timer", server)
     m = motors.Motor(pins)
-
+    print("Starting main loop")
+    logging.info("Starting main loop")
     try:
         main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, h=h, col=col, server=server)
     except KeyboardInterrupt as e:
+        print("KeyboardInterrupt")
         logging.warning("KeyboardInterrupt")
         stop_function(timer=timer_thread, m=m)
     except Exception as e:
