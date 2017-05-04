@@ -15,6 +15,7 @@ class Heat:
         self.sens = {}
         for key, item in addresses.items():
             self.sens[key] = GY906.MLX90614(item, bus_num=1)
+        self.last_read = time.time()
 
     def read_raw(self, dir):
         #Read just the single sensor

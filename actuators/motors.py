@@ -178,9 +178,10 @@ class Motor:
                 while True:
                     print("Cell difference", (now,front))
                     victims = sm.check_victim(pos,h)
-                    if (victims[0]):
+                    if (victims[0] and time.time()-h.last_read>5):
                         time_before_victims = time.time()
                         m.saveAllVictims(h)
+                        h.last_read = time.time()
                         started_time += time.time() - time_before_victims
                     now = tof.read_fix(best_dir)[0]
                     avg = tof.read_fix('N')[0]
