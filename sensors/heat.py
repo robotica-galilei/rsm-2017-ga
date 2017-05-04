@@ -1,6 +1,7 @@
 import sys
 sys.path.append("../")
 import logging
+import time
 
 import config.params as params
 import modules.GY906 as GY906
@@ -19,7 +20,11 @@ class Heat:
 
     def read_raw(self, dir):
         #Read just the single sensor
-        return self.sens[dir].get_obj_temp()
+        val = self.sens[dir].get_obj_temp()
+        print("Heat: ", val)
+        if val < 10 or val > 80:
+            val = 10
+        return val
 
     def isThereSomeVictim(self, temp=params.HEAT_THRESHOLD):
         '''
@@ -28,7 +33,6 @@ class Heat:
         victims = []
         for i in params.directions:
             now = self.read_raw(i)
-            if( now >= temp):
-                print("Heat: ", now)
-                victims.append(i)
+            print("Heat: ", now)
+            victims.append(i)
         return len(victims) >= 1, victims

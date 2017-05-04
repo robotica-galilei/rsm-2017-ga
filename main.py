@@ -28,7 +28,7 @@ class timer(threading.Thread):
             self.server.setElapsedTime(int(time.time()-self.startingtime))
 
 
-def moveTo(path, m, t, ch, h, k, col, gyro):
+def moveTo(path, m, t, ch, h, k, col, gyro, starting_deg):
     global pos
     global orientation
     global mat
@@ -37,6 +37,9 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
 
     old_orientation = orientation
     old_pos = pos
+
+    gyro.update()
+    deg_pos = gyro.yawsum
 
     #Move forward just one cell
     if pos[0]==path[1][0][0]:
@@ -61,12 +64,12 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
             m.rotateRight(gyro)
         orientation=new_dir
         server.setRobotOrientation(new_dir)
-    mat = m.oneCellForward( mode = 'gyro', tof = t , ch=ch, h=h, gyro=gyro)
-    m.parallel(t)
-    m.parallel(t)
+    mat = m.oneCellForward( mode = 'gyro', tof = t , ch=ch, h=h, gyro=gyro, k=k, mat=mat, pos=pos, deg_pos=deg_pos)
+    m.parallel(t, gyro = gyro, starting_deg=starting_deg)
     pos=path[1][0]
     server.setRobotPosition(pos)
-    if (sm.check_black(pos, col)) and False: #To commentut
+    if sm.check_black(pos, col): #To commentut
+        m.set_degrees(gyro, deg_pos)
         if pos in unexplored_queue:
             unexplored_queue.remove(pos)
         refresh_map(sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t))
@@ -76,6 +79,7 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
         server.setRobotOrientation(new_dir)
         pos = old_pos
         m.oneCellBack()
+
         server.setRobotPosition(pos)
 
 
@@ -183,10 +187,16 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
     '''
 
 
-    m.parallel(t)
-    m.parallel(t)
-
+    gyro.update()
+    starting_deg = gyro.yawsum
+    m.parallel(t, starting_deg=starting_deg, gyro =  gyro)
     while True:
+        '''
+        try:
+            raw_input("Continue...")
+        except:
+            input("Continue...")
+        '''
         if GPIO.event_detected(params.START_STOP_BUTTON_PIN) and time.time() - interrupt_time > 4:
             interrupt_time = time.time()
             print("Stopped by user")
@@ -253,14 +263,14 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
         ##########
 
         server.setMazeMap(mat.tolist()) #Update map
-
+        lost = False
         #Decide where to go
         if len(unexplored_queue)==0: #If there is no available cell to explore, the maze is done
+            lost = False
             if pos!=home:
                 server.setRobotStatus("Done! Homing...")
                 logging.info("Maze finished...")
                 destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat, bridge) #Find the best path to reach home
-                lost = False
                 if destination[0] != float('Inf'):
                     logging.info("Returning home")
                     while pos != home:
@@ -268,19 +278,9 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
                         if destination[0] == float('Inf'):
                             lost = True
                             break
-                        moveTo(destination, m, t, ch, h, k, col, gyro)
+                        moveTo(destination, m, t, ch, h, k, col, gyro, starting_deg=starting_deg)
                 else:
                     lost = True
-                if lost == True:
-                    server.setRobotStatus('Lost. Roaming...')
-                    print('Lost. Roaming...')
-                    logging.warning("Lost")
-                    mat = np.matrix("0 0 0; 0 0 0; 0 0 0")
-                    pos = (1,1) #Initial position
-                    home = (1,1) #Position of the initial cell
-                    orientation = 3 #Initial orientation, generally
-                    unexplored_queue = [] #Queue containing all the unexplored cells
-                    sim_pos = (0,0)
             server.setRobotStatus("Done!")
             stop_function(timer_thread,m)
             #Commented because the thread should start with the button
@@ -298,17 +298,27 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
 
             #Move to destination
             if(destination[0] != float('Inf')):
-                moveTo(destination, m, t, ch, h, k, col, gyro)
+                moveTo(destination, m, t, ch, h, k, col, gyro, starting_deg=starting_deg)
             else:
                 server.setRobotStatus('Lost')
-                pass
+                lost = True
+        if lost == True:
+            server.setRobotStatus('Lost. Roaming...')
+            print('Lost. Roaming...')
+            logging.warning("Lost")
+            mat = np.matrix("0 0 0; 0 0 0; 0 0 0")
+            pos = (1,1) #Initial position
+            home = (1,1) #Position of the initial cell
+            orientation = 3 #Initial orientation, generally
+            unexplored_queue = [] #Queue containing all the unexplored cells
+            sim_pos = (0,0)
 
 
 
 if __name__ == '__main__':
     global interrupt_time; interrupt_time = time.time()
     logging.basicConfig(filename='log_robot.log',level=logging.DEBUG)
-    if len(sys.argv) >= 2 and sys.argv[1] == 'r':
+    if (len(sys.argv) >= 2 and sys.argv[1] == 'r') or True:
         logging.info("Starting in race mode")
         import sensors.sensors_handler as sm
         import sensors.tof as tof
@@ -324,6 +334,7 @@ if __name__ == '__main__':
         col = color.Color()
         import actuators.kit as kit
         k = kit.Kit()
+        k.retract()
         import Adafruit_BBIO.GPIO as GPIO
     else:
         logging.info("Starting in simulation mode")
@@ -336,7 +347,7 @@ if __name__ == '__main__':
         k = None
 
     server = Pyro4.Proxy("PYRONAME:robot.server") #Connect to server for graphical interface
-
+    #server = None
     pins ={'fl':'P8_13','fr':'P8_19','rl':'P9_14','rr':'P9_16','dir_fl':'gpio31','dir_fr':'gpio48','dir_rl':'gpio60','dir_rr':'gpio30'}
 
     timer_thread = timer("Timer", server)

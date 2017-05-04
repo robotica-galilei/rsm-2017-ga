@@ -46,7 +46,10 @@ class Tof:
 
     def read_raw(self, string):
         #Read just the single sensor
-        return self.sens[string].get_distance()
+        try:
+            return self.sens[string].get_distance()
+        except Exception:
+            return self.sens[string].get_distance()
 
     def read_raw_all(self):
         #Return a dictionary with all the sensors
@@ -122,9 +125,9 @@ class Tof:
             return side2, avg2, cosalfa2, senalfa2, 1
         elif avg2 == -1:
             return side1, avg1, cosalfa1, senalfa1, -1
-        elif s_div2 > s_div1
+        elif s_div2 > s_div1:
             return side2, avg2, cosalfa2, senalfa2, 1
-        elif s_div1 > s_div2
+        elif s_div1 > s_div2:
             return side1, avg1, cosalfa1, senalfa1, -1
         elif avg1 < avg2:
             return side1, avg1, cosalfa1, senalfa1, -1

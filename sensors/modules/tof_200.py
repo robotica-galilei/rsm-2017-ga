@@ -95,7 +95,7 @@ class VL53L0X:
 
         data = self.i2c.read_i2c_block_data(self.address, 0x14, 12)
         distance = makeuint16(data[11], data[10])
-        if distance == 20:
+        if distance == 20 or distance > 2000:
             distance = -1
         return distance
 
