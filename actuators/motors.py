@@ -10,7 +10,7 @@ import config.dimensions as dim
 import motors_pid as pid
 
 
-MOTOR_CELL_TIME     =       2.5
+MOTOR_CELL_TIME     =       1.5
 MOTOR_ROTATION_TIME =       1.5
 MOTOR_DEFAULT_POWER_LINEAR      =       50
 MOTOR_DEFAULT_POWER_ROTATION    =       40
@@ -146,6 +146,7 @@ class Motor:
     def oneCellForward(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME, mode= 'time', ch=None, tof= None, gyro=None):
         logging.info("Going one cell forward")
         if mode == 'time':
+            avg = now
             logging.debug("Going by time")
             self.setSpeeds(power, power)
             time.sleep(wait)
@@ -157,62 +158,62 @@ class Motor:
             gyro.update()
             deg = gyro.yawsum
             now = tof.read_fix('N')[0]
-            avg = tof.read_fix('N')[0]
             best_dir = 'N'
             boost = 0
-            if now > 600 or now == -1:
-                print("Using SOUTH sensor")
+            a_tempo = False
+            if now > 750 or now == -1:
                 front = tof.read_fix('S')[0]
+                if front > 750 or front == -1:
+                    a_tempo = True
+                print("Using SOUTH sensor")
                 best_dir = 'S'
-                now = tof.read_fix('S')[0]
+                now = front
             else:
                 print("Using NORTH sensor")
             started_time = time.time()
-            while True:
-                print("Cell difference", (now,front))
-                if  (best_dir == 'N' and front-now > dim.cell_dimension) or (best_dir == 'S' and now-front > dim.cell_dimension):
-                    print("Front tof has recorded cell difference", (now,front))
-                    break
-                if not (avg>100 or avg ==-1):
-                    print("Front avg recorded wall", avg)
-                    break
-                if not time.time()-started_time < MOTOR_CELL_TIME+0.5:
-                    print("Max time passed")
-                    break
-                now = tof.read_fix(best_dir)[0]
-                avg = tof.read_fix('N')[0]
-                print(now)
-                if ch.is_something_touched():
-                    time.sleep(0.3)
-                    if ch.read('E') and ch.read('O'):
-                        break
-                    if ch.read('E'):
-                        self.disincagna(gyro, -1, deg)
-                    else:
-                        self.disincagna(gyro, 1, deg)
-                gyro.update()
-                correction = deg - gyro.yawsum
-                '''
-                if gyro.pitch > 15:
-                    if boost < 20:
-                        boost += 1
-                        time.sleep(0.05)
-                    started_time = time.time()
-                elif gyro.pitch < -15:
-                    if boost < -30:
-                        boost -= 1
-                        time.sleep(0.05)
-                    started_time = time.time()
-                else:
-                    if boost > 0:
-                        boost -= 1
-                        time.sleep(0.05)
-                    elif boost < 0:
-                        boost += 1
-                        time.sleep(0.05)
-                '''
-                self.setSpeeds(power - correction + boost, power + correction + boost)
+            if not a_tempo:
+                while True:
+                    print("Cell difference", (now,front))
+                    now = tof.read_fix(best_dir)[0]
+                    avg = tof.read_fix('N')[0]
+                    if gyro.pitch < 15 and gyro.pitch > -15:
+                        if  (best_dir == 'N' and front-now > dim.cell_dimension) or (best_dir == 'S' and now-front > dim.cell_dimension):
+                            print("Front tof has recorded cell difference", (now,front))
+                            break
+                        if not (avg>100 or avg ==-1):
+                            print("Front avg recorded wall", avg)
+                            break
+                        if not time.time()-started_time < MOTOR_CELL_TIME+0.5:
+                            print("Max time passed")
+                            break
 
+                    print(now)
+                    if ch.is_something_touched():
+                        time.sleep(0.3)
+                        if ch.read('E') and ch.read('O'):
+                            break
+                        if ch.read('E'):
+                            self.disincagna(gyro, -1, deg)
+                        else:
+                            self.disincagna(gyro, 1, deg)
+                    gyro.update()
+                    correction = deg - gyro.yawsum
+
+                    if gyro.pitch > 15:
+                        self.setSpeeds(-30,-30)
+                        time.sleep(1)
+                        self.setSpeeds(70,70)
+                        time.sleep(0.6)
+                        gyro.update()
+                        while(gyro.pitch > 15):
+                            self.setSpeeds(70 + gyro.roll, 70 - gyro.roll)
+                            gyro.update()
+
+                self.setSpeeds(power - correction, power + correction )
+            else:
+                self.setSpeeds(MOTOR_DEFAULT_POWER_LINEAR, MOTOR_DEFAULT_POWER_LINEAR)
+                time.sleep(MOTOR_CELL_TIME)
+                self.stop()
 
         elif mode == 'tof_fixed':
             side, avg, cosalfa, senalfa, z = tof.best_side('E','O')
