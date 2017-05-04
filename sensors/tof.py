@@ -168,8 +168,10 @@ class Tof:
         #return int(math.floor(avg/dim.cell_dimension))  #approssimazione
 
         if k==None:
+            #to test if  it works
             k=dim.cell_dimension
-            return int(math.floor(abs((avg - (k - dim.robot_width)/2.)) / k)) #con il robot piazzato al centro della cella
+            return int(math.floor((avg - (k - dim.robot_width)/2.)) / k) #con il robot piazzato al centro della cella
+
 
 
 

@@ -334,7 +334,7 @@ class Motor:
             x=0
 
             #while (True):
-            while(N_prec >= N_now): #While the number of cells is not changed
+            while (N_now!=0 and N_prec >= N_now) or (N_now==0 and avg2 >= dim.MIN_DISTANCE): #While the number of cells is not changed or the distance from a wall is too low
                 print("N", N_prec, N_now)
                 side, avg, cosalfa, senalfa, s_div, z = tof.best_side('E','O')
                 avg2, cosalfa2, senalfa2, s_div2 = tof.read_fix(side2)
@@ -363,9 +363,13 @@ class Motor:
                 self.setSpeeds(power*(1+correction),power*(1-correction))
 
                 distance=tof.real_distance(avg2,cosalfa)
-                if(z2 * distance<=(N_prec*dim.cell_long) and x != 3):
+
+                if z2 * distance <= (N_prec*dim.cell_long) and x < 3:
                     # I'm still in the same cell
                     x=0
+
+                if avg2 <= dim.MIN_DISTANCE:
+                    x=3
 
                 else:
                     if x==0:
@@ -378,6 +382,12 @@ class Motor:
                     else:
                         x=3
                         #Next cell
+
+                if x < 3:
+                    #vittime rilevate in cella di partenza
+
+                else:
+                    #vittime rilevate in cella di arrivo
 
                 N_now = z2*tof.n_cells(avg2, cosalfa, k=dim.cell_long)
             self.parallel(tof, gyro=gyro)
