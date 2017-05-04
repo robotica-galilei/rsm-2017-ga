@@ -52,8 +52,8 @@ PID costants
 '''
 
 PID_p = 0.4
-PID_i = 0
-PID_d = 0
+PID_i = 0.05
+PID_d = 0.03
 
 '''
 ERROR_COSTANTS

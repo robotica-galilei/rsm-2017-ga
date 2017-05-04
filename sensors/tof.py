@@ -119,23 +119,25 @@ class Tof:
         avg2, cosalfa2, senalfa2, s_div2 = self.read_fix(side2)
 
         if avg1 == -1 :
-            return side2, avg2, cosalfa2, senalfa2, 1
+            return side2, avg2, cosalfa2, senalfa2, s_div2, 1
         elif avg2 == -1:
-            return side1, avg1, cosalfa1, senalfa1, -1
+            return side1, avg1, cosalfa1, senalfa1, s_div1, -1
         elif s_div2 > s_div1
-            return side2, avg2, cosalfa2, senalfa2, 1
+            return side2, avg2, cosalfa2, senalfa2, s_div2, 1
         elif s_div1 > s_div2
-            return side1, avg1, cosalfa1, senalfa1, -1
+            return side1, avg1, cosalfa1, senalfa1, s_div1, -1
         elif avg1 < avg2:
-            return side1, avg1, cosalfa1, senalfa1, -1
+            return side1, avg1, cosalfa1, senalfa1, s_div1, -1
         else:
-            return side2, avg2, cosalfa2, senalfa2, 1
+            return side2, avg2, cosalfa2, senalfa2, s_div2, 1
 
-    def n_cells(self, avg, cosalfa):
+    def n_cells(self, avg, cosalfa, k = None):
 
         #return int(math.floor(real_distance(avg,cosalfa)/dim.cell_dimension))  #approssimazione
+        if k==None:
+            k=dim.cell_dimension
 
-        return int(math.floor(abs((self.real_distance(avg,cosalfa) - (dim.cell_dimension - dim.robot_width)/2.)) / dim.cell_dimension)) #con il robot piazzato al centro della cella
+        return int(math.floor(abs((self.real_distance(avg,cosalfa) - (k - dim.robot_width)/2.)) / k)) #con il robot piazzato al centro della cella
 
     def real_distance(self, dist, cosalfa):
         return dist*cosalfa
@@ -159,15 +161,13 @@ class Tof:
                     trusted[key[:1]] = False
         return trusted
 
-    def error(self, avg = None, cosalfa = None, z = None,  a=1):
+    def error(self, N, avg = None, cosalfa = None, z = None,  a=1):
         if avg==None and cosalfa==None and z==None:
             side, avg, cosalfa, senalfa, z = self.best_side('E','O')
 
-        if (avg != -1) and (cosalfa != None):
-            N = self.n_cells(avg, cosalfa)
             #return z*(1-(1./(a+1))*(2*avg+dim.robot_width)*(1+a*cosalfa)/(dim.cell_dimension*(1+N))) # relative error [-1, - 1]
             #return z*((dim.cell_dimension*(1+N))-(1./(a+1))*(2*avg+dim.robot_width)*(1+a*cosalfa)) # absolute error
-            return z*(1-(2*avg+dim.robot_width)*cosalfa/(dim.cell_dimension*(1+N)))
+            return z*(1-(2*avg+dim.robot_width)/(dim.cell_dimension*(1+N)))
         else:
             return None
 

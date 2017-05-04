@@ -223,15 +223,21 @@ class Motor:
                 time.sleep(MOTOR_CELL_TIME)
                 self.stop()
 
+            self.parallel()
+
+
+
         elif mode == 'tof_fixed':
             side, avg, cosalfa, senalfa, z = tof.best_side('E','O')
             side2, avg2, cosalfa2, senalfa2, z2 = tof.best_side('N','S')
+            gyro.update()
+            deg=gyro.yawsum()
 
             if avg2 < avg and avg2 != -1:
                 cosalfa = cosalfa2
                 senalfa = senalfa2
 
-            N_prec = tof.n_cells(avg2, cosalfa)*z2
+            N_prec = tof.n_cells(avg2, cosalfa, k = dim.cell_long)*z2
             N_now = N_prec
             x=0
 
@@ -245,7 +251,17 @@ class Motor:
                     cosalfa = cosalfa2
                     senalfa = senalfa2
 
+                if s_div2 < 2 and s_div1 < 2:
+                    gyro.update()
+                    grad=gyro.yawsum()
+                    cosalfa = math.cos(math.radians(deg-grad))
+
+
+
                 error=tof.error(avg, cosalfa, z)
+
+                logging.info("avg, cosalfa = "avg, cosalfa)
+                logging.info("error = ", error)
 
                 if error != None:
                     correction = pid.get_pid(error)
@@ -253,27 +269,29 @@ class Motor:
                 else:
                     correction = 0
 
+                logging.info("correction = ", correction)
                 self.setSpeeds(power*(1+correction),power*(1-correction))
 
                 distance=tof.real_distance(avg2,cosalfa)
-                if(distance<=(N_prec*dim.cell_dimension)):
+                if(distance<=(N_prec*dim.cell_long)):
                     # I'm still in the same cell
                     x=0
 
                 else:
                     if x==0:
                         x=1
-                        #non sono sicuro della cella
+                        #not really sure about in which cell I am
                     if x==1:
                         x=2
-                        #confermo la cella
+                        #yes, I am sure about this shit
                         logging.info('Now we are in the next cell')
                     else:
                         pass
                         #Next cell
 
                 N_now = z2*tof.n_cells(avg2, cosalfa)
-            self.parallel(tof)
+
+
 
         """
         elif mode == 'complete':

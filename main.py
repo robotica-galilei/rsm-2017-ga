@@ -61,7 +61,7 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
             m.rotateRight(gyro)
         orientation=new_dir
         server.setRobotOrientation(new_dir)
-    mat = m.oneCellForward( mode = 'gyro', tof = t , ch=ch, h=h, gyro=gyro)
+    mat = m.oneCellForward( mode = 'tof_fixed', tof = t , ch=ch, h=h, gyro=gyro)
     m.parallel(t)
     m.parallel(t)
     pos=path[1][0]
