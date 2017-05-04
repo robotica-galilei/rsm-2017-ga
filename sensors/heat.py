@@ -33,6 +33,7 @@ class Heat:
         victims = []
         for i in params.directions:
             now = self.read_raw(i)
-            print("Heat: ", now)
-            victims.append(i)
+            if( now >= temp):
+                print("Heat: ", now)
+                victims.append(i)
         return len(victims) >= 1, victims

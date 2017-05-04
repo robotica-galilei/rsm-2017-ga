@@ -15,6 +15,7 @@ class Imu:
         self.ser = serial.Serial(port = port, baudrate=baudrate)
         self.ser.close()
         self.ser.open()
+        self.starting_deg = 0
 
     def update(self):
         if self.ser.isOpen():

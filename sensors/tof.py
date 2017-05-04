@@ -61,31 +61,60 @@ class Tof:
     def read_fix(self,dir):
         #Return the distance in a certain direction cleaned
         alfa_dict = {'N': ('NE','N','NO'), 'E': ('ES','E','EN'), 'S':('SO','S','SE'), 'O':('ON','O','OS')}
-        s1 = None; s2 = None; s3 = None
-        for key in alfa_dict[dir]:
-            if len(key) == 2:
-                if s1 == None:
-                    s1 = self.read_raw(key)
-                    ps1 = params.tof_calibration[key]
+        s1 = None; s2 =None; s3 = None
+        t1 = 0; t2 = 0; t3 = 0;
+        sum1 = 0; sum2 = 0; sum3 = 0
+        s_t1 = 0; s_t2 = 0; s_t3 = 0;
+        for i in range(3):
+            for key in alfa_dict[dir]:
+                if len(key) == 2:
+                    if s1 == None:
+                        s1 = self.read_raw(key)
+                        t1 =self.trust(value=s1)
+                        sum1+=s1*t1
+                        s_t1+=t1
+                        ps1 = params.tof_calibration[key]
+                    else:
+                        s3 = self.read_raw(key)
+                        t3 =self.trust(value=s3)
+                        sum3+=s3*t3
+                        s_t3+=t3
+                        ps3 = params.tof_calibration[key]
                 else:
-                    s3 = self.read_raw(key)
-                    ps3 = params.tof_calibration[key]
-            else:
-                s2 = self.read_raw(key)
-                ps2 = params.tof_calibration[key]
+                    s2 = self.read_raw(key)
+                    t2 =self.trust(value=s2)
+                    sum2+=s2*t2
+                    s_t2+=t2
+                    ps2 = params.tof_calibration[key]
+            print(s1, s2, s3)
+
+
+
+        s1=sum1
+        s2=sum2
+        s3=sum3
+        t1=s_t1
+        t2=s_t2
+        t3=s_t3
+        print(s1,s2,s3)
+        print(t1,t2,t3)
+        if t1 != 0:
+            s1=(s1/t1)-ps1
+        else:
+            s1=-1
+        if t2 != 0:
+            s2=(s2/t2)-ps2
+        else:
+            s2=-1
+        if t3 != 0:
+            s3=(s3/t3)-ps3
+        else:
+            s3=-1
 
         print(s1, s2, s3)
-        t1 = self.trust(value=s1)
-        t2 = self.trust(value=s2)
-        t3 = self.trust(value=s3)
-        s1 = (s1-ps1)*t1
-        s2 = (s2-ps2)*t2
-        s3 = (s2-ps2)*t3
-
-
         #calculate average and the cos and sin of angle
         s_sum = s1 + s2 + s3
-        s_div = t1 + t2 + t3
+        s_div = self.trust(value=s1) + self.trust(value=s2) + self.trust(value=s3)
 
         if s_div != 0:
             avg = s_sum/s_div
@@ -95,8 +124,8 @@ class Tof:
 
         d = self.diff(s1, s2, s3)
         if d != None:
-            cosalfa = 1./(math.sqrt(1+(d/dim.tof_60_distance)**2))
-            senalfa = (d/dim.tof_60_distance)/(math.sqrt(1+(d/dim.tof_60_distance)**2))
+            cosalfa = 1./(math.sqrt(1+math.pow(float(d)/float(dim.tof_60_distance),2)))
+            senalfa = (d/dim.tof_60_distance)/(math.sqrt(1+math.pow(float(d)/float(dim.tof_60_distance),2)))
         else:
             cosalfa = None
             senalfa = None
@@ -122,23 +151,27 @@ class Tof:
         avg2, cosalfa2, senalfa2, s_div2 = self.read_fix(side2)
 
         if avg1 == -1 :
-            return side2, avg2, cosalfa2, senalfa2, 1
+            return side2, avg2, cosalfa2, senalfa2, s_div2, 1
         elif avg2 == -1:
-            return side1, avg1, cosalfa1, senalfa1, -1
+            return side1, avg1, cosalfa1, senalfa1, s_div1, -1
         elif s_div2 > s_div1:
-            return side2, avg2, cosalfa2, senalfa2, 1
+            return side2, avg2, cosalfa2, senalfa2, s_div2, 1
         elif s_div1 > s_div2:
-            return side1, avg1, cosalfa1, senalfa1, -1
+            return side1, avg1, cosalfa1, senalfa1, s_div1, -1
         elif avg1 < avg2:
-            return side1, avg1, cosalfa1, senalfa1, -1
+            return side1, avg1, cosalfa1, senalfa1, s_div1, -1
         else:
-            return side2, avg2, cosalfa2, senalfa2, 1
+            return side2, avg2, cosalfa2, senalfa2, s_div2, 1
 
-    def n_cells(self, avg, cosalfa):
+    def n_cells(self, avg, cosalfa, k = None):
 
-        #return int(math.floor(real_distance(avg,cosalfa)/dim.cell_dimension))  #approssimazione
+        #return int(math.floor(avg/dim.cell_dimension))  #approssimazione
 
-        return int(math.floor(abs((self.real_distance(avg,cosalfa) - (dim.cell_dimension - dim.robot_width)/2.)) / dim.cell_dimension)) #con il robot piazzato al centro della cella
+        if k==None:
+            k=dim.cell_dimension
+            return int(math.floor(abs((avg - (k - dim.robot_width)/2.)) / k)) #con il robot piazzato al centro della cella
+
+
 
     def real_distance(self, dist, cosalfa):
         return dist*cosalfa
@@ -162,14 +195,13 @@ class Tof:
                     trusted[key[:1]] = False
         return trusted
 
-    def error(self, avg = None, cosalfa = None, z = None,  a=1):
+    def error(self, N, avg = None, cosalfa = None, z = None,  a=1):
         if avg==None and cosalfa==None and z==None:
             side, avg, cosalfa, senalfa, z = self.best_side('E','O')
 
-        if (avg != -1) and (cosalfa != None):
-            N = self.n_cells(avg, cosalfa)
-            return z*(1-(1./(a+1))*(2*avg+dim.robot_width)*(1+a*cosalfa)/(dim.cell_dimension*(1+N))) # relative error [-1, - 1]
+            #return z*(1-(1./(a+1))*(2*avg+dim.robot_width)*(1+a*cosalfa)/(dim.cell_dimension*(1+N))) # relative error [-1, - 1]
             #return z*((dim.cell_dimension*(1+N))-(1./(a+1))*(2*avg+dim.robot_width)*(1+a*cosalfa)) # absolute error
+            return z*(1-(2*avg+dim.robot_width)/(dim.cell_dimension*(1+N)))
         else:
             return None
 

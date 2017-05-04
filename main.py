@@ -28,7 +28,7 @@ class timer(threading.Thread):
             self.server.setElapsedTime(int(time.time()-self.startingtime))
 
 
-def moveTo(path, m, t, ch, h, k, col, gyro, starting_deg):
+def moveTo(path, m, t, ch, h, k, col, gyro):
     global pos
     global orientation
     global mat
@@ -64,8 +64,10 @@ def moveTo(path, m, t, ch, h, k, col, gyro, starting_deg):
             m.rotateRight(gyro)
         orientation=new_dir
         server.setRobotOrientation(new_dir)
-    mat = m.oneCellForward( mode = 'gyro', tof = t , ch=ch, h=h, gyro=gyro, k=k, mat=mat, pos=pos, deg_pos=deg_pos)
-    m.parallel(t, gyro = gyro, starting_deg=starting_deg)
+
+    mat = m.oneCellForward( mode = 'tof_fixed', tof = t , ch=ch, h=h, gyro=gyro, k=k, mat=mat, pos=pos, deg_pos=deg_pos)
+    m.parallel(t, gyro = gyro)
+
     pos=path[1][0]
     server.setRobotPosition(pos)
     if sm.check_black(pos, col): #To commentut
@@ -188,8 +190,8 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
 
 
     gyro.update()
-    starting_deg = gyro.yawsum
-    m.parallel(t, starting_deg=starting_deg, gyro =  gyro)
+    gyro.starting_deg = gyro.yawsum
+    m.parallel(t, gyro =  gyro)
     while True:
         '''
         try:
@@ -278,7 +280,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
                         if destination[0] == float('Inf'):
                             lost = True
                             break
-                        moveTo(destination, m, t, ch, h, k, col, gyro, starting_deg=starting_deg)
+                        moveTo(destination, m, t, ch, h, k, col, gyro)
                 else:
                     lost = True
             server.setRobotStatus("Done!")
@@ -298,7 +300,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
 
             #Move to destination
             if(destination[0] != float('Inf')):
-                moveTo(destination, m, t, ch, h, k, col, gyro, starting_deg=starting_deg)
+                moveTo(destination, m, t, ch, h, k, col, gyro)
             else:
                 server.setRobotStatus('Lost')
                 lost = True
