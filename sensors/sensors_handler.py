@@ -16,7 +16,7 @@ def check_black(pos, col = None):
     return col.is_cell_black()
 
 def check_victim(pos, h = None):
-    return h.isThereSomeVictim()[0]
+    return h.isThereSomeVictim()
 
 def check_bridge(pos):
     return False

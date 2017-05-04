@@ -28,7 +28,7 @@ class timer(threading.Thread):
             self.server.setElapsedTime(int(time.time()-self.startingtime))
 
 
-def moveTo(path, m, t, ch, h, col, gyro):
+def moveTo(path, m, t, ch, h, k, col, gyro):
     global pos
     global orientation
     global mat
@@ -61,12 +61,12 @@ def moveTo(path, m, t, ch, h, col, gyro):
             m.rotateRight(gyro)
         orientation=new_dir
         server.setRobotOrientation(new_dir)
-    m.oneCellForward( mode = 'gyro', tof = t , ch=ch, gyro=gyro)
+    mat = m.oneCellForward( mode = 'gyro', tof = t , ch=ch, h=h, gyro=gyro)
     m.parallel(t)
     m.parallel(t)
     pos=path[1][0]
     server.setRobotPosition(pos)
-    if (sm.check_black(pos, col)):
+    if (sm.check_black(pos, col)) and False: #To commentut
         if pos in unexplored_queue:
             unexplored_queue.remove(pos)
         refresh_map(sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t))
@@ -77,13 +77,8 @@ def moveTo(path, m, t, ch, h, col, gyro):
         pos = old_pos
         m.oneCellBack()
         server.setRobotPosition(pos)
-    if (sm.check_victim(pos,h)):
-        m.stop()
-        for i in range(3):
-            m.setSpeeds(40,40)
-            time.sleep(0.1)
-            m.setSpeeds(-40,-40)
-            time.sleep(0.1)
+
+
 
 
 
@@ -154,7 +149,7 @@ def refresh_map(walls):
         mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]-2), unexplored_queue)
 
 
-def main(timer_thread, m, t, gyro, ch, h, col, server):
+def main(timer_thread, m, t, gyro, ch, h, k, col, server):
 
     #Global variables
     global mat; mat = np.matrix("0 0 0; 0 0 0; 0 0 0") #1x1 Matrix
@@ -163,6 +158,7 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
     global orientation; orientation = 3 #Initial orientation, generally
     global unexplored_queue; unexplored_queue = [] #Queue containing all the unexplored cells
     global sim_pos; sim_pos = (0,0)
+    global interrupt_time
     bridge = []
     #print(mat)
 
@@ -178,20 +174,23 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
     server.setRobotOrientation(orientation)
     ###
 
+    #Commented because the thread should start with the button
+    '''
     try:
         raw_input("Continue...")
     except:
         input("Continue...")
+    '''
 
-    timer_thread.start()
 
     m.parallel(t)
     m.parallel(t)
-    GPIO.setup(params.START_STOP_BUTTON_PIN, GPIO.IN)
-    GPIO.add_event_detect(params.START_STOP_BUTTON_PIN, GPIO.RISING) #Attaching interrupt for start and stop
+
     while True:
-        if GPIO.event_detected(params.START_STOP_BUTTON_PIN):
-            raise KeyboardInterrupt
+        if GPIO.event_detected(params.START_STOP_BUTTON_PIN) and time.time() - interrupt_time > 4:
+            interrupt_time = time.time()
+            print("Stopped by user")
+            sys.exit()
         server.setRobotStatus("Exploring")
         #Set current cell as explored
         mat.itemset(pos,2)
@@ -202,11 +201,11 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
 
         #Read sensors
         walls = sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t)
+        print("Walls", walls)
 
 
-        if(sm.check_victim(pos,h)):
-            mat.itemset(pos, 512)
-
+        # If no part of the map is covered by another floor then the ramp can be ignored
+        '''
         if(sm.check_bridge((pos[0]+sim_pos[0],pos[1]+sim_pos[1])) or sm.check_bridge(pos)):
             mat.itemset(pos, 1024)
             if sim_pos == (0,0):
@@ -248,7 +247,8 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
             refresh_map(walls)
         else:
             refresh_map(walls)
-
+        '''
+        refresh_map(walls) #To comment when activated advanced ramp
 
         ##########
 
@@ -268,27 +268,37 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
                         if destination[0] == float('Inf'):
                             lost = True
                             break
-                        moveTo(destination, m, t, ch, h, col, gyro)
+                        moveTo(destination, m, t, ch, h, k, col, gyro)
                 else:
                     lost = True
                 if lost == True:
                     server.setRobotStatus('Lost. Roaming...')
                     print('Lost. Roaming...')
                     logging.warning("Lost")
-                    pass
+                    mat = np.matrix("0 0 0; 0 0 0; 0 0 0")
+                    pos = (1,1) #Initial position
+                    home = (1,1) #Position of the initial cell
+                    orientation = 3 #Initial orientation, generally
+                    unexplored_queue = [] #Queue containing all the unexplored cells
+                    sim_pos = (0,0)
             server.setRobotStatus("Done!")
             stop_function(timer_thread,m)
+            #Commented because the thread should start with the button
+            '''
             try:
                 raw_input("Press enter to continue")
             except:
                 input("Press enter to continue")
-            sys.exit()
+            '''
+            if lost == False:
+                print("finished")
+                sys.exit()
         else:
             destination=mp.bestPath(orientation,[pos[0],pos[1]],unexplored_queue,mat, bridge) #Find the best path to reach the nearest cell
 
             #Move to destination
             if(destination[0] != float('Inf')):
-                moveTo(destination, m, t, ch, h, col, gyro)
+                moveTo(destination, m, t, ch, h, k, col, gyro)
             else:
                 server.setRobotStatus('Lost')
                 pass
@@ -296,6 +306,7 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
 
 
 if __name__ == '__main__':
+    global interrupt_time; interrupt_time = time.time()
     logging.basicConfig(filename='log_robot.log',level=logging.DEBUG)
     if len(sys.argv) >= 2 and sys.argv[1] == 'r':
         logging.info("Starting in race mode")
@@ -311,6 +322,8 @@ if __name__ == '__main__':
         h = heat.Heat()
         import sensors.color as color
         col = color.Color()
+        import actuators.kit as kit
+        k = kit.Kit()
         import Adafruit_BBIO.GPIO as GPIO
     else:
         logging.info("Starting in simulation mode")
@@ -320,25 +333,42 @@ if __name__ == '__main__':
         ch = None
         h = None
         col = None
+        k = None
 
     server = Pyro4.Proxy("PYRONAME:robot.server") #Connect to server for graphical interface
 
     pins ={'fl':'P8_13','fr':'P8_19','rl':'P9_14','rr':'P9_16','dir_fl':'gpio31','dir_fr':'gpio48','dir_rl':'gpio60','dir_rr':'gpio30'}
 
     timer_thread = timer("Timer", server)
+    timer_thread.start()
     m = motors.Motor(pins)
     print("Starting main loop")
     logging.info("Starting main loop")
-
-    try:
-        main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, h=h, col=col, server=server)
-    except KeyboardInterrupt as e:
-        print("KeyboardInterrupt")
-        logging.warning("KeyboardInterrupt")
-        stop_function(timer=timer_thread, m=m)
-    '''
-    except Exception as e:
-        logging.critical("%s", e)
-        stop_function(timer=timer_thread, m=m)
-        raise e
-    '''
+    GPIO.setup(params.START_STOP_BUTTON_PIN, GPIO.IN)
+    GPIO.add_event_detect(params.START_STOP_BUTTON_PIN, GPIO.RISING) #Attaching interrupt for start and stop
+    m.stop()
+    while True:
+        while True:
+            if GPIO.event_detected(params.START_STOP_BUTTON_PIN) and time.time() - interrupt_time > 0.5:
+                interrupt_time = time.time()
+                break
+            else:
+                k.blink()
+                time.sleep(0.5)
+        try:
+            main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, h=h, k=k, col=col, server=server)
+        except KeyboardInterrupt as e:
+            print("KeyboardInterrupt")
+            logging.warning("KeyboardInterrupt")
+            stop_function(timer=timer_thread, m=m)
+            break
+        except SystemExit as e:
+            print("SystemExit")
+            logging.warning("SystemExit")
+            stop_function(timer=timer_thread, m=m)
+        '''
+        except Exception as e:
+            logging.critical("%s", e)
+            stop_function(timer=timer_thread, m=m)
+            raise e
+        '''

@@ -10,7 +10,7 @@ import Pyro4
 import time
 
 #Server connection
-server = Pyro4.Proxy("PYRONAME:robot.server")    # use name server object lookup uri shortcut
+server = Pyro4.Proxy("PYRO:robot.server@192.168.7.2:9092")    # use name server object lookup uri shortcut
 
 #Init
 pygame.init()
