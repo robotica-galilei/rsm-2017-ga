@@ -16,7 +16,14 @@ def check_black(pos, col = None):
     return col.is_cell_black()
 
 def check_victim(pos, h = None):
-    return h.isThereSomeVictim()
+    is_there_h, victim_list_h = h.isThereSomeVictim()
+    # is_there_v, victim_list_v = h.isThereSomeVideoVictim()
+    is_there_v = False, victim_list_v = [] #TODO comment when implementing video victims
+    is_there = is_there_h or is_there_v
+    victim_list = []
+    victim_list.append(is_there_h)
+    victim_list.append(is_there_v)
+    return is_there, victim_list
 
 def check_bridge(pos):
     return False

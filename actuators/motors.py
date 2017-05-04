@@ -379,13 +379,55 @@ class Motor:
                         x=3
                         #Next cell
 
+                #Ramp
+                gyro.update()
+                if gyro.pitch > 18: #Up
+                    self.setSpeeds(-30,-30)
+                    time.sleep(1)
+                    self.setSpeeds(70,70)
+                    time.sleep(0.6)
+                    gyro.update()
+                    while(gyro.pitch > 18):
+                        self.setSpeeds(70 + gyro.roll, 70 - gyro.roll)
+                        gyro.update()
+                    time.sleep(0.2)
+                    self.stop()
+                    break
+                if gyro.pitch < -6: #Down
+                    self.setSpeeds(40,40)
+                    time.sleep(0.05)
+                    self.setSpeeds(30,30)
+                    time.sleep(0.05)
+                    self.setSpeeds(22,22)
+                    time.sleep(0.05)
+                    self.setSpeeds(18,18)
+                    time.sleep(0.05)
+                    self.setSpeeds(15,15)
+                    time.sleep(0.1)
+                    gyro.update()
+                    while(gyro.pitch < -6):
+                        gyro.update()
+                        self.setSpeeds(25 - gyro.roll, 25 + gyro.roll)
+                    time.sleep(1)
+                    self.stop()
+                    break
+
+                #Check victims
+                victims = sm.check_victim(pos,h)
+                print("Victims, ", victims)
+                if (victims[0] and time.time()-h.last_read>5):
+                    mat.itemset(pos, 512)
+                    time_before_victims = time.time()
+                    self.saveAllVictims(gyro, victims, k)
+                    self.setSpeeds(50,50)
+                    time.sleep(0.2)
+                    self.stop()
+                    h.last_read = time.time()
+                    started_time += time.time() - time_before_victims
+
                 N_now = z2*tof.n_cells(avg2, cosalfa, k=dim.cell_long)
             self.parallel(tof, gyro=gyro)
 
-
-
-
-        #self.parallel()
         logging.info("Arrived in centre of the cell")
         self.stop()
         return mat
