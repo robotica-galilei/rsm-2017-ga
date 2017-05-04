@@ -7,4 +7,4 @@ robot_length = 180
 
 tof_60_distance = 98
 
-cell_dimension = 295
+cell_dimension = 230
