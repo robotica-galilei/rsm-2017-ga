@@ -99,7 +99,7 @@ class Tof:
             senalfa = None
 
 
-        return avg, cosalfa, senalfa
+        return avg, cosalfa, senalfa, s_div
 
     def is_there_a_wall(self, dir):
         d = self.read_fix(dir)[0]
@@ -115,12 +115,16 @@ class Tof:
     def best_side(self, side1, side2):
         #choose the best side
 
-        avg1, cosalfa1, senalfa1 = self.read_fix(side1)
-        avg2, cosalfa2, senalfa2 = self.read_fix(side2)
+        avg1, cosalfa1, senalfa1, s_div1 = self.read_fix(side1)
+        avg2, cosalfa2, senalfa2, s_div2 = self.read_fix(side2)
 
-        if avg1 == -1:
+        if avg1 == -1 :
             return side2, avg2, cosalfa2, senalfa2, 1
         elif avg2 == -1:
+            return side1, avg1, cosalfa1, senalfa1, -1
+        elif s_div2 > s_div1
+            return side2, avg2, cosalfa2, senalfa2, 1
+        elif s_div1 > s_div2
             return side1, avg1, cosalfa1, senalfa1, -1
         elif avg1 < avg2:
             return side1, avg1, cosalfa1, senalfa1, -1
