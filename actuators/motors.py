@@ -8,9 +8,11 @@ import utils.GPIO as GPIO
 import config.params as params
 import config.dimensions as dim
 import motors_pid as pid
+import sensors.sensors_handler as sm
 
 
-MOTOR_CELL_TIME     =       1.5
+MOTOR_CELL_TIME     =       1.6
+MOTOR_MIN_CELL_TIME     =       1.3
 MOTOR_ROTATION_TIME =       1.5
 MOTOR_DEFAULT_POWER_LINEAR      =       50
 MOTOR_DEFAULT_POWER_ROTATION    =       60
@@ -143,7 +145,7 @@ class Motor:
     """
     Here start the simple functions for robot motion execution
     """
-    def oneCellForward(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME, mode= 'time', ch=None, tof= None, gyro=None):
+    def oneCellForward(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME, mode= 'time', ch=None, tof= None, gyro=None, h=None, mat = None):
         logging.info("Going one cell forward")
         if mode == 'time':
             avg = now
@@ -171,9 +173,15 @@ class Motor:
             else:
                 print("Using NORTH sensor")
             started_time = time.time()
+            mat.itemset(pos, 512)
             if not a_tempo:
                 while True:
                     print("Cell difference", (now,front))
+                    victims = sm.check_victim(pos,h)
+                    if (victims[0]):
+                        time_before_victims = time.time()
+                        m.saveAllVictims(h)
+                        started_time += time.time() - time_before_victims
                     now = tof.read_fix(best_dir)[0]
                     avg = tof.read_fix('N')[0]
                     if gyro.pitch < 15 and gyro.pitch > -15:
@@ -183,7 +191,7 @@ class Motor:
                         if not (avg>100 or avg ==-1):
                             print("Front avg recorded wall", avg)
                             break
-                        if not time.time()-started_time < MOTOR_CELL_TIME+0.5:
+                        if not time.time()-started_time < MOTOR_CELL_TIME+0.3:
                             print("Max time passed")
                             break
 
@@ -300,6 +308,41 @@ class Motor:
         """
         logging.info("Arrived in centre of the cell")
         self.stop()
+        return mat
+
+
+    def saveAllVictims(self, h, k):
+        turn = 1
+        if 'N' in victims[1]:
+            k.release_one_kit()
+        if 'E' in victims[1]:
+            for i in range(turn):
+                self.rotateRight(gyro)
+            k.release_one_kit()
+            turn = 1
+        else:
+            turn += 1
+        if 'S' in victims[1]:
+            for i in range(turn):
+                self.rotateRight(gyro)
+            k.release_one_kit()
+            turn = 1
+        else:
+            turn += 1
+        if 'O' in victims[1]:
+            if turn != 3:
+                for i in range(turn):
+                    self.rotateRight(gyro)
+            else:
+                self.rotateLeft(gyro)
+            k.release_one_kit()
+            turn = 1
+        else:
+            turn += 1
+
+        if(turn < 4):
+            for i in range(turn):
+                self.rotateRight(gyro)
 
 
 

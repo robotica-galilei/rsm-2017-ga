@@ -61,7 +61,7 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
             m.rotateRight(gyro)
         orientation=new_dir
         server.setRobotOrientation(new_dir)
-    m.oneCellForward( mode = 'gyro', tof = t , ch=ch, gyro=gyro)
+    mat = m.oneCellForward( mode = 'gyro', tof = t , ch=ch, h=h, gyro=gyro)
     m.parallel(t)
     m.parallel(t)
     pos=path[1][0]
@@ -203,40 +203,6 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
         walls = sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t)
         print("Walls", walls)
 
-        victims = sm.check_victim(pos,h)
-        if (victims[0]):
-            turn = 1
-            if 'N' in victims[1]:
-                k.release_one_kit()
-            if 'E' in victims[1]:
-                for i in range(turn):
-                    m.rotateRight(gyro)
-                k.release_one_kit()
-                turn = 1
-            else:
-                turn += 1
-            if 'S' in victims[1]:
-                for i in range(turn):
-                    m.rotateRight(gyro)
-                k.release_one_kit()
-                turn = 1
-            else:
-                turn += 1
-            if 'O' in victims[1]:
-                if turn != 3:
-                    for i in range(turn):
-                        m.rotateRight(gyro)
-                else:
-                    m.rotateLeft(gyro)
-                k.release_one_kit()
-                turn = 1
-            else:
-                turn += 1
-
-            if(turn < 4):
-                for i in range(turn):
-                    m.rotateRight(gyro)
-            mat.itemset(pos, 512)
 
         # If no part of the map is covered by another floor then the ramp can be ignored
         '''
@@ -309,7 +275,12 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
                     server.setRobotStatus('Lost. Roaming...')
                     print('Lost. Roaming...')
                     logging.warning("Lost")
-                    pass
+                    mat = np.matrix("0 0 0; 0 0 0; 0 0 0")
+                    pos = (1,1) #Initial position
+                    home = (1,1) #Position of the initial cell
+                    orientation = 3 #Initial orientation, generally
+                    unexplored_queue = [] #Queue containing all the unexplored cells
+                    sim_pos = (0,0)
             server.setRobotStatus("Done!")
             stop_function(timer_thread,m)
             #Commented because the thread should start with the button
@@ -319,8 +290,9 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
             except:
                 input("Press enter to continue")
             '''
-            print("finished")
-            sys.exit()
+            if lost == False:
+                print("finished")
+                sys.exit()
         else:
             destination=mp.bestPath(orientation,[pos[0],pos[1]],unexplored_queue,mat, bridge) #Find the best path to reach the nearest cell
 
