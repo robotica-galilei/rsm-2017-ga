@@ -19,7 +19,7 @@ class visualVictim:
             bit_readings.append(GPIO.input(self.pins[i]))
         processed_readings=[]
         for i in range(4):
-            processed_readings.append(int(str(bit_readings[2*i])+str(bit_readings[2*i+1]),2))
+            processed_readings.append(bit_readings[2*i]*2+bit_readings[2*i+1])
         self.victims_found=[]
         self.victims_found.append((name_meaning[processed_readings[0]],position_meaning[processed_readings[1]]))
         self.victims_found.append((name_meaning[processed_readings[2]],position_meaning[processed_readings[3]]))
