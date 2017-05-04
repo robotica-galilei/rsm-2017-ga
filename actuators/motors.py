@@ -13,7 +13,7 @@ import motors_pid as pid
 MOTOR_CELL_TIME     =       1.5
 MOTOR_ROTATION_TIME =       1.5
 MOTOR_DEFAULT_POWER_LINEAR      =       50
-MOTOR_DEFAULT_POWER_ROTATION    =       40
+MOTOR_DEFAULT_POWER_ROTATION    =       60
 
 
 class Motor:
@@ -117,7 +117,7 @@ class Motor:
             if ((correction < 5 and correction > -5) or (measurement < 1 and measurement > -1)):
                 break
 
-            self.setSpeeds(30*z, -30*z)
+            self.setSpeeds(MOTOR_DEFAULT_POWER_ROTATION*z, -MOTOR_DEFAULT_POWER_ROTATION*z)
 
 
         '''
@@ -209,7 +209,7 @@ class Motor:
                             self.setSpeeds(70 + gyro.roll, 70 - gyro.roll)
                             gyro.update()
 
-                self.setSpeeds(power - correction, power + correction )
+                    self.setSpeeds(power - correction, power + correction )
             else:
                 self.setSpeeds(MOTOR_DEFAULT_POWER_LINEAR, MOTOR_DEFAULT_POWER_LINEAR)
                 time.sleep(MOTOR_CELL_TIME)

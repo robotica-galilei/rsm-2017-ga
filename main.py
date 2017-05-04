@@ -28,7 +28,7 @@ class timer(threading.Thread):
             self.server.setElapsedTime(int(time.time()-self.startingtime))
 
 
-def moveTo(path, m, t, ch, h, col, gyro):
+def moveTo(path, m, t, ch, h, k, col, gyro):
     global pos
     global orientation
     global mat
@@ -77,13 +77,8 @@ def moveTo(path, m, t, ch, h, col, gyro):
         pos = old_pos
         m.oneCellBack()
         server.setRobotPosition(pos)
-    if (sm.check_victim(pos,h)):
-        m.stop()
-        for i in range(3):
-            m.setSpeeds(40,40)
-            time.sleep(0.1)
-            m.setSpeeds(-40,-40)
-            time.sleep(0.1)
+
+
 
 
 
@@ -154,7 +149,7 @@ def refresh_map(walls):
         mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]-2), unexplored_queue)
 
 
-def main(timer_thread, m, t, gyro, ch, h, col, server):
+def main(timer_thread, m, t, gyro, ch, h, k, col, server):
 
     #Global variables
     global mat; mat = np.matrix("0 0 0; 0 0 0; 0 0 0") #1x1 Matrix
@@ -208,7 +203,39 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
         walls = sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t)
         print("Walls", walls)
 
-        if(sm.check_victim(pos,h)):
+        victims = sm.check_victim(pos,h)
+        if (victims[0]):
+            turn = 1
+            if 'N' in victims[1]:
+                k.release_one_kit()
+            if 'E' in victims[1]:
+                for i in range(turn):
+                    m.rotateRight(gyro)
+                k.release_one_kit()
+                turn = 1
+            else:
+                turn += 1
+            if 'S' in victims[1]:
+                for i in range(turn):
+                    m.rotateRight(gyro)
+                k.release_one_kit()
+                turn = 1
+            else:
+                turn += 1
+            if 'O' in victims[1]:
+                if turn != 3:
+                    for i in range(turn):
+                        m.rotateRight(gyro)
+                else:
+                    m.rotateLeft(gyro)
+                k.release_one_kit()
+                turn = 1
+            else:
+                turn += 1
+
+            if(turn < 4):
+                for i in range(turn):
+                    m.rotateRight(gyro)
             mat.itemset(pos, 512)
 
         # If no part of the map is covered by another floor then the ramp can be ignored
@@ -275,7 +302,7 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
                         if destination[0] == float('Inf'):
                             lost = True
                             break
-                        moveTo(destination, m, t, ch, h, col, gyro)
+                        moveTo(destination, m, t, ch, h, k, col, gyro)
                 else:
                     lost = True
                 if lost == True:
@@ -299,7 +326,7 @@ def main(timer_thread, m, t, gyro, ch, h, col, server):
 
             #Move to destination
             if(destination[0] != float('Inf')):
-                moveTo(destination, m, t, ch, h, col, gyro)
+                moveTo(destination, m, t, ch, h, k, col, gyro)
             else:
                 server.setRobotStatus('Lost')
                 pass
@@ -347,6 +374,7 @@ if __name__ == '__main__':
     logging.info("Starting main loop")
     GPIO.setup(params.START_STOP_BUTTON_PIN, GPIO.IN)
     GPIO.add_event_detect(params.START_STOP_BUTTON_PIN, GPIO.RISING) #Attaching interrupt for start and stop
+    m.stop()
     while True:
         while True:
             if GPIO.event_detected(params.START_STOP_BUTTON_PIN) and time.time() - interrupt_time > 0.5:
@@ -356,7 +384,7 @@ if __name__ == '__main__':
                 k.blink()
                 time.sleep(0.5)
         try:
-            main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, h=h, col=col, server=server)
+            main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, h=h, k=k, col=col, server=server)
         except KeyboardInterrupt as e:
             print("KeyboardInterrupt")
             logging.warning("KeyboardInterrupt")
