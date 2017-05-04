@@ -122,27 +122,33 @@ class Motor:
             self.setSpeeds(MOTOR_DEFAULT_POWER_ROTATION*z, -MOTOR_DEFAULT_POWER_ROTATION*z)
 
 
-        '''
-        while True:
-            side, avg, cosalfa, senalfa, z = tof.best_side('E','O')
-            side2, avg2, cosalfa2, senalfa2, z2 = tof.best_side('N','S')
+        """
+        def parallel(self, senalfa_prec, tof=None)
 
-            if avg2 < avg and avg2 != -1:
-                side = side2
-                cosalfa = cosalfa2
-                senalfa = senalfa2
-                avg = avg2
-                z = z2
-            print("Cosalfa, senalfa: ", cosalfa, senalfa)
-            error = z * senalfa
-            print("PID: ", pid.get_pid(error))
-            self.setSpeeds(-40*error, 40*error)
-            if senalfa <= params.ERROR_SENALFA and senalfa>= -params.ERROR_SENALFA:
-                break
-        '''
-        self.stop()
 
-    """
+            while True:
+                side, avg, cosalfa, senalfa,s_dif, z = tof.best_side('E','O')
+                side2, avg2, cosalfa2, senalfa2,s_dif2, z2 = tof.best_side('N','S')
+
+                if avg2 < avg and avg2 != -1:
+                    side = side2
+                    cosalfa = cosalfa2
+                    senalfa = senalfa2
+                    avg = avg2
+                    z = z2
+
+                if s_dif<=2 and s_dif2<=2
+                error = z * math.sin(math.radius(senalfa))
+                logging.INFO("Cosalfa, senalfa: ", cosalfa, senalfa)
+                error = z * senalfa
+                correzione = pid.get_pid(params.PID_p_ROTATION, params.PID_i_ROTATION, params.PID_d_ROTATION, error = error)
+                self.setSpeeds(-MOTOR_DEFAULT_POWER_ROTATION*correzione, MOTOR_DEFAULT_POWER_ROTATION*)
+                if senalfa <= params.ERROR_SENALFA and senalfa>= -params.ERROR_SENALFA:
+                    break
+        """
+            self.stop()
+
+        """
     Here start the simple functions for robot motion execution
     """
     def oneCellForward(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME, mode= 'time', ch=None, tof= None, gyro=None, h=None, mat = None):
@@ -223,13 +229,14 @@ class Motor:
                 time.sleep(MOTOR_CELL_TIME)
                 self.stop()
 
-            self.parallel()
 
 
 
         elif mode == 'tof_fixed':
-            side, avg, cosalfa, senalfa, z = tof.best_side('E','O')
-            side2, avg2, cosalfa2, senalfa2, z2 = tof.best_side('N','S')
+
+            #### now it should be a wall follower
+            side, avg, cosalfa, senalfa,s_div, z = tof.best_side('E','O')
+            side2, avg2, cosalfa2, senalfa2, s_div2, z2 = tof.best_side('N','S')
             gyro.update()
             deg=gyro.yawsum()
 
@@ -237,12 +244,19 @@ class Motor:
                 cosalfa = cosalfa2
                 senalfa = senalfa2
 
-            N_prec = tof.n_cells(avg2, cosalfa, k = dim.cell_long)*z2
-            N_now = N_prec
-            x=0
+            if s_div2 < 2 and s_div1 < 2:
+                time.sleep(0.05)
+                gyro.update()
+                grad=gyro.yawsum()
+                cosalfa = math.cos(math.radians(deg-grad))
 
-            while(N_prec <= N_now):
-                print("N", (N_prec, N_now))
+#            N_prec = tof.n_cells(avg2, cosalfa, k = dim.cell_long)*z2
+#            N_now = N_prec
+#            x=0
+
+            while (True):
+#            while(N_prec <= N_now or x!=4):
+                print("N", N_prec, N_now)
                 side, avg, cosalfa, senalfa, z = tof.best_side('E','O')
                 avg2, cosalfa2, senalfa2, s_div2=read_fix(side2)
 
@@ -251,7 +265,7 @@ class Motor:
                     cosalfa = cosalfa2
                     senalfa = senalfa2
 
-                if s_div2 < 2 and s_div1 < 2:
+                if s_div2 <= 2 and s_div1 <= 2:
                     gyro.update()
                     grad=gyro.yawsum()
                     cosalfa = math.cos(math.radians(deg-grad))
@@ -271,9 +285,9 @@ class Motor:
 
                 logging.info("correction = ", correction)
                 self.setSpeeds(power*(1+correction),power*(1-correction))
-
+"""
                 distance=tof.real_distance(avg2,cosalfa)
-                if(distance<=(N_prec*dim.cell_long)):
+                if(z2 * distance<=(N_prec*dim.cell_long) and x != 3):
                     # I'm still in the same cell
                     x=0
 
@@ -286,44 +300,18 @@ class Motor:
                         #yes, I am sure about this shit
                         logging.info('Now we are in the next cell')
                     else:
-                        pass
+                        x=3
                         #Next cell
-
+                        if N_prec== -1:
+                            x=4
+                            #stop
                 N_now = z2*tof.n_cells(avg2, cosalfa)
-
-
-
-        """
-        elif mode == 'complete':
-            side1, avg1, cosalfa1, senalfa1, z1 = self.best_side('E','O')
-            side2, avg2, cosalfa2, senalfa2, z2 = self.best_side('N','S')
-            if avg1 == -1:
-                '''use gyro and time'''
-                if avg2 == -1:
-                    '''only gyro'''
-                     pass
-
-                else:
-                    cosalfa = cosalfa2
-
-            else
-                elif avg1 < avg2:
-                    cosalfa = cosalfa1
-
-                elif avg2 <= avg1:
-                    cosalfa = cosalfa2
-
-            if :
-                    parallel(cosalfa)
+"""
 
 
 
 
-            print (cosalfa)
-
-
-
-        """
+        self.parallel()
         logging.info("Arrived in centre of the cell")
         self.stop()
         return mat
@@ -371,10 +359,14 @@ class Motor:
 
     def rotateRight(self, gyro, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
         self.rotateDegrees(gyro=gyro, degrees=-90)
+
+        self.parallel()
         self.stop()
 
     def rotateLeft(self, gyro, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
         self.rotateDegrees(gyro=gyro, degrees=90)
+
+        self.parallel()
         self.stop()
 
     def rotateDegrees(self, gyro, degrees):
@@ -391,13 +383,16 @@ class Motor:
         else:
             self.setSpeeds(40,-40)
             while(gyro.update().yawsum >= now+degrees+4):
-                pass
 
             self.setSpeeds(30,-30)
             start = time.time()
             while gyro.update().yawsum >= now+degrees+2 and time.time()-start > 3:
                 pass
         self.stop()
+
+        """
+        if
+        """
 
     def set_degrees(self, gyro, degrees):
         now = gyro.update().yawsum

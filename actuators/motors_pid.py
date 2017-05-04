@@ -18,10 +18,10 @@ def update_error(error):
         error_prec.append(error_now)
         error_now = error
 
-def P(k=params.PID_p):
+def P(k):
     return error_now*k
 
-def I(k=params.PID_i):
+def I(k):
     error_sum = 0
     num = 0
     for i in error_prec:
@@ -34,7 +34,7 @@ def I(k=params.PID_i):
 
     return error_sum*k
 
-def D(k=params.PID_d):
+def D(k):
     avg = 0.
     num = 0
     for i in error_prec:
@@ -44,7 +44,7 @@ def D(k=params.PID_d):
     avg /= num
     return (error_now-avg)*k
 
-def get_pid(error = None):
+def get_pid(PID_p, PID_i, PID_d, error = None):
     if error != None:
         update_error(error)
-    return P()+I()+D()
+    return P(PID_p)+I(PID_i)+D(PID_d)
