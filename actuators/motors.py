@@ -235,13 +235,13 @@ class Motor:
             N_now = N_prec
             x=0
 
-            while(N_prec == N_now):
+            while(N_prec <= N_now):
                 print("N", (N_prec, N_now))
                 side, avg, cosalfa, senalfa, z = tof.best_side('E','O')
-                side2, avg2, cosalfa2, senalfa2, z2 = tof.best_side('N','S')
+                avg2, cosalfa2, senalfa2, s_div2=read_fix(side2)
 
 
-                if avg2 < avg and avg2 != -1:
+                if avg2 < avg and s_div2==3:
                     cosalfa = cosalfa2
                     senalfa = senalfa2
 

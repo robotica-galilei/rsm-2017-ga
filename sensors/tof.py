@@ -165,8 +165,9 @@ class Tof:
 
         if (avg != -1) and (cosalfa != None):
             N = self.n_cells(avg, cosalfa)
-            return z*(1-(1./(a+1))*(2*avg+dim.robot_width)*(1+a*cosalfa)/(dim.cell_dimension*(1+N))) # relative error [-1, - 1]
+            #return z*(1-(1./(a+1))*(2*avg+dim.robot_width)*(1+a*cosalfa)/(dim.cell_dimension*(1+N))) # relative error [-1, - 1]
             #return z*((dim.cell_dimension*(1+N))-(1./(a+1))*(2*avg+dim.robot_width)*(1+a*cosalfa)) # absolute error
+            return z*(1-(2*avg+dim.robot_width)*cosalfa/(dim.cell_dimension*(1+N)))
         else:
             return None
 
