@@ -234,10 +234,14 @@ class Motor:
                     #print("Cell difference", (now,front))
                     victims = sm.check_victim(pos,h)
                     print("Victims, ", victims)
-                    if (victims[0] and time.time()-h.last_read>5):
-                        mat.itemset(pos, 512)
+                    if (victims[0]): #and time.time()-h.last_read>5):
                         time_before_victims = time.time()
-                        #self.saveAllVictims(gyro, victims, k)
+                        if mat.item(pos)//512 == 1; #If i've seen the victims but not the visual
+                            mat.itemset(pos, 1024)
+                            self.saveAllVictims(gyro, victims, k)
+                        else if mat.item(pos)//512 == 0: #First time i see victims here
+                            mat.itemset(pos, 512)
+                            self.saveAllVictims(gyro, victims, k)
                         #self.setSpeeds(50,50)
                         #time.sleep(0.2)
                         #self.stop()
@@ -414,16 +418,15 @@ class Motor:
 
                 #Check victims
                 victims = sm.check_victim(pos,h)
-                print("Victims, ", victims)
-                if (victims[0] and time.time()-h.last_read>5):
-                    mat.itemset(pos, 512)
+                print("Victims: ", victims)
+                if (victims[0]): #and time.time()-h.last_read>5):
                     time_before_victims = time.time()
-                    self.saveAllVictims(gyro, victims, k)
-                    self.setSpeeds(50,50)
-                    time.sleep(0.2)
-                    self.stop()
-                    h.last_read = time.time()
-                    started_time += time.time() - time_before_victims
+                    if mat.item(pos)//512 == 1 and sm.are_there_visual_victims_in_the_list(victims[1]); #If i've seen the victims but not the visual (at least not all of them)
+                        mat.itemset(pos, 1024, only_visual == True)
+                        self.saveAllVictims(gyro, victims, k)
+                    else if mat.item(pos)//512 == 0: #First time i see victims here
+                        mat.itemset(pos, 512)
+                        self.saveAllVictims(gyro, victims, k)
 
                 N_now = z2*tof.n_cells(avg2, cosalfa, k=dim.cell_long)
             self.parallel(tof, gyro=gyro)
@@ -433,32 +436,42 @@ class Motor:
         return mat
 
 
-    def saveAllVictims(self, gyro, victims, k):
+    def saveAllVictims(self, gyro, victims, k, only_visual = False):
         self.stop()
         turn = 1
-        if 'N' in victims[1]:
+        if 'N' in victims[1] and not only_visual:
             k.release_one_kit()
-        if 'E' in victims[1]:
+        if 'E' in victims[1]  and not only_visual) or 'HE' in victims[1] or 'SE' in victims[1] or 'UE' in victims[1]:
+            for i in range(turn):
+                self.rotateRight(gyro)
+            if 'E' in victims[1] or 'HE' in victims[1] or 'SE' in victims[1]:
+                k.release_one_kit()
+                if 'HE' in victims[1]:
+                    k.release_one_kit()
+            else:
+                k.blink()
+            turn = 1
+        else:
+            turn += 1
+        if 'S' in victims[1]  and not only_visual:
             for i in range(turn):
                 self.rotateRight(gyro)
             k.release_one_kit()
             turn = 1
         else:
             turn += 1
-        if 'S' in victims[1]:
-            for i in range(turn):
-                self.rotateRight(gyro)
-            k.release_one_kit()
-            turn = 1
-        else:
-            turn += 1
-        if 'O' in victims[1]:
+        if ('O' in victims[1]  and not only_visual) or 'HO' in victims[1] or 'SO' in victims[1] or 'UO' in victims[1]:
             if turn != 3:
                 for i in range(turn):
                     self.rotateRight(gyro)
             else:
                 self.rotateLeft(gyro)
-            k.release_one_kit()
+            if 'O' in victims[1] or 'HO' in victims[1] or 'SO' in victims[1]:
+                k.release_one_kit()
+                if 'HO' in victims[1]:
+                    k.release_one_kit()
+            else:
+                k.blink()
             turn = 1
         else:
             turn += 1

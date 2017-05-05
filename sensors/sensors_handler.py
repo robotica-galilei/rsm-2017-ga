@@ -25,5 +25,8 @@ def check_victim(pos, h = None):
     victim_list.append(is_there_v)
     return is_there, victim_list
 
+def are_there_visual_victims_in_the_list(victims):
+    return 'HE' in victims or 'SE' in victims or 'UE' in victims or 'HO' in victims or 'SO' in victims or 'UOs' in victims
+
 def check_bridge(pos):
     return False
