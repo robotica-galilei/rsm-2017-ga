@@ -2,9 +2,15 @@ import sys
 sys.path.append("../")
 import logging
 import time
+import serial
 
 import config.params as params
 import modules.GY906 as GY906
+
+
+
+name_meaning=[None,'U','S','H']
+position_meaning=[None,'Incoming','Center','Passed']
 
 class Heat:
     def __init__(self, addresses = params.heat_addresses, port = params.video_victims_port, baudrate = 115200):
@@ -18,9 +24,9 @@ class Heat:
             self.sens[key] = GY906.MLX90614(item, bus_num=1)
         self.last_read = time.time()
 
-        #self.ser = serial.Serial(port = port, baudrate=baudrate)
-        #self.ser.close()
-        #self.ser.open()
+        self.ser = serial.Serial(port = port, baudrate=baudrate)
+        self.ser.close()
+        self.ser.open()
         self.starting_deg = 0
 
     def read_raw(self, dir):
@@ -34,7 +40,28 @@ class Heat:
         '''
         Returns if something has been seen by the sensors
         '''
-        return False, []
+        self.ser.flushInput()
+        while(self.ser.read() != '\r'):
+            pass
+        val=str(self.ser.readline())
+        #print (val)
+        bit_readings=list(val)
+        #print (bit_readings)
+        processed_readings=[]
+        for i in range(4):
+            processed_readings.append(int(bit_readings[2*i])*2+int(bit_readings[2*i+1]))
+        #print(processed_readings)
+        self.victims_found=[]
+        self.victims_found.append((name_meaning[processed_readings[0]],position_meaning[processed_readings[1]]))
+        self.victims_found.append((name_meaning[processed_readings[2]],position_meaning[processed_readings[3]]))
+        victims_a = []
+        stringa = ''
+        if self.victims_found[0][1]!='Center':
+                stringa += self.victims_found[0][0]+'O'
+        if self.victims_found[1][1]!='Center':
+                stringa += self.victims_found[1][0]+'E'
+        print
+        return len(stringa)>1, [stringa]
         '''
         if self.ser.isOpen():
             self.ser.flushInput()

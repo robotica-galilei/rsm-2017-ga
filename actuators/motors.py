@@ -236,7 +236,7 @@ class Motor:
                 if (victims[0]): #and time.time()-h.last_read>5):
                     time_before_victims = time.time()
                     if mat.item(pos)//512 == 1 and sm.are_there_visual_victims_in_the_list(victims[1]): #If i've seen the victims but not the visual (at least not all of them)
-                        mat.itemset(pos, 1024, only_visual == True)
+                        mat.itemset(pos, 1024, only_visual = True)
                         self.saveAllVictims(gyro, victims, k, tof)
                     elif mat.item(pos)//512 == 0: #First time i see victims here
                         mat.itemset(pos, 512)
@@ -506,7 +506,7 @@ class Motor:
                     time_before_victims = time.time()
                     if mat.item(pos)//512 == 1 and sm.are_there_visual_victims_in_the_list(victims[1]): #If i've seen the victims but not the visual (at least not all of them)
                         mat.itemset(pos, 1024)
-                        self.saveAllVictims(gyro, victims, k, tof, only_visual == True)
+                        self.saveAllVictims(gyro, victims, k, tof, only_visual = True)
                     elif mat.item(pos)//512 == 0: #First time i see victims here
                         mat.itemset(pos, 512)
                         self.saveAllVictims(gyro, victims, k, tof)

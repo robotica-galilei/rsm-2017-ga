@@ -17,8 +17,10 @@ def check_black(pos, col = None):
 
 def check_victim(pos, h = None):
     is_there_h, victim_list_h = h.isThereSomeVictim()
-    # is_there_v, victim_list_v = h.isThereSomeVideoVictim()
-    is_there_v = False; victim_list_v = [] #TODO comment when implementing video victims
+    try:
+        is_there_v, victim_list_v = h.isThereSomeVideoVictim()
+    except Exception:
+        is_there_v = False; victim_list_v = [] #TODO comment when implementing video victims
     is_there = is_there_h or is_there_v
     victim_list = []
     victim_list.extend(victim_list_h)
@@ -26,7 +28,7 @@ def check_victim(pos, h = None):
     return is_there, victim_list
 
 def are_there_visual_victims_in_the_list(victims):
-    return 'HE' in victims or 'SE' in victims or 'UE' in victims or 'HO' in victims or 'SO' in victims or 'UOs' in victims
+    return 'HE' in victims or 'SE' in victims or 'UE' in victims or 'HO' in victims or 'SO' in victims or 'UO' in victims
 
 def check_bridge(pos):
     return False

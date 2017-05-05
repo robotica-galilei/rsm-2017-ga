@@ -10,7 +10,7 @@ Pins and ports
 kit_servo_pin = "P9_22"
 START_STOP_BUTTON_PIN = "P8_16"
 imu_serial_port = "/dev/ttyO1"
-video_victims_port = "/dev/ttyO0"
+video_victims_port = "/dev/ttyO5"
 imu_baudrate = 115200
 color_address = 0x29
 
@@ -37,7 +37,7 @@ HEAT_THRESHOLD = 32
 '''
 Color calibration
 '''
-BLACK_THRESHOLD = 550
+BLACK_THRESHOLD = 350
 
 '''
 Led parameters

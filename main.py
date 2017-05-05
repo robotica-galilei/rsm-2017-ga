@@ -316,6 +316,13 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
                             lost = True
                             break
                         moveTo(destination, m, t, ch, h, k, col, gyro)
+                    if lost == False:
+                        k.blink()
+                        time.sleep(4)
+                        k.blink()
+                        time.sleep(4)
+                        k.blink()
+                        time.sleep(4)
                 else:
                     lost = True
             try:
