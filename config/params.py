@@ -23,8 +23,6 @@ heat_addresses = {'N': 0x12, 'S': 0x13, 'E': 0x11, 'O': 0x10}
 
 motors_pins = {'fl':'P8_13','fr':'P8_19','rl':'P9_14','rr':'P9_16','dir_fl':'gpio31','dir_fr':'gpio48','dir_rl':'gpio60','dir_rr':'gpio30'}
 
-victim_pins =['gpio72','gpio73','gpio8','gpio75','gpio76','gpio77','gpio78','gpio79']
-
 '''
 ToF calibration
 '''
