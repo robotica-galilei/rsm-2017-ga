@@ -120,6 +120,7 @@ def refresh_map(walls):
         if(mat.item((pos[0]-1,pos[1]))<500):
             mat.itemset((pos[0]-1,pos[1]),1) #Set wall
     else:
+        mat.itemset((pos[0]-1,pos[1]), 0)
         if pos[0]==1:
             mat = maman.appendTwoLinesToMatrix(mat, 1, 0)
             pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 0)
@@ -130,6 +131,7 @@ def refresh_map(walls):
         if(mat.item((pos[0],pos[1]+1))<500):
             mat.itemset((pos[0],pos[1]+1),1) #Set wall
     else:
+        mat.itemset((pos[0],pos[1]+1), 0)
         if pos[1]==np.shape(mat)[1]-2:
             mat = maman.appendTwoLinesToMatrix(mat, 0, 1)
 
@@ -140,6 +142,7 @@ def refresh_map(walls):
         if(mat.item((pos[0]+1,pos[1]))<500):
             mat.itemset((pos[0]+1,pos[1]),1) #Set wall
     else:
+        mat.itemset((pos[0]+1,pos[1]), 0)
         if pos[0]==np.shape(mat)[0]-2:
             mat = maman.appendTwoLinesToMatrix(mat, 1, 1)
         mat, unexplored_queue = nearcellToQueue(mat, (pos[0]+2,pos[1]), unexplored_queue)
@@ -149,6 +152,7 @@ def refresh_map(walls):
         if(mat.item((pos[0],pos[1]-1))<500):
             mat.itemset((pos[0],pos[1]-1),1) #Set wall
     else:
+        mat.itemset((pos[0],pos[1]-1), 0)
         if pos[1]==1:
             mat = maman.appendTwoLinesToMatrix(mat, 0, 0)
             pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 1)
