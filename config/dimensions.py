@@ -7,10 +7,11 @@ robot_length = 180
 
 tof_60_distance = 98
 
-cell_dimension = 290
+cell_dimension = 300
+cell_dimension_gyro = 260
 
 
 #dimensions used during  the movement of the robot. we don't know why the misured get shorter then they should be
 
-cell_long = 290
-MIN_DISTANCE = 80
+cell_long = 300
+MIN_DISTANCE = 20

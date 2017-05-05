@@ -83,7 +83,7 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
     except Exception:
         pass
     if sm.check_black(pos, col): #To commentut
-        m.set_degrees(gyro, deg_pos)
+        m.posiziona_assi(gyro)
         if pos in unexplored_queue:
             unexplored_queue.remove(pos)
         refresh_map(sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t))
@@ -324,15 +324,17 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
                 pass
             stop_function(timer_thread,m)
             #Commented because the thread should start with the button
-            '''
+
             try:
                 raw_input("Press enter to continue")
             except:
                 input("Press enter to continue")
-            '''
+
             if lost == False:
                 print("finished")
-                sys.exit()
+                #sys.exit()
+                time.sleep(10)
+                lost = True
         else:
             destination=mp.bestPath(orientation,[pos[0],pos[1]],unexplored_queue,mat, bridge) #Find the best path to reach the nearest cell
 

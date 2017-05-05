@@ -18,11 +18,11 @@ def check_black(pos, col = None):
 def check_victim(pos, h = None):
     is_there_h, victim_list_h = h.isThereSomeVictim()
     # is_there_v, victim_list_v = h.isThereSomeVideoVictim()
-    is_there_v = False, victim_list_v = [] #TODO comment when implementing video victims
+    is_there_v = False; victim_list_v = [] #TODO comment when implementing video victims
     is_there = is_there_h or is_there_v
     victim_list = []
-    victim_list.append(is_there_h)
-    victim_list.append(is_there_v)
+    victim_list.extend(victim_list_h)
+    victim_list.extend(victim_list_v)
     return is_there, victim_list
 
 def are_there_visual_victims_in_the_list(victims):

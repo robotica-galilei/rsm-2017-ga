@@ -44,7 +44,8 @@ def D(k):
     avg /= num
     return (error_now-avg)*k
 
-def get_pid(PID_p, PID_i, PID_d, error = None):
+def get_pid(error = None):
     if error != None:
         update_error(error)
-    return P(PID_p)+I(PID_i)+D(PID_d)
+    #return P(PID_p)+I(PID_i)+D(PID_d)
+    return 0

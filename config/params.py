@@ -34,12 +34,12 @@ is_there_a_wall_threshold = 200
 '''
 Heat calibration
 '''
-HEAT_THRESHOLD = 33
+HEAT_THRESHOLD = 32
 
 '''
 Color calibration
 '''
-BLACK_THRESHOLD = 280
+BLACK_THRESHOLD = 550
 
 '''
 Led parameters
