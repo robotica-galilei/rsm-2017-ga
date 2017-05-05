@@ -194,7 +194,7 @@ class Motor:
     """
     Here start the simple functions for robot motion execution
     """
-    def oneCellForward(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME, mode= 'time', ch=None, tof= None, gyro=None, h=None, k = None, mat = None, pos = None, deg_pos=None):
+    def oneCellForward(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME, mode= 'time', ch=None, tof= None, gyro=None, h=None, k = None, mat = None, pos = None, new_pos = new_pos, deg_pos=None):
         logging.info("Going one cell forward")
         if mode == 'time':
             avg = now
@@ -338,7 +338,7 @@ class Motor:
             x=0
 
             #while (True):
-            while(N_prec >= N_now): #While the number of cells is not changed
+            while (N_now!=0 and N_prec >= N_now) or (N_now==0 and avg2 >= dim.MIN_DISTANCE): #While the number of cells is not changed or the distance from a wall is too low
                 print("N", N_prec, N_now)
                 side, avg, cosalfa, senalfa, s_div, z = tof.best_side('E','O')
                 avg2, cosalfa2, senalfa2, s_div2 = tof.read_fix(side2)
@@ -367,9 +367,13 @@ class Motor:
                 self.setSpeeds(power*(1+correction),power*(1-correction))
 
                 distance=tof.real_distance(avg2,cosalfa)
-                if(z2 * distance<=(N_prec*dim.cell_long) and x != 3):
+
+                if z2 * distance <= (N_prec*dim.cell_long) and x < 3:
                     # I'm still in the same cell
                     x=0
+
+                if avg2 <= dim.MIN_DISTANCE:
+                    x=3
 
                 else:
                     if x==0:
@@ -382,6 +386,12 @@ class Motor:
                     else:
                         x=3
                         #Next cell
+
+                if x < 3:
+                    pass
+
+                else:
+                    pos = new_pos
 
                 #Ramp
                 gyro.update()
@@ -416,6 +426,7 @@ class Motor:
                     self.stop()
                     break
 
+
                 #Check victims
                 victims = sm.check_victim(pos,h)
                 print("Victims: ", victims)
@@ -427,6 +438,15 @@ class Motor:
                     else if mat.item(pos)//512 == 0: #First time i see victims here
                         mat.itemset(pos, 512)
                         self.saveAllVictims(gyro, victims, k)
+
+                if ch.is_something_touched():
+                    time.sleep(0.2)
+                    if ch.read('E') and ch.read('O'):
+                        pass
+                    elif ch.read('E'):
+                        self.disincagna(gyro, -1, deg)
+                    else:
+                        self.disincagna(gyro, 1, deg)
 
                 N_now = z2*tof.n_cells(avg2, cosalfa, k=dim.cell_long)
             self.parallel(tof, gyro=gyro)

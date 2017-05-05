@@ -10,6 +10,7 @@ Pins and ports
 kit_servo_pin = "P9_22"
 START_STOP_BUTTON_PIN = "P8_16"
 imu_serial_port = "/dev/ttyO1"
+video_victims_port = "/dev/ttyO0"
 imu_baudrate = 115200
 color_address = 0x29
 
