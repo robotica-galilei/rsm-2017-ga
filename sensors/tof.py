@@ -170,7 +170,19 @@ class Tof:
         if k==None:
             #to test if  it works
             k=dim.cell_dimension
-            return int(math.floor((avg - (k - dim.robot_width)/2.)) / k) #con il robot piazzato al centro della cella
+
+        return int(math.floor((avg - (k - dim.robot_width)/2.)) / k) #con il robot piazzato al centro della cella
+
+    def n_cells_pid(self, avg, cosalfa, k = None):
+
+        #return int(math.floor(avg/dim.cell_dimension))  #approssimazione
+
+        if k==None:
+            #to test if  it works
+            k=dim.cell_dimension
+
+        return int(avg(math.floor((avg - (k - dim.robot_width)/2.)) / k)) #con il robot piazzato al centro della cella
+
 
 
 
@@ -197,10 +209,11 @@ class Tof:
                     trusted[key[:1]] = False
         return trusted
 
-    def error(self, N, avg = None, cosalfa = None, z = None,  a=1):
+    def error(self, avg = None, cosalfa = None, z = None,  a=1):
         if avg==None and cosalfa==None and z==None:
             side, avg, cosalfa, senalfa, z = self.best_side('E','O')
 
+            N=self.n_cells_pid(avg, cosalfa)
             #return z*(1-(1./(a+1))*(2*avg+dim.robot_width)*(1+a*cosalfa)/(dim.cell_dimension*(1+N))) # relative error [-1, - 1]
             #return z*((dim.cell_dimension*(1+N))-(1./(a+1))*(2*avg+dim.robot_width)*(1+a*cosalfa)) # absolute error
             return z*(1-(2*avg+dim.robot_width)/(dim.cell_dimension*(1+N)))
