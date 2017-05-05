@@ -194,7 +194,7 @@ class Motor:
     """
     Here start the simple functions for robot motion execution
     """
-    def oneCellForward(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME, mode= 'time', ch=None, tof= None, gyro=None, h=None, k = None, mat = None, pos = None, new_pos = new_pos, deg_pos=None):
+    def oneCellForward(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME, mode= 'time', ch=None, tof= None, gyro=None, h=None, k = None, mat = None, pos = None, new_pos = None, deg_pos=None):
         logging.info("Going one cell forward")
         if mode == 'time':
             avg = now
@@ -236,10 +236,10 @@ class Motor:
                     print("Victims, ", victims)
                     if (victims[0]): #and time.time()-h.last_read>5):
                         time_before_victims = time.time()
-                        if mat.item(pos)//512 == 1; #If i've seen the victims but not the visual
+                        if mat.item(pos)//512 == 1: #If i've seen the victims but not the visual
                             mat.itemset(pos, 1024)
                             self.saveAllVictims(gyro, victims, k)
-                        else if mat.item(pos)//512 == 0: #First time i see victims here
+                        elif mat.item(pos)//512 == 0: #First time i see victims here
                             mat.itemset(pos, 512)
                             self.saveAllVictims(gyro, victims, k)
                         #self.setSpeeds(50,50)
@@ -316,7 +316,7 @@ class Motor:
 
 
         elif mode == 'tof_fixed':
-
+            print("Ciao merde")
             #### now it should be a wall follower
             side, avg, cosalfa, senalfa, s_div, z = tof.best_side('E','O')
             side2, avg2, cosalfa2, senalfa2, s_div2, z2 = tof.best_side('N','S') #Find the mostaccurate side
@@ -338,7 +338,8 @@ class Motor:
             x=0
 
             #while (True):
-            while (N_now!=0 and N_prec >= N_now) or (N_now==0 and avg2 >= dim.MIN_DISTANCE): #While the number of cells is not changed or the distance from a wall is too low
+            print("Sto per partire")
+            while N_prec >= N_now: #or (avg2 >= dim.MIN_DISTANCE): #While the number of cells is not changed or the distance from a wall is too low
                 print("N", N_prec, N_now)
                 side, avg, cosalfa, senalfa, s_div, z = tof.best_side('E','O')
                 avg2, cosalfa2, senalfa2, s_div2 = tof.read_fix(side2)
@@ -363,7 +364,7 @@ class Motor:
 
                 else:
                     correction = 0
-
+                print("POWER: ",power*(1+correction))
                 self.setSpeeds(power*(1+correction),power*(1-correction))
 
                 distance=tof.real_distance(avg2,cosalfa)
@@ -428,27 +429,43 @@ class Motor:
 
 
                 #Check victims
+
                 victims = sm.check_victim(pos,h)
                 print("Victims: ", victims)
                 if (victims[0]): #and time.time()-h.last_read>5):
                     time_before_victims = time.time()
-                    if mat.item(pos)//512 == 1 and sm.are_there_visual_victims_in_the_list(victims[1]); #If i've seen the victims but not the visual (at least not all of them)
+                    if mat.item(pos)//512 == 1 and sm.are_there_visual_victims_in_the_list(victims[1]): #If i've seen the victims but not the visual (at least not all of them)
                         mat.itemset(pos, 1024, only_visual == True)
                         self.saveAllVictims(gyro, victims, k)
-                    else if mat.item(pos)//512 == 0: #First time i see victims here
+                    elif mat.item(pos)//512 == 0: #First time i see victims here
                         mat.itemset(pos, 512)
                         self.saveAllVictims(gyro, victims, k)
+                
 
                 if ch.is_something_touched():
+                    if ch.read('E'):
+                        self.setSpeeds(70,50)
+                    else:
+                        self.setSpeeds(50,70)
                     time.sleep(0.2)
                     if ch.read('E') and ch.read('O'):
-                        pass
+                        gyro.update()
+                        gyro.starting_deg = gyro.yawsum
+                        break
+                        print("Letti tutti")
+                        '''
+                        mot.setSpeeds(-50,-50)
+                        time.sleep(0.1)
+                        mot.setSpeeds(20,20)
+                        time.sleep(0.2)
+                        '''
                     elif ch.read('E'):
                         self.disincagna(gyro, -1, deg)
                     else:
                         self.disincagna(gyro, 1, deg)
 
                 N_now = z2*tof.n_cells(avg2, cosalfa, k=dim.cell_long)
+            print("Ho finito il ciclo, merde")
             self.parallel(tof, gyro=gyro)
 
         logging.info("Arrived in centre of the cell")
@@ -461,7 +478,7 @@ class Motor:
         turn = 1
         if 'N' in victims[1] and not only_visual:
             k.release_one_kit()
-        if 'E' in victims[1]  and not only_visual) or 'HE' in victims[1] or 'SE' in victims[1] or 'UE' in victims[1]:
+        if ('E' in victims[1]  and not only_visual) or 'HE' in victims[1] or 'SE' in victims[1] or 'UE' in victims[1]:
             for i in range(turn):
                 self.rotateRight(gyro)
             if 'E' in victims[1] or 'HE' in victims[1] or 'SE' in victims[1]:
@@ -510,13 +527,13 @@ class Motor:
     def rotateRight(self, gyro, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
         self.rotateDegrees(gyro=gyro, degrees=-90)
 
-        self.parallel(gyro)
+        self.parallel(gyro=gyro)
         self.stop()
 
     def rotateLeft(self, gyro, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
         self.rotateDegrees(gyro=gyro, degrees=90)
 
-        self.parallel(gyro)
+        self.parallel(gyro=gyro)
         self.stop()
 
     def rotateDegrees(self, gyro, degrees):
@@ -552,8 +569,7 @@ class Motor:
 
 
     def disincagna(self, gyro, dir, deg = None, largo = True): #Best name everf
-        pass
-        '''
+
         to_do = 20
         if largo:
             to_do = 30
@@ -562,6 +578,7 @@ class Motor:
         if largo:
             self.setSpeeds(-20,-20)
             time.sleep(0.4)
+        self.posiziona_assi(gyro)
         self.rotateDegrees(gyro, to_do*dir)
         self.setSpeeds(-20, -20)
         time.sleep(1)
@@ -570,11 +587,10 @@ class Motor:
         self.setSpeeds(20, 20)
         time.sleep(0.8)
 
-        if deg != None:
+        if deg != None and False:
             self.set_degrees(gyro, deg)
         else:
             self.rotateDegrees(gyro, to_do*dir)
         if largo:
             self.setSpeeds(20,20)
         time.sleep(0.4)
-        '''
