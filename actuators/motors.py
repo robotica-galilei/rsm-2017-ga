@@ -355,8 +355,9 @@ class Motor:
                     cosalfa = math.cos(math.radians(deg-grad))
 
 
+                error=error() #no segui linea
 
-                error=tof.error(avg, cosalfa, z)
+                #error=tof.error(avg, cosalfa, z) #segui linea
 
 
                 if error != None:
@@ -440,7 +441,7 @@ class Motor:
                     elif mat.item(pos)//512 == 0: #First time i see victims here
                         mat.itemset(pos, 512)
                         self.saveAllVictims(gyro, victims, k)
-                
+
 
                 if ch.is_something_touched():
                     if ch.read('E'):
