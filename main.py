@@ -191,7 +191,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
 
     gyro.update()
     gyro.starting_deg = gyro.yawsum
-    m.parallel(t, gyro =  gyro)
+    m.parallel(tof = t, gyro =  gyro)
     while True:
         '''
         try:

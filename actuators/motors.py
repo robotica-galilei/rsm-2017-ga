@@ -385,11 +385,14 @@ class Motor:
 
                 if x < 3:
                     #vittime rilevate in cella di partenza
+                    pass
 
                 else:
                     #vittime rilevate in cella di arrivo
+                    pass
 
                 N_now = z2*tof.n_cells(avg2, cosalfa, k=dim.cell_long)
+
             self.parallel(tof, gyro=gyro)
 
 
