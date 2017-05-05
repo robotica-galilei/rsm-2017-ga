@@ -25,7 +25,10 @@ class timer(threading.Thread):
         self.startingtime = time.time()
         while(self.stop_flag):
             time.sleep(0.5)
-            self.server.setElapsedTime(int(time.time()-self.startingtime))
+            try:
+                self.server.setElapsedTime(int(time.time()-self.startingtime))
+            except Exception:
+                pass
 
 
 def moveTo(path, m, t, ch, h, k, col, gyro):
@@ -55,7 +58,10 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
     if orientation!=new_dir:
         if abs(new_dir-orientation) == 2:
             m.rotateRight(gyro)
-            server.setRobotOrientation((new_dir+1)%4)
+            try:
+                server.setRobotOrientation((new_dir+1)%4)
+            except Exception:
+                pass
             m.rotateRight(gyro)
         elif new_dir-orientation == -3 or new_dir-orientation == 1:
             m.rotateLeft(gyro)
@@ -63,26 +69,40 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
             pass
             m.rotateRight(gyro)
         orientation=new_dir
-        server.setRobotOrientation(new_dir)
+        try:
+            server.setRobotOrientation(new_dir)
+        except Exception:
+            pass
 
     mat = m.oneCellForward( mode = 'tof_fixed', tof = t , ch=ch, h=h, gyro=gyro, k=k, mat=mat, pos=pos, new_pos = path[1][0], deg_pos=deg_pos)
     m.parallel(t, gyro = gyro)
 
     pos=path[1][0]
-    server.setRobotPosition(pos)
+    try:
+        server.setRobotPosition(pos)
+    except Exception:
+        pass
     if sm.check_black(pos, col): #To commentut
         m.set_degrees(gyro, deg_pos)
         if pos in unexplored_queue:
             unexplored_queue.remove(pos)
         refresh_map(sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t))
         mat.itemset(pos, 256)
-        server.setMazeMap(mat.tolist())
+        try:
+            server.setMazeMap(mat.tolist())
+        except Exception:
+            pass
         orientation = old_orientation
-        server.setRobotOrientation(new_dir)
+        try:
+            server.setRobotOrientation(new_dir)
+        except Exception:
+            pass
         pos = old_pos
         m.oneCellBack()
-
-        server.setRobotPosition(pos)
+        try:
+            server.setRobotPosition(pos)
+        except Exception:
+            pass
 
 
 
@@ -176,12 +196,15 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
 
 
     ###Initial settings to be displayed
-    server.setRobotStatus("Waiting for start")
-    server.setRobotPosition(pos)
-    server.setVictimsNumber(0)
-    server.setElapsedTime(0)
-    server.setMazeMap(mat.tolist())
-    server.setRobotOrientation(orientation)
+    try:
+        server.setRobotStatus("Waiting for start")
+        server.setRobotPosition(pos)
+        server.setVictimsNumber(0)
+        server.setElapsedTime(0)
+        server.setMazeMap(mat.tolist())
+        server.setRobotOrientation(orientation)
+    except Exception:
+        pass
     ###
 
     #Commented because the thread should start with the button
@@ -207,7 +230,10 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
             interrupt_time = time.time()
             print("Stopped by user")
             sys.exit()
-        server.setRobotStatus("Exploring")
+        try:
+            server.setRobotStatus("Exploring")
+        except Exception:
+            pass
         #Set current cell as explored
         mat.itemset(pos,2)
 
@@ -267,14 +293,19 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
         refresh_map(walls) #To comment when activated advanced ramp
 
         ##########
-
-        server.setMazeMap(mat.tolist()) #Update map
+        try:
+            server.setMazeMap(mat.tolist()) #Update map
+        except Exception:
+            pass
         lost = False
         #Decide where to go
         if len(unexplored_queue)==0: #If there is no available cell to explore, the maze is done
             lost = False
             if pos!=home:
-                server.setRobotStatus("Done! Homing...")
+                try:
+                    server.setRobotStatus("Done! Homing...")
+                except Exception:
+                    pass
                 logging.info("Maze finished...")
                 destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat, bridge) #Find the best path to reach home
                 if destination[0] != float('Inf'):
@@ -287,7 +318,10 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
                         moveTo(destination, m, t, ch, h, k, col, gyro)
                 else:
                     lost = True
-            server.setRobotStatus("Done!")
+            try:
+                server.setRobotStatus("Done!")
+            except Exception:
+                pass
             stop_function(timer_thread,m)
             #Commented because the thread should start with the button
             '''
@@ -306,10 +340,16 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
             if(destination[0] != float('Inf')):
                 moveTo(destination, m, t, ch, h, k, col, gyro)
             else:
-                server.setRobotStatus('Lost')
+                try:
+                    server.setRobotStatus('Lost')
+                except Exception:
+                    pass
                 lost = True
         if lost == True:
-            server.setRobotStatus('Lost. Roaming...')
+            try:
+                server.setRobotStatus('Lost. Roaming...')
+            except Exception:
+                pass
             print('Lost. Roaming...')
             logging.warning("Lost")
             mat = np.matrix("0 0 0; 0 0 0; 0 0 0")
@@ -351,9 +391,10 @@ if __name__ == '__main__':
         h = None
         col = None
         k = None
-
-    server = Pyro4.Proxy("PYRONAME:robot.server") #Connect to server for graphical interface
-    #server = None
+    try:
+        server = Pyro4.Proxy("PYRONAME:robot.server") #Connect to server for graphical interface
+    except Exception:
+        server = None
     pins ={'fl':'P8_13','fr':'P8_19','rl':'P9_14','rr':'P9_16','dir_fl':'gpio31','dir_fr':'gpio48','dir_rl':'gpio60','dir_rr':'gpio30'}
 
     timer_thread = timer("Timer", server)
