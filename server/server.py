@@ -11,6 +11,9 @@ orientation=0
 robot_status="Unknown"
 victims_number=0
 elapsed_time=0
+tof_readings=(-1,-1,-1,-1)
+heat_readings=(0,0,0,0)
+toc_readings=(0,0)
 
 maze_map=[]
 
@@ -71,6 +74,15 @@ class server(object):
         global maze_map
         maze_map=w_map
         return 0
+
+    def getTof(self):
+        return tof_readings
+
+    def getHeat(self):
+        return heat_readings
+
+    def getToc(self):
+        return toc_readings
 
 
 ip = None
