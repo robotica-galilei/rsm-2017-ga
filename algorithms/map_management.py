@@ -47,13 +47,29 @@ def appendTwoLinesToMatrix(mat, axis, position):
     '''
     if(axis == 0):
         if(position == 0):
-            mat = np.hstack((np.zeros((np.shape(mat)[0],2)),mat)) #Add 2 rows to the top
+            #mat = np.hstack((np.zeros((np.shape(mat)[0],2)),mat)) #Add 2 rows to the top
+            l = [[0 for i in range(len(mat[0]))]]
+            l.extend(l)
+            l.extend(mat)
+            mat = l
         elif(position == 1):
-            mat = np.hstack((mat,np.zeros((np.shape(mat)[0],2)))) #Add 2 rows to the bottom
+            #mat = np.hstack((mat,np.zeros((np.shape(mat)[0],2)))) #Add 2 rows to the bottom
+            l = [0 for i in range(len(mat[0]))]
+            mat.append(l)
+            mat.append(l)
+            mat
     elif(axis == 1):
         if(position == 0):
-            mat = np.vstack((np.zeros((2,np.shape(mat)[1])),mat)) #Add 2 columns to the left
+            #mat = np.vstack((np.zeros((2,np.shape(mat)[1])),mat)) #Add 2 columns to the left
+            for idx, elem in enumerate(mat):
+                l = [0,0]
+                l.extend(elem)
+                mat[idx] = l
         elif(position == 1):
-            mat = np.vstack((mat,np.zeros((2,np.shape(mat)[1])))) #Add 2 columns to the right
+            #mat = np.vstack((mat,np.zeros((2,np.shape(mat)[1])))) #Add 2 columns to the right
+            for idx, elem in enumerate(mat):
+                mat[idx].append(0)
+                mat[idx].append(0)
 
-    return mat;
+
+    return mat

@@ -388,9 +388,13 @@ class Motor:
             x=0
 
             #while (True):
+            if side2 == 'N':
+                avg_front = avg2
+            else:
+                avg_front = tof.read_raw(side2) -30
             time_started = time.time()
             print("Sto per partire")
-            while N_prec >= N_now or (avg2 >= dim.MIN_DISTANCE and side2 == 'N') or time.time()-time_started < 0.5: #While the number of cells is not changed or the distance from a wall is too low
+            while (N_prec >= N_now and avg_front >= dim.MIN_DISTANCE) or time.time()-time_started < 0.5: #While the number of cells is not changed or the distance from a wall is too low
                 print("N", N_prec, N_now)
                 #side, avg, cosalfa, senalfa, s_div, z = tof.best_side('E','O')
                 tof_sum = 0
@@ -404,6 +408,11 @@ class Motor:
                     avg2 = tof_sum/t
                 else:
                     avg2 = 1250
+
+                if side2 == 'N':
+                    avg_front = avg2
+                else:
+                    avg_front = tof.read_raw(side2) -30
 
                 #avg2 = tof.read_raw(side2)-30
 
@@ -465,6 +474,7 @@ class Motor:
 
 
                 #Ramp
+                '''
                 gyro.update()
                 if gyro.pitch > 18: #Up
                     self.setSpeeds(-30,-30)
@@ -526,7 +536,7 @@ class Motor:
                         self.disincagna(gyro, -1, deg)
                     else:
                         self.disincagna(gyro, 1, deg)
-
+                '''
                 N_now = z2*tof.n_cells(avg2, 1, k=dim.cell_long)
             self.parallel(tof, gyro=gyro)
             print("N", N_prec, N_now)
