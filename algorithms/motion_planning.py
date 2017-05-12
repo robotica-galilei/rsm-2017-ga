@@ -30,10 +30,10 @@ def queueCheck(mat, node, new, wall, dist, path, visited, q, dir_now, dir_then):
 
     This function returns all the matrices and the priority queue updated
     '''
-    if (not mat.item(wall) and (not visited.item(new) or dist.item(new) > dist.item(node) +1) and mat.item(new)//256 != 1):
-        dist.itemset(new, dist.item(node) +1 + abs(((abs(dir_now-dir_then)+1)%4)-1))
-        q.put((dist.item(new),new,dir_then))
-        visited.itemset(new, True)
+    if (not mat[wall[0]][wall[1]] and (not visited[new[0]][new[1]] or dist[new[0]][new[1]] > dist[node[0]][node[1]] +1) and mat[new[0]][new[1]]//256 != 1):
+        dist[new[0]][new[1]] = dist[node[0]][node[1]] +1 + abs(((abs(dir_now-dir_then)+1)%4)-1)
+        q.put((dist[new[0]][new[1]],new,dir_then))
+        visited[new[0]][new[1]] = True
         tmp = [(new[0],new[1])]
         tmp.extend(path[node[0]][node[1]])
         path[new[0]][new[1]] = tmp
@@ -47,24 +47,24 @@ def dijkstra(direction,start, end ,mat, bridge):
     It returns the distance between the starting cell and the final cell.
     '''
 
-    visited = np.zeros((np.shape(mat)[0],np.shape(mat)[1]))
-    dist = np.zeros((np.shape(mat)[0],np.shape(mat)[1]))
-    dist.fill('Inf')
-    path = [[[] for i in range(np.shape(mat)[1])] for j in range(np.shape(mat)[0])]
-    for i in range (1, np.shape(mat)[0]-1,2):
-        for j in range (1, np.shape(mat)[1]-1,2):
+    visited = [[0] * len(mat[0]) for i in mat]
+    dist = [[float('Inf')] * len(mat[0]) for i in mat]
+    path = [[[] for i in range(len(mat[0]))] for j in range(len(mat))]
+    for i in range (1, len(mat)-1,2):
+        for j in range (1, len(mat[0])-1,2):
             path[i][j].append((i,j))
     try:
         q = queue.PriorityQueue()
     except:
         q = Queue.PriorityQueue()
     q.put((0,start,direction))
-    visited.itemset(tuple(start), 1)
+    visited[start[0]][start[1]] = 1
     dist[start[0]][start[1]] = 0
     while(not q.empty()):
         top = q.get()
         val = top[0]
         node = (top[1][0],top[1][1])
+        '''
         if(mat.item(node)//1024 == 1):
             if node == bridge[0] and visited.item(bridge[1]) == False:
                 q.put((val+15, bridge[1], top[2]))
@@ -80,23 +80,23 @@ def dijkstra(direction,start, end ,mat, bridge):
                 tmp = [(bridge[0][0],bridge[0][1])]
                 tmp.extend(path[node[0]][node[1]])
                 path[bridge[0][0]][bridge[0][1]] = tmp
-
-        if(val <= dist.item(node)):
-            if(node[0]>2): #Check left
-                new = (node[0]-2,node[1])
-                wall = (node[0]-1,node[1])
-                mat, dist, path, visited, q = queueCheck(mat, node, new, wall, dist, path, visited, q, top[2], 0)
-            if(node[1]>2): #Check up
+        '''
+        if(val <= dist[node[0]][node[1]]):
+            if(node[1]>2): #Check left
                 new = (node[0],node[1]-2)
                 wall = (node[0],node[1]-1)
+                mat, dist, path, visited, q = queueCheck(mat, node, new, wall, dist, path, visited, q, top[2], 0)
+            if(node[0]>2): #Check up
+                new = (node[0]-2,node[1])
+                wall = (node[0]-1,node[1])
                 mat, dist, path, visited, q = queueCheck(mat, node, new, wall, dist, path, visited, q, top[2], 3)
-            if(np.shape(mat)[0]-node[0]>2): #Check right
-                new = (node[0]+2,node[1])
-                wall = (node[0]+1,node[1])
-                mat, dist, path, visited, q = queueCheck(mat, node, new, wall, dist, path, visited, q, top[2], 2)
-            if(np.shape(mat)[1]-node[1]>2): #Check down
+            if(len(mat[0])-node[1]>2): #Check right
                 new = (node[0],node[1]+2)
                 wall = (node[0],node[1]+1)
+                mat, dist, path, visited, q = queueCheck(mat, node, new, wall, dist, path, visited, q, top[2], 2)
+            if(len(mat)-node[0]>2): #Check down
+                new = (node[0]+2,node[1])
+                wall = (node[0]+1,node[1])
                 mat, dist, path, visited, q = queueCheck(mat, node, new, wall, dist, path, visited, q, top[2], 1)
     return dist[end[0]][end[1]], path[end[0]][end[1]][::-1] #Return the distance and the list of cells
 
@@ -124,5 +124,4 @@ def bestPath(direction,pos, possible, mat, bridge):
         tmp = dijkstra(direction,pos, i, mat, bridge)
         if(tmp[0]<best[0] or best[0]==-1):
             best=tmp
-
     return best

@@ -37,6 +37,7 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
     global mat
     global unexplored_queue
     del path[1][0] # Delete the first element (The total distance)
+    print("MAT: ", mat)
 
     old_orientation = orientation
     old_pos = pos
@@ -47,14 +48,14 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
     #Move forward just one cell
     if pos[0]==path[1][0][0]:
         if pos[1]>path[1][0][1]:
-            new_dir=3
-        else:
-            new_dir=1
-    else:
-        if pos[0]>path[1][0][0]:
             new_dir=0
         else:
             new_dir=2
+    else:
+        if pos[0]>path[1][0][0]:
+            new_dir=3
+        else:
+            new_dir=1
     if orientation!=new_dir:
         if abs(new_dir-orientation) == 2:
             m.rotateRight(gyro)
@@ -74,7 +75,7 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
         except Exception:
             pass
 
-    mat = m.oneCellForward( mode = 'tof_fixed', tof = t , ch=ch, h=h, gyro=gyro, k=k, mat=mat, pos=pos, new_pos = path[1][0], deg_pos=deg_pos)
+    mat = m.oneCellForward( mode = 'time', tof = t , ch=ch, h=h, gyro=gyro, k=k, mat=mat, pos=pos, new_pos = path[1][0], deg_pos=deg_pos)
     m.parallel(t, gyro = gyro)
 
     pos=path[1][0]
@@ -82,14 +83,14 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
         server.setRobotPosition(pos)
     except Exception:
         pass
-    if sm.check_black(pos, col): #To commentut
+    if sm.check_black(pos, col) and False: #To commentut
         m.posiziona_assi(gyro)
         if pos in unexplored_queue:
             unexplored_queue.remove(pos)
         refresh_map(sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t))
-        mat.itemset(pos, 256)
+        mat[pos[0], pos[1]] = 256
         try:
-            server.setMazeMap(mat.tolist())
+            server.setMazeMap(mat)
         except Exception:
             pass
         orientation = old_orientation
@@ -124,8 +125,8 @@ def nearcellToQueue(mat, nearcell, unexplored_queue):
 
     Returns the updated mat and unexplored_queue
     '''
-    if (nearcell not in unexplored_queue) and mat.item(nearcell)==0 and not mat.item(pos)//256 == 1: #If the cell is not queued and not explored yet
-        mat.itemset(nearcell,1) #Set as queued/explored
+    if (nearcell not in unexplored_queue) and mat[nearcell[0]][nearcell[1]]==0 and not mat[pos[0]][pos[1]]//256 == 1: #If the cell is not queued and not explored yet
+        mat[nearcell[0]][nearcell[1]] = 1 #Set as queued/explored
         unexplored_queue.append(nearcell) #Add to queue
     return mat, unexplored_queue
 
@@ -136,53 +137,53 @@ def refresh_map(walls):
     global unexplored_queue
     global sim_pos
     ##########Resize map, shift indexes, add walls and cells to queue
-    if walls[0]>0 or mat.item((pos[0]-1,pos[1]))>500: #Left wall
-        if(mat.item((pos[0]-1,pos[1]))<500):
-            mat.itemset((pos[0]-1,pos[1]),1) #Set wall
+
+    if walls[0]>0 or mat[pos[0]][pos[1]-1] > 500: #Left wall
+        if(mat[pos[0]][pos[1]-1] < 500):
+            mat[pos[0]][pos[1]-1] = 1 #Set wall
     else:
-        mat.itemset((pos[0]-1,pos[1]), 0)
-        if pos[0]==1:
-            mat = maman.appendTwoLinesToMatrix(mat, 1, 0)
-            pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 0)
-        mat, unexplored_queue = nearcellToQueue(mat, (pos[0]-2,pos[1]), unexplored_queue)
-
-
-    if walls[1]>0 or mat.item((pos[0],pos[1]+1))>500: #Bottom wall
-        if(mat.item((pos[0],pos[1]+1))<500):
-            mat.itemset((pos[0],pos[1]+1),1) #Set wall
-    else:
-        mat.itemset((pos[0],pos[1]+1), 0)
-        if pos[1]==np.shape(mat)[1]-2:
-            mat = maman.appendTwoLinesToMatrix(mat, 0, 1)
-
-        mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]+2), unexplored_queue)
-
-
-    if walls[2]>0 or mat.item((pos[0]+1,pos[1]))>500: #Right wall
-        if(mat.item((pos[0]+1,pos[1]))<500):
-            mat.itemset((pos[0]+1,pos[1]),1) #Set wall
-    else:
-        mat.itemset((pos[0]+1,pos[1]), 0)
-        if pos[0]==np.shape(mat)[0]-2:
-            mat = maman.appendTwoLinesToMatrix(mat, 1, 1)
-        mat, unexplored_queue = nearcellToQueue(mat, (pos[0]+2,pos[1]), unexplored_queue)
-
-
-    if walls[3]>0 or mat.item((pos[0],pos[1]-1))>500: #Top wall
-        if(mat.item((pos[0],pos[1]-1))<500):
-            mat.itemset((pos[0],pos[1]-1),1) #Set wall
-    else:
-        mat.itemset((pos[0],pos[1]-1), 0)
+        mat[pos[0]][pos[1]-1] = 0
         if pos[1]==1:
-            mat = maman.appendTwoLinesToMatrix(mat, 0, 0)
+            mat = maman.appendTwoLinesToMatrix(mat, 1, 0)
             pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 1)
         mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]-2), unexplored_queue)
 
 
+    if walls[1]>0 or mat[pos[0]+1][pos[1]] > 500: #Rear wall
+        if(mat[pos[0]+1][pos[1]] < 500):
+            mat[pos[0]+1][pos[1]] = 1 #Set wall
+    else:
+        mat[pos[0]+1][pos[1]] = 0
+        if pos[1]==len(mat[0])-2:
+            mat = maman.appendTwoLinesToMatrix(mat, 0, 1)
+
+        mat, unexplored_queue = nearcellToQueue(mat, (pos[0]+2,pos[1]), unexplored_queue)
+
+
+    if walls[2]>0 or mat[pos[0]][pos[1]+1] > 500: #Right wall
+        if(mat[pos[0]][pos[1]+1] < 500):
+            mat[pos[0]][pos[1]+1] = 1 #Set wall
+    else:
+        mat[pos[0]][pos[1]+1] = 0
+        if pos[0]==len(mat)-2:
+            mat = maman.appendTwoLinesToMatrix(mat, 1, 1)
+        mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]+2), unexplored_queue)
+
+
+    if walls[3]>0 or mat[pos[0]-1][pos[1]] > 500: #Front wall
+        if(mat[pos[0]-1][pos[1]] < 500):
+            mat[pos[0]-1][pos[1]] = 1 #Set wall
+    else:
+        mat[pos[0]-1][pos[1]] = 0
+        if pos[0]==1:
+            mat = maman.appendTwoLinesToMatrix(mat, 0, 0)
+            pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 0)
+        mat, unexplored_queue = nearcellToQueue(mat, (pos[0]-2,pos[1]), unexplored_queue)
+
 def main(timer_thread, m, t, gyro, ch, h, k, col, server):
 
     #Global variables
-    global mat; mat = np.matrix("0 0 0; 0 0 0; 0 0 0") #1x1 Matrix
+    global mat; mat = [[0,0,0],[0,0,0],[0,0,0]] #1x1 Matrix
     global pos; pos = (1,1) #Initial position
     global home; home = (1,1) #Position of the initial cell
     global orientation; orientation = 3 #Initial orientation, generally
@@ -190,7 +191,6 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
     global sim_pos; sim_pos = (0,0)
     global interrupt_time
     bridge = []
-    #print(mat)
 
 
 
@@ -201,7 +201,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
         server.setRobotPosition(pos)
         server.setVictimsNumber(0)
         server.setElapsedTime(0)
-        server.setMazeMap(mat.tolist())
+        server.setMazeMap(mat)
         server.setRobotOrientation(orientation)
     except Exception:
         pass
@@ -235,7 +235,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
         except Exception:
             pass
         #Set current cell as explored
-        mat.itemset(pos,2)
+        mat[pos[0]][pos[1]] = 2
 
         #Remove current cell from unexplored cells if needed
         if pos in unexplored_queue:
@@ -294,7 +294,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
 
         ##########
         try:
-            server.setMazeMap(mat.tolist()) #Update map
+            server.setMazeMap(mat) #Update map
         except Exception:
             pass
         lost = False
@@ -361,7 +361,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
                 pass
             print('Lost. Roaming...')
             logging.warning("Lost")
-            mat = np.matrix("0 0 0; 0 0 0; 0 0 0")
+            mat = [[0,0,0],[0,0,0],[0,0,0]]
             pos = (1,1) #Initial position
             home = (1,1) #Position of the initial cell
             orientation = 3 #Initial orientation, generally
@@ -415,7 +415,7 @@ if __name__ == '__main__':
     GPIO.add_event_detect(params.START_STOP_BUTTON_PIN, GPIO.RISING) #Attaching interrupt for start and stop
     m.stop()
     while True:
-        while True:
+        while False:
             if GPIO.event_detected(params.START_STOP_BUTTON_PIN) and time.time() - interrupt_time > 0.5:
                 interrupt_time = time.time()
                 break
