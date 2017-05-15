@@ -383,14 +383,15 @@ class Motor:
                 self.stop()
 
         elif mode == 'new_tof':
+            precision = 15
             side, avg, k = tof.best_side('N','S') #Find the most accurate side between front and rear
 
             N_prec = tof.n_cells_avg(avg) #N_cells before the movement
             N_now = N_prec
-            is_in_center = tof.is_in_cell_center(avg, precision = 15)
+            is_in_center = tof.is_in_cell_center(avg, precision = precision)
             correction = 0; k_c=0
 
-            while N_now == N_prec or not is_in_center:
+            while (N_now == N_prec or not is_in_center) and tof.n_cells_avg(avg-(dim.cell_dimension/2-precision)*k):
                 if N_now != N_prec:
                     self.setSpeeds(MOTOR_PRECISION_POWER_LINEAR, MOTOR_PRECISION_POWER_LINEAR)
                 else:
@@ -402,7 +403,7 @@ class Motor:
                 correction *= 0.3
                 #print('C: ', correction)
                 N_now = tof.n_cells_avg(avg)
-                is_in_center = tof.is_in_cell_center(avg, precision = 15)
+                is_in_center = tof.is_in_cell_center(avg, precision = precision)
                 #print('N: ', N_prec, N_now)
             self.parallel(tof, gyro=gyro)
 
