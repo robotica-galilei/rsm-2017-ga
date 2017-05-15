@@ -75,7 +75,7 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
         except Exception:
             pass
 
-    mat = m.oneCellForward( mode = 'time', tof = t , ch=ch, h=h, gyro=gyro, k=k, mat=mat, pos=pos, new_pos = path[1][0], deg_pos=deg_pos)
+    mat = m.oneCellForward( mode = 'new_tof', tof = t , ch=ch, h=h, gyro=gyro, k=k, mat=mat, pos=pos, new_pos = path[1][0], deg_pos=deg_pos)
     m.parallel(t, gyro = gyro)
 
     pos=path[1][0]

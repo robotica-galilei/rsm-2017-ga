@@ -16,6 +16,7 @@ MOTOR_CELL_TIME     =       1.3
 MOTOR_MIN_CELL_TIME     =       0.4
 MOTOR_ROTATION_TIME =       1.5
 MOTOR_DEFAULT_POWER_LINEAR      =       50
+MOTOR_PRECISION_POWER_LINEAR      =       30
 MOTOR_DEFAULT_POWER_ROTATION    =       70
 
 
@@ -196,7 +197,12 @@ class Motor:
     """
     def oneCellForward(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME, mode= 'time', ch=None, tof= None, gyro=None, h=None, k = None, mat = None, pos = None, new_pos = None, deg_pos=None):
         logging.info("Going one cell forward")
-        if mode == 'time':
+        if mode == 'wall':
+            self.setSpeeds(power,power)
+            while(tof.read_raw('N') > 90):
+                for i in range(4):
+                    tof.read_raw('S')
+        elif mode == 'time':
             print("Sto per partire")
             started_time = time.time()
             while time.time()-started_time < MOTOR_CELL_TIME: #or (avg2 >= dim.MIN_DISTANCE): #While the number of cells is not changed or the distance from a wall is too low
@@ -376,14 +382,35 @@ class Motor:
                 time.sleep(MOTOR_CELL_TIME)
                 self.stop()
 
+        elif mode == 'new_tof':
+            side, avg, k = tof.best_side('N','S') #Find the most accurate side between front and rear
 
+            N_prec = tof.n_cells_avg(avg) #N_cells before the movement
+            N_now = N_prec
+            is_in_center = tof.is_in_cell_center(avg, precision = 15)
+            correction = 0; k_c=0
+
+            while N_now == N_prec or not is_in_center:
+                if N_now != N_prec:
+                    self.setSpeeds(MOTOR_PRECISION_POWER_LINEAR, MOTOR_PRECISION_POWER_LINEAR)
+                else:
+                    self.setSpeeds(MOTOR_DEFAULT_POWER_LINEAR + correction*k_c, MOTOR_DEFAULT_POWER_LINEAR - correction*k_c)
+
+                avg = tof.read_fix(side)
+                side_c, avg_c, k_c = tof.best_side('E','O') #Find the most accurate side between right and left to calculate the correction
+                correction = dim.cell_dimension/2 - avg_c - ((tof.n_cells_avg(avg_c)-1)*dim.cell_dimension + dim.robot_width/2)
+                correction *= 0.3
+                #print('C: ', correction)
+                N_now = tof.n_cells_avg(avg)
+                is_in_center = tof.is_in_cell_center(avg, precision = 15)
+                #print('N: ', N_prec, N_now)
+            self.parallel(tof, gyro=gyro)
 
 
         elif mode == 'tof_fixed':
-            print("Ciao merde")
             #### now it should be a wall follower
             #side, avg, cosalfa, senalfa, s_div, z = tof.best_side('E','O')
-            side2, avg2, cosalfa2, senalfa2, s_div2, z2 = tof.best_side('N','S') #Find the mostaccurate side
+            side, avg, k = tof.best_side('N','S') #Find the mostaccurate side
             gyro.update()
             deg=gyro.yawsum
 
@@ -418,35 +445,7 @@ class Motor:
                 else:
                     avg_front = tof.read_raw(side2) -30
 
-                #avg2 = tof.read_raw(side2)-30
-
-                '''
-                if avg2 < avg and s_div2==3:
-                    cosalfa = cosalfa2
-                    senalfa = senalfa2
-                '''
-                #cosalfa = cosalfa2
-                #senalfa = senalfa2
-
-                '''
-                if s_div2 <= 2 and s_div <= 2:
-                    gyro.update()
-                    grad=gyro.yawsum
-                    cosalfa = math.cos(math.radians(deg-grad))
-                '''
-
-
-                #error=tof.error() #no segui linea
-
-                #error=tof.error(avg, cosalfa, z) #segui linea
-
-
-                #if error != None:
-                #    correction = pid.get_pid(error)
-
-                #else:
                 correction = 0
-                #print("POWER: ",power*(1+correction))
                 self.setSpeeds(power*(1+correction),power*(1-correction))
 
                 distance=tof.real_distance(avg2,1)
@@ -597,9 +596,15 @@ class Motor:
 
 
 
-    def oneCellBack(self, power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME):
-        self.setSpeeds(-50, -50)
-        time.sleep(1.2)
+    def oneCellBack(self, mode= 'time', power= MOTOR_DEFAULT_POWER_LINEAR, wait= MOTOR_CELL_TIME, tof=None):
+        if mode == 'wall':
+            self.setSpeeds(-power,-power)
+            while(tof.read_raw('S') > 90):
+                for i in range(4):
+                    tof.read_raw('S')
+        elif mode == 'time':
+            self.setSpeeds(-50, -50)
+            time.sleep(1.2)
         self.stop()
 
     def rotateRight(self, gyro, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
@@ -616,7 +621,7 @@ class Motor:
 
     def rotateDegrees(self, gyro, degrees):
         now = gyro.update().yawsum
-        if degrees > 0:
+        if degrees > 1:
             self.setSpeeds(-60,60)
             while(gyro.update().yawsum <= now+degrees-5):
                 pass
@@ -625,7 +630,7 @@ class Motor:
             self.setSpeeds(-30,30)
             while(gyro.update().yawsum <= now+degrees-2 and time.time()-start > 3):
                 pass
-        else:
+        elif degrees < -1:
             self.setSpeeds(60,-60)
             while(gyro.update().yawsum >= now+degrees+5):
                 pass
