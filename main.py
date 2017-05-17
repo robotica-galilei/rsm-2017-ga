@@ -37,7 +37,6 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
     global mat
     global unexplored_queue
     del path[1][0] # Delete the first element (The total distance)
-    print("MAT: ", mat)
 
     old_orientation = orientation
     old_pos = pos
@@ -59,10 +58,6 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
     if orientation!=new_dir:
         if abs(new_dir-orientation) == 2:
             m.rotateRight(gyro)
-            try:
-                server.setRobotOrientation((new_dir+1)%4)
-            except Exception:
-                pass
             m.rotateRight(gyro)
         elif new_dir-orientation == -3 or new_dir-orientation == 1:
             m.rotateLeft(gyro)
@@ -70,40 +65,23 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
             pass
             m.rotateRight(gyro)
         orientation=new_dir
-        try:
-            server.setRobotOrientation(new_dir)
-        except Exception:
-            pass
+
+    if time.time() - gyro.last_calibrated > 20 and t.is_there_a_wall('S'):
+        m.calibrate_gyro(gyro)
 
     mat = m.oneCellForward( mode = 'new_tof', tof = t , ch=ch, h=h, gyro=gyro, k=k, mat=mat, pos=pos, new_pos = path[1][0], deg_pos=deg_pos)
     m.parallel(t, gyro = gyro)
 
     pos=path[1][0]
-    try:
-        server.setRobotPosition(pos)
-    except Exception:
-        pass
     if sm.check_black(pos, col) and False: #To commentut
         m.posiziona_assi(gyro)
         if pos in unexplored_queue:
             unexplored_queue.remove(pos)
-        refresh_map(sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t))
+        mat, pos = refresh_map(sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t), mat, pos)
         mat[pos[0], pos[1]] = 256
-        try:
-            server.setMazeMap(mat)
-        except Exception:
-            pass
         orientation = old_orientation
-        try:
-            server.setRobotOrientation(new_dir)
-        except Exception:
-            pass
         pos = old_pos
         m.oneCellBack()
-        try:
-            server.setRobotPosition(pos)
-        except Exception:
-            pass
 
 
 
@@ -154,9 +132,8 @@ def refresh_map(walls):
             mat[pos[0]+1][pos[1]] = 1 #Set wall
     else:
         mat[pos[0]+1][pos[1]] = 0
-        if pos[1]==len(mat[0])-2:
+        if pos[0]==len(mat)-2:
             mat = maman.appendTwoLinesToMatrix(mat, 0, 1)
-
         mat, unexplored_queue = nearcellToQueue(mat, (pos[0]+2,pos[1]), unexplored_queue)
 
 
@@ -165,7 +142,7 @@ def refresh_map(walls):
             mat[pos[0]][pos[1]+1] = 1 #Set wall
     else:
         mat[pos[0]][pos[1]+1] = 0
-        if pos[0]==len(mat)-2:
+        if pos[1]==len(mat[0])-2:
             mat = maman.appendTwoLinesToMatrix(mat, 1, 1)
         mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]+2), unexplored_queue)
 
@@ -180,6 +157,8 @@ def refresh_map(walls):
             pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 0)
         mat, unexplored_queue = nearcellToQueue(mat, (pos[0]-2,pos[1]), unexplored_queue)
 
+    return mat, pos
+
 def main(timer_thread, m, t, gyro, ch, h, k, col, server):
 
     #Global variables
@@ -188,7 +167,6 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
     global home; home = (1,1) #Position of the initial cell
     global orientation; orientation = 3 #Initial orientation, generally
     global unexplored_queue; unexplored_queue = [] #Queue containing all the unexplored cells
-    global sim_pos; sim_pos = (0,0)
     global interrupt_time
     bridge = []
 
@@ -218,14 +196,22 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
 
     gyro.update()
     gyro.starting_deg = gyro.yawsum
+    gyro.last_calibrated = time.time()
     m.parallel(tof = t, gyro =  gyro)
     while True:
-        '''
+        #Set current cell as explored
+        mat[pos[0]][pos[1]] = 2
+        try:
+            server.setMazeMap(mat) #Update map
+            server.setRobotOrientation(orientation)
+            server.setRobotPosition(pos)
+        except:
+            pass
         try:
             raw_input("Continue...")
         except:
             input("Continue...")
-        '''
+
         if GPIO.event_detected(params.START_STOP_BUTTON_PIN) and time.time() - interrupt_time > 4:
             interrupt_time = time.time()
             print("Stopped by user")
@@ -234,69 +220,28 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
             server.setRobotStatus("Exploring")
         except Exception:
             pass
-        #Set current cell as explored
-        mat[pos[0]][pos[1]] = 2
+
+
+        print("Mat: ", mat)
+        print("Pos: ", pos)
 
         #Remove current cell from unexplored cells if needed
         if pos in unexplored_queue:
             unexplored_queue.remove(pos)
 
         #Read sensors
-        walls = sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t)
+        walls = sm.scanWalls(pos,orientation, t)
         print("Walls", walls)
 
-
-        # If no part of the map is covered by another floor then the ramp can be ignored
-        '''
-        if(sm.check_bridge((pos[0]+sim_pos[0],pos[1]+sim_pos[1])) or sm.check_bridge(pos)):
-            mat.itemset(pos, 1024)
-            if sim_pos == (0,0):
-                print("Rampa in salita")
-                logging.info("Rampa in salita")
-                if orientation == 0:
-                    mat.itemset(pos[0]-1,pos[1], 512)
-                elif orientation == 1:
-                    mat.itemset(pos[0],pos[1]+1, 512)
-                elif orientation == 2:
-                    mat.itemset(pos[0]+1,pos[1], 512)
-                elif orientation == 3:
-                    mat.itemset(pos[0],pos[1]-1, 512)
-                refresh_map(walls)
-                bridge = [pos, (pos[0]+20, pos[1])]
-                pos = (pos[0]+20, pos[1])
-                server.setRobotPosition(pos)
-                sim_pos = (-20,0)
-                for i  in range(10):
-                    mat = np.vstack((mat,np.zeros((2,np.shape(mat)[1]))))
-                mat.itemset(pos,1024)
-                if orientation == 0: #TODO invert this when racing. The robot does not teleport like in the simulation
-                    mat.itemset(pos[0]-1,pos[1], 512)
-                elif orientation == 1:
-                    mat.itemset(pos[0],pos[1]+1, 512)
-                elif orientation == 2:
-                    mat.itemset(pos[0]+1,pos[1], 512)
-                elif orientation == 3:
-                    mat.itemset(pos[0],pos[1]-1, 512)
-            else:
-                print("Rampa in discesa")
-                logging.info("Rampa in discesa")
-                pos = (pos[0]-20, pos[1])
-                server.setRobotPosition(pos)
-                sim_pos = (0,0)
-
-            #Read sensors
-            walls = sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t)
-            refresh_map(walls)
-        else:
-            refresh_map(walls)
-        '''
         refresh_map(walls) #To comment when activated advanced ramp
-
-        ##########
         try:
             server.setMazeMap(mat) #Update map
-        except Exception:
+            server.setRobotOrientation(orientation)
+            server.setRobotPosition(pos)
+        except:
             pass
+
+        ##########
         lost = False
         #Decide where to go
         if len(unexplored_queue)==0: #If there is no available cell to explore, the maze is done

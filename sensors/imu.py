@@ -16,6 +16,7 @@ class Imu:
         self.ser.close()
         self.ser.open()
         self.starting_deg = 0
+        self.last_calibrated = 0
 
     def update(self):
         if self.ser.isOpen():

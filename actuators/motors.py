@@ -389,7 +389,13 @@ class Motor:
             N_prec = tof.n_cells_avg(avg) #N_cells before the movement
             N_now = N_prec
             is_in_center = tof.is_in_cell_center(avg, precision = precision)
-            correction = 0; k_c=0
+            side_c, avg_c, k_c = tof.best_side('E','O') #Find the most accurate side between right and left to calculate the correction
+            correction = dim.cell_dimension/2 - avg_c - ((tof.n_cells_avg(avg_c)-1)*dim.cell_dimension + dim.robot_width/2)
+            correction *= 0.3
+            if correction > 10:
+                correction = 10
+            elif correction < -10:
+                correction = -10
 
             while (N_now == N_prec or not is_in_center) and tof.n_cells_avg(avg-(dim.cell_dimension/2-precision)*k):
                 if N_now != N_prec:
@@ -398,9 +404,7 @@ class Motor:
                     self.setSpeeds(MOTOR_DEFAULT_POWER_LINEAR + correction*k_c, MOTOR_DEFAULT_POWER_LINEAR - correction*k_c)
 
                 avg = tof.read_fix(side)
-                side_c, avg_c, k_c = tof.best_side('E','O') #Find the most accurate side between right and left to calculate the correction
-                correction = dim.cell_dimension/2 - avg_c - ((tof.n_cells_avg(avg_c)-1)*dim.cell_dimension + dim.robot_width/2)
-                correction *= 0.3
+
                 #print('C: ', correction)
                 N_now = tof.n_cells_avg(avg)
                 is_in_center = tof.is_in_cell_center(avg, precision = precision)
@@ -607,6 +611,29 @@ class Motor:
             self.setSpeeds(-50, -50)
             time.sleep(1.2)
         self.stop()
+
+    def calibrate_gyro(self, gyro= None):
+        self.setSpeeds(-50,-50)
+        time.sleep(0.7)
+        self.setSpeeds(10,-70)
+        time.sleep(0.2)
+        self.setSpeeds(-70,10)
+        time.sleep(0.2)
+        self.setSpeeds(-20,-70)
+        time.sleep(0.2)
+        self.setSpeeds(-70,-20)
+        time.sleep(0.2)
+        self.setSpeeds(-50,-50)
+        time.sleep(0.2)
+        self.stop()
+
+        gyro.update()
+        gyro.starting_deg = gyro.yawsum
+
+        self.setSpeeds(30,30)
+        time.sleep(0.5)
+        self.parallel(gyro=gyro)
+
 
     def rotateRight(self, gyro, power= MOTOR_DEFAULT_POWER_ROTATION, wait= MOTOR_ROTATION_TIME):
         self.rotateDegrees(gyro=gyro, degrees=-90)
