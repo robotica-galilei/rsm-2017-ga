@@ -83,6 +83,8 @@ class Tof:
             return side2, avg2, 1
         elif avg2 == -1:
             return side1, avg1, -1
+        elif side1 == 'N' and side2 =='S' and avg1 < avg2+dim.cell_dimension:
+            return side1, avg1, -1
         elif avg1 < avg2:
             return side1, avg1, -1
         else:

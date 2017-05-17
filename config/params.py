@@ -26,7 +26,7 @@ motors_pins = {'fl':'P8_13','fr':'P8_19','rl':'P9_14','rr':'P9_16','dir_fl':'gpi
 '''
 ToF calibration
 '''
-tof_calibration = {'NO' : 25, 'NE' : 25, 'SO' : 25, 'SE' : 25, 'EN' : 25, 'ES' : 25, 'ON' : 25, 'OS' : 25, 'N': 50, 'S': 50, 'E': 50, 'O': 50}
+tof_calibration = {'NO' : 25, 'NE' : 25, 'SO' : 25, 'SE' : 25, 'EN' : 25, 'ES' : 25, 'ON' : 25, 'OS' : 25, 'N': 40, 'S': 40, 'E': 40, 'O': 40}
 is_there_a_wall_threshold = 200
 
 '''

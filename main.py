@@ -207,11 +207,13 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
             server.setRobotPosition(pos)
         except:
             pass
+        '''
         try:
             raw_input("Continue...")
         except:
             input("Continue...")
-
+        '''
+        
         if GPIO.event_detected(params.START_STOP_BUTTON_PIN) and time.time() - interrupt_time > 4:
             interrupt_time = time.time()
             print("Stopped by user")
