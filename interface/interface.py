@@ -50,12 +50,20 @@ def check_connection():
 while True:
     #Retrieve data from server
     check_connection()
-    x_pos, y_pos = server.getRobotPosition()
+    y_pos, x_pos = server.getRobotPosition()
     robot_orientation = server.getRobotOrientation()
     robot_status = server.getRobotStatus()
     n_victims = server.getVictimsNumber()
     elapsed_time = server.getElapsedTime()
     maze_map = server.getMazeMap()
+    print(x_pos, y_pos)
+
+    allah = [[0 for j in range(len(maze_map))] for i in range(len(maze_map[0]))]
+    for i in range(len(maze_map)):
+        for j in range(len(maze_map[0])):
+            allah[j][i] = maze_map[i][j]
+
+    maze_map = allah
 
     #Checking for events (Escape key, X button)
     for event in pygame.event.get():
