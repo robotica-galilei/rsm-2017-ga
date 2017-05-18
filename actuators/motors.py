@@ -397,7 +397,7 @@ class Motor:
             elif correction < -10:
                 correction = -10
 
-            while ((N_now == N_prec or not is_in_center) and tof.n_cells_avg(avg-(dim.cell_dimension/2-precision)*k)) or (side == 'N' and avg > 65 and N_now == 1):
+            while (((N_now == N_prec or not is_in_center) and abs(tof.n_cells_avg(avg-(dim.cell_dimension/2-precision))- N_prec) <= 1 )  or (side == 'N' and avg > 65 and N_now == 1)) and ((side == 'N' and avg>55) or side == 'S'):
                 if N_now != N_prec:
                     self.setSpeeds(MOTOR_PRECISION_POWER_LINEAR, MOTOR_PRECISION_POWER_LINEAR)
                 else:
@@ -550,6 +550,7 @@ class Motor:
             print("N", N_prec, N_now)
         logging.info("Arrived in centre of the cell")
         self.stop()
+        time.sleep(0.3)
         return mat
 
 

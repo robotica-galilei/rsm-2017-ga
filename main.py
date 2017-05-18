@@ -1,6 +1,7 @@
 import Pyro4
 import sys
 import time
+import os
 import importlib
 import numpy as np
 import algorithms.motion_planning as mp
@@ -59,17 +60,23 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
         if abs(new_dir-orientation) == 2:
             m.rotateRight(gyro)
             m.rotateRight(gyro)
+            time.sleep(0.3)
         elif new_dir-orientation == -3 or new_dir-orientation == 1:
             m.rotateLeft(gyro)
+            time.sleep(0.3)
         elif new_dir-orientation == 3 or new_dir-orientation == -1:
             pass
             m.rotateRight(gyro)
+            time.sleep(0.3)
         orientation=new_dir
 
     if time.time() - gyro.last_calibrated > 20 and t.is_there_a_wall('S'):
         m.calibrate_gyro(gyro)
 
-    mat = m.oneCellForward( mode = 'new_tof', tof = t , ch=ch, h=h, gyro=gyro, k=k, mat=mat, pos=pos, new_pos = path[1][0], deg_pos=deg_pos)
+    walls = sm.scanWalls((pos[0],pos[1]),orientation, t)
+    refresh_map(walls)
+    if(not walls[orientation]):
+        mat = m.oneCellForward( mode = 'new_tof', tof = t , ch=ch, h=h, gyro=gyro, k=k, mat=mat, pos=pos, new_pos = path[1][0], deg_pos=deg_pos)
     m.parallel(t, gyro = gyro)
 
     pos=path[1][0]
@@ -90,6 +97,7 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
 def stop_function(timer, m):
     timer.stop_flag = False
     m.stop()
+    os.system("rosnode kill listener")
 
 def nearcellToQueue(mat, nearcell, unexplored_queue):
     '''
@@ -213,7 +221,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
         except:
             input("Continue...")
         '''
-        
+
         if GPIO.event_detected(params.START_STOP_BUTTON_PIN) and time.time() - interrupt_time > 4:
             interrupt_time = time.time()
             print("Stopped by user")
@@ -320,11 +328,13 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
 if __name__ == '__main__':
     global interrupt_time; interrupt_time = time.time()
     logging.basicConfig(filename='log_robot.log',level=logging.DEBUG)
+    m = motors.Motor(params.motors_pins)
+    m.stop()
     if (len(sys.argv) >= 2 and sys.argv[1] == 'r') or True:
         logging.info("Starting in race mode")
         import sensors.sensors_handler as sm
         import sensors.tof as tof
-        t = tof.Tof()
+        t = tof.Tof(from_ros = True)
         t.activate_all()
         import sensors.imu as imu
         gyro = imu.Imu()
@@ -351,16 +361,15 @@ if __name__ == '__main__':
         server = Pyro4.Proxy("PYRONAME:robot.server") #Connect to server for graphical interface
     except Exception:
         server = None
-    pins ={'fl':'P8_13','fr':'P8_19','rl':'P9_14','rr':'P9_16','dir_fl':'gpio31','dir_fr':'gpio48','dir_rl':'gpio60','dir_rr':'gpio30'}
 
     timer_thread = timer("Timer", server)
     timer_thread.start()
-    m = motors.Motor(pins)
+
     print("Starting main loop")
     logging.info("Starting main loop")
     GPIO.setup(params.START_STOP_BUTTON_PIN, GPIO.IN)
     GPIO.add_event_detect(params.START_STOP_BUTTON_PIN, GPIO.RISING) #Attaching interrupt for start and stop
-    m.stop()
+
     while True:
         while False:
             if GPIO.event_detected(params.START_STOP_BUTTON_PIN) and time.time() - interrupt_time > 0.5:
