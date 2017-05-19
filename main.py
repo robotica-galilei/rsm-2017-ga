@@ -9,12 +9,8 @@ import algorithms.map_management as maman
 import threading
 import logging
 import config.params as params
-try:
-    import actuators.motors as motors
-except Exception as e:
-    print(e)
-    logging.critical(e)
-    import actuators.fakemotors as motors
+import actuators.motors as motors
+import motion.cell_navigation as cn
 
 class timer(threading.Thread):
     def __init__(self,threadName, server):
@@ -58,37 +54,41 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
             new_dir=1
     if orientation!=new_dir:
         if abs(new_dir-orientation) == 2:
-            m.rotateRight(gyro)
-            m.rotateRight(gyro)
+            cn.rotateRight(m, gyro)
+            cn.rotateRight(m, gyro)
             time.sleep(0.3)
         elif new_dir-orientation == -3 or new_dir-orientation == 1:
-            m.rotateLeft(gyro)
+            cn.rotateLeft(m, gyro)
             time.sleep(0.3)
         elif new_dir-orientation == 3 or new_dir-orientation == -1:
             pass
-            m.rotateRight(gyro)
+            cn.rotateRight(m, gyro)
             time.sleep(0.3)
         orientation=new_dir
 
     if time.time() - gyro.last_calibrated > 20 and t.is_there_a_wall('S'):
-        m.calibrate_gyro(gyro)
+        cn.calibrate_gyro(m, gyro)
 
+    time.sleep(0.3)
     walls = sm.scanWalls((pos[0],pos[1]),orientation, t)
     refresh_map(walls)
     if(not walls[orientation]):
-        mat = m.oneCellForward( mode = 'new_tof', tof = t , ch=ch, h=h, gyro=gyro, k=k, mat=mat, pos=pos, new_pos = path[1][0], deg_pos=deg_pos)
-    m.parallel(t, gyro = gyro)
+        temp_mat = cn.oneCellForward(m= m, mode= 'new_tof', tof= t , ch= ch, h= h, gyro= gyro, k= k, mat= mat, pos= pos, new_pos= path[1][0], deg_pos= deg_pos)
+        pos=path[1][0]
+    elif pos in unexplored_queue:
+        unexplored_queue.remove(pos)s
+    cn.parallel(m, t, gyro = gyro)
 
-    pos=path[1][0]
+
     if sm.check_black(pos, col) and False: #To commentut
-        m.posiziona_assi(gyro)
+        cn.posiziona_assi(gyro)
         if pos in unexplored_queue:
             unexplored_queue.remove(pos)
         mat, pos = refresh_map(sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t), mat, pos)
         mat[pos[0], pos[1]] = 256
         orientation = old_orientation
         pos = old_pos
-        m.oneCellBack()
+        cn.oneCellBack(m)
 
 
 
@@ -205,7 +205,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
     gyro.update()
     gyro.starting_deg = gyro.yawsum
     gyro.last_calibrated = time.time()
-    m.parallel(tof = t, gyro =  gyro)
+    cn.parallel(m, tof = t, gyro =  gyro)
     while True:
         #Set current cell as explored
         mat[pos[0]][pos[1]] = 2
@@ -215,12 +215,12 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
             server.setRobotPosition(pos)
         except:
             pass
-        '''
+
         try:
             raw_input("Continue...")
         except:
             input("Continue...")
-        '''
+
 
         if GPIO.event_detected(params.START_STOP_BUTTON_PIN) and time.time() - interrupt_time > 4:
             interrupt_time = time.time()
