@@ -59,17 +59,9 @@ try:
 
         elif char == curses.KEY_RIGHT:
             # print doesn't work with curses, use addstr instead
-<<<<<<< HEAD
-            screen.addstr(0, 0, 'right')
-            m.setSpeeds(70,10)
-        elif char == curses.KEY_LEFT:
-            screen.addstr(0, 0, 'left ')
-            m.setSpeeds(10,70)
-=======
             x = cont_x/x_max
             y = -2*cont_y/y_max+1
 
->>>>>>> 9aebba640c47c7a0ee6b499072127b142e6798c1
         elif char == curses.KEY_UP:
             x=1
             y=1
