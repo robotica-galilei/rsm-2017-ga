@@ -47,21 +47,33 @@ LED_PIN = 'gpio61'
 LED_BLINK_DELAY = 0.5
 
 '''
-PID costants
+traction costants
 '''
 
-PID_p = 0.4
-PID_i = 0.05
-PID_d = -0.03
+#to test: I use random numbers
+
+yaw_N = 5
+Pyaw = 0.4
+Iyaw = 0.05
+Dyaw = -0.03
+
+pinch_N = 10
+Ppinch = 0.4
+Ipinch = 0.05
+Dpinch = -0.03
 
 
-PID_p_ROTATION= 2.
-PID_i_ROTATION= 0.5
-PID_d_ROTATION= -0.01
+'''
+ramp
+'''
+vel_rampgiu = 25
+vel_rampsu = 100
+ramp_angle = 20
+
+
+
 '''
 ERROR_COSTANTS
 '''
 
 ERROR_OBSTACLE= 50
-ERROR_SENALFA= 0.01
-ERROR_COSALFA = 0.98
