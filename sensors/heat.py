@@ -81,7 +81,7 @@ class Heat:
         Returns if something has been seen by the sensors
         '''
         victims = []
-        for i in params.directions:
+        for i in params.heat_directions:
             now = self.read_raw(i)
             if( now >= temp):
                 print(i + "Heat: ", now)

@@ -208,7 +208,7 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
         print("Sto per partire")
         started_time = time.time()
         while time.time()-started_time < motors.MOTOR_CELL_TIME: #or (avg2 >= dim.MIN_DISTANCE): #While the number of cells is not changed or the distance from a wall is too low
-            m.setSpeeds(power,power)
+            m.setSpeeds(motors.MOTOR_DEFAULT_POWER_LINEAR,motors.MOTOR_DEFAULT_POWER_LINEAR)
             '''
             gyro.update()
             if gyro.pitch > 18: #Up
@@ -387,7 +387,9 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
     elif mode == 'new_tof':
         precision = 15
         side, avg, k = tof.best_side('N','S') #Find the most accurate side between front and rear
-
+        if (side == 'S' and (avg == -1 or avg > 900)) or (side == 'N' and avg == -1):
+            oneCellForward(m, mode='time')
+            return
         N_prec = tof.n_cells_avg(avg) #N_cells before the movement
         N_now = N_prec
         is_in_center = tof.is_in_cell_center(avg, precision = precision)

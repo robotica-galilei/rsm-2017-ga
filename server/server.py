@@ -23,16 +23,17 @@ class server(object):
         return "Pong"
 
     def getRobotPosition(self):
-        return (x_pos, y_pos)
+        return (z_pos, x_pos, y_pos)
 
     def setRobotPosition(self, coords):
+        global z_pos
         global x_pos
         global y_pos
-        if len(coords) < 2:
+        if len(coords) < 3:
             print(coords)
             return -1
         else:
-            x_pos, y_pos = coords
+            z_pos, x_pos, y_pos = coords
             return 0
 
     def getRobotOrientation(self):

@@ -40,15 +40,14 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
 
     gyro.update()
     deg_pos = gyro.yawsum
-
     #Move forward just one cell
-    if pos[0]==path[1][0][0]:
-        if pos[1]>path[1][0][1]:
+    if pos[1]==path[1][0][1]:
+        if pos[2]>path[1][0][2]:
             new_dir=0
         else:
             new_dir=2
     else:
-        if pos[0]>path[1][0][0]:
+        if pos[1]>path[1][0][1]:
             new_dir=3
         else:
             new_dir=1
@@ -70,13 +69,13 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
         cn.calibrate_gyro(m, gyro)
 
     time.sleep(0.3)
-    walls = sm.scanWalls((pos[0],pos[1]),orientation, t)
+    walls = sm.scanWalls((pos[0],pos[1],pos[2]),orientation, t)
     refresh_map(walls)
     if(not walls[orientation]):
         temp_mat = cn.oneCellForward(m= m, mode= 'new_tof', tof= t , ch= ch, h= h, gyro= gyro, k= k, mat= mat, pos= pos, new_pos= path[1][0], deg_pos= deg_pos)
         pos=path[1][0]
     elif pos in unexplored_queue:
-        unexplored_queue.remove(pos)s
+        unexplored_queue.remove(pos)
     cn.parallel(m, t, gyro = gyro)
 
 
@@ -84,8 +83,8 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
         cn.posiziona_assi(gyro)
         if pos in unexplored_queue:
             unexplored_queue.remove(pos)
-        mat, pos = refresh_map(sm.scanWalls((pos[0]+sim_pos[0],pos[1]+sim_pos[1]),orientation, t), mat, pos)
-        mat[pos[0], pos[1]] = 256
+        mat, pos = refresh_map(sm.scanWalls((pos[0],pos[1],pos[2]),orientation, t), mat, pos)
+        mat[pos[0], pos[1], pos[2]] = 256
         orientation = old_orientation
         pos = old_pos
         cn.oneCellBack(m)
@@ -111,8 +110,8 @@ def nearcellToQueue(mat, nearcell, unexplored_queue):
 
     Returns the updated mat and unexplored_queue
     '''
-    if (nearcell not in unexplored_queue) and mat[nearcell[0]][nearcell[1]]==0 and not mat[pos[0]][pos[1]]//256 == 1: #If the cell is not queued and not explored yet
-        mat[nearcell[0]][nearcell[1]] = 1 #Set as queued/explored
+    if (nearcell not in unexplored_queue) and mat[nearcell[0]][nearcell[1]][nearcell[2]]==0 and not mat[pos[0]][pos[1]][pos[2]]//256 == 1: #If the cell is not queued and not explored yet
+        mat[nearcell[0]][nearcell[1]][nearcell[2]] = 1 #Set as queued/explored
         unexplored_queue.append(nearcell) #Add to queue
     return mat, unexplored_queue
 
@@ -124,55 +123,55 @@ def refresh_map(walls):
     global sim_pos
     ##########Resize map, shift indexes, add walls and cells to queue
 
-    if walls[0]>0 or mat[pos[0]][pos[1]-1] > 500: #Left wall
-        if(mat[pos[0]][pos[1]-1] < 500):
-            mat[pos[0]][pos[1]-1] = 1 #Set wall
+    if walls[0]>0 or mat[pos[0]][pos[1]][pos[2]-1] > 500: #Left wall
+        if(mat[pos[0]][pos[1]][pos[2]-1] < 500):
+            mat[pos[0]][pos[1]][pos[2]-1] = 1 #Set wall
     else:
-        mat[pos[0]][pos[1]-1] = 0
-        if pos[1]==1:
+        mat[pos[0]][pos[1]][pos[2]-1] = 0
+        if pos[2]==1:
             mat = maman.appendTwoLinesToMatrix(mat, 1, 0)
             pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 1)
-        mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]-2), unexplored_queue)
+        mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1],pos[2]-2), unexplored_queue)
 
 
-    if walls[1]>0 or mat[pos[0]+1][pos[1]] > 500: #Rear wall
-        if(mat[pos[0]+1][pos[1]] < 500):
-            mat[pos[0]+1][pos[1]] = 1 #Set wall
+    if walls[1]>0 or mat[pos[0]][pos[1]+1][pos[2]] > 500: #Rear wall
+        if(mat[pos[0]][pos[1]+1][pos[2]] < 500):
+            mat[pos[0]][pos[1]+1][pos[2]] = 1 #Set wall
     else:
-        mat[pos[0]+1][pos[1]] = 0
-        if pos[0]==len(mat)-2:
-            mat = maman.appendTwoLinesToMatrix(mat, 0, 1)
-        mat, unexplored_queue = nearcellToQueue(mat, (pos[0]+2,pos[1]), unexplored_queue)
-
-
-    if walls[2]>0 or mat[pos[0]][pos[1]+1] > 500: #Right wall
-        if(mat[pos[0]][pos[1]+1] < 500):
-            mat[pos[0]][pos[1]+1] = 1 #Set wall
-    else:
-        mat[pos[0]][pos[1]+1] = 0
+        mat[pos[0]][pos[1]+1][pos[2]] = 0
         if pos[1]==len(mat[0])-2:
-            mat = maman.appendTwoLinesToMatrix(mat, 1, 1)
-        mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]+2), unexplored_queue)
+            mat = maman.appendTwoLinesToMatrix(mat, 0, 1)
+        mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]+2,pos[2]), unexplored_queue)
 
 
-    if walls[3]>0 or mat[pos[0]-1][pos[1]] > 500: #Front wall
-        if(mat[pos[0]-1][pos[1]] < 500):
-            mat[pos[0]-1][pos[1]] = 1 #Set wall
+    if walls[2]>0 or mat[pos[0]][pos[1]][pos[2]+1] > 500: #Right wall
+        if(mat[pos[0]][pos[1]][pos[2]+1] < 500):
+            mat[pos[0]][pos[1]][pos[2]+1] = 1 #Set wall
     else:
-        mat[pos[0]-1][pos[1]] = 0
-        if pos[0]==1:
+        mat[pos[0]][pos[1]][pos[2]+1] = 0
+        if pos[2]==len(mat[0][0])-2:
+            mat = maman.appendTwoLinesToMatrix(mat, 1, 1)
+        mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1],pos[2]+2), unexplored_queue)
+
+
+    if walls[3]>0 or mat[pos[0]][pos[1]-1][pos[2]] > 500: #Front wall
+        if(mat[pos[0]][pos[1]-1][pos[2]] < 500):
+            mat[pos[0]][pos[1]-1][pos[2]] = 1 #Set wall
+    else:
+        mat[pos[0]][pos[1]-1][pos[2]] = 0
+        if pos[1]==1:
             mat = maman.appendTwoLinesToMatrix(mat, 0, 0)
             pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 0)
-        mat, unexplored_queue = nearcellToQueue(mat, (pos[0]-2,pos[1]), unexplored_queue)
+        mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]-2,pos[2]), unexplored_queue)
 
     return mat, pos
 
 def main(timer_thread, m, t, gyro, ch, h, k, col, server):
 
     #Global variables
-    global mat; mat = [[0,0,0],[0,0,0],[0,0,0]] #1x1 Matrix
-    global pos; pos = (1,1) #Initial position
-    global home; home = (1,1) #Position of the initial cell
+    global mat; mat = [[[0,0,0],[0,0,0],[0,0,0]]] #1x1 Matrix
+    global pos; pos = (0,1,1) #Initial position
+    global home; home = (0,1,1) #Position of the initial cell
     global orientation; orientation = 3 #Initial orientation, generally
     global unexplored_queue; unexplored_queue = [] #Queue containing all the unexplored cells
     global interrupt_time
@@ -208,18 +207,19 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
     cn.parallel(m, tof = t, gyro =  gyro)
     while True:
         #Set current cell as explored
-        mat[pos[0]][pos[1]] = 2
+        mat[pos[0]][pos[1]][pos[2]] = 2
         try:
             server.setMazeMap(mat) #Update map
             server.setRobotOrientation(orientation)
             server.setRobotPosition(pos)
         except:
             pass
-
+        '''
         try:
             raw_input("Continue...")
         except:
             input("Continue...")
+        '''
 
 
         if GPIO.event_detected(params.START_STOP_BUTTON_PIN) and time.time() - interrupt_time > 4:
@@ -230,10 +230,6 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
             server.setRobotStatus("Exploring")
         except Exception:
             pass
-
-
-        print("Mat: ", mat)
-        print("Pos: ", pos)
 
         #Remove current cell from unexplored cells if needed
         if pos in unexplored_queue:
@@ -262,11 +258,11 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
                 except Exception:
                     pass
                 logging.info("Maze finished...")
-                destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat, bridge) #Find the best path to reach home
+                destination=mp.bestPath(orientation,[pos[0],pos[1],pos[2]],[home],mat, bridge) #Find the best path to reach home
                 if destination[0] != float('Inf'):
                     logging.info("Returning home")
                     while pos != home:
-                        destination=mp.bestPath(orientation,[pos[0],pos[1]],[home],mat, bridge)
+                        destination=mp.bestPath(orientation,[pos[0],pos[1],pos[2]],[home],mat, bridge)
                         if destination[0] == float('Inf'):
                             lost = True
                             break
@@ -298,8 +294,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
                 time.sleep(10)
                 lost = True
         else:
-            destination=mp.bestPath(orientation,[pos[0],pos[1]],unexplored_queue,mat, bridge) #Find the best path to reach the nearest cell
-
+            destination=mp.bestPath(orientation,[pos[0],pos[1],pos[2]],unexplored_queue,mat, bridge) #Find the best path to reach the nearest cell
             #Move to destination
             if(destination[0] != float('Inf')):
                 moveTo(destination, m, t, ch, h, k, col, gyro)
@@ -316,12 +311,11 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
                 pass
             print('Lost. Roaming...')
             logging.warning("Lost")
-            mat = [[0,0,0],[0,0,0],[0,0,0]]
-            pos = (1,1) #Initial position
-            home = (1,1) #Position of the initial cell
+            mat = [[[0,0,0],[0,0,0],[0,0,0]]]
+            pos = (0,1,1) #Initial position
+            home = (0,1,1) #Position of the initial cell
             orientation = 3 #Initial orientation, generally
             unexplored_queue = [] #Queue containing all the unexplored cells
-            sim_pos = (0,0)
 
 
 

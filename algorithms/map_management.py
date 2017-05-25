@@ -28,9 +28,9 @@ def updatePosition(position, home,unexplored_queue, index):
     Returns the actual position, the home position and the unexplored_queue shifted
     '''
     for i in range(0,len(unexplored_queue)):
-        unexplored_queue[i]=(unexplored_queue[i][0]+((not index)*2),unexplored_queue[i][1]+(index*2)) #Shift queued cells position
-    position = (position[0]+((not index)*2),position[1]+(index*2)) #Shift robot position
-    home = (home[0]+((not index)*2),home[1]+(index*2)) #Shift home position
+        unexplored_queue[i]=(unexplored_queue[i][0],unexplored_queue[i][1]+((not index)*2),unexplored_queue[i][2]+(index*2)) #Shift queued cells position
+    position = (position[0],position[1]+((not index)*2),position[2]+(index*2)) #Shift robot position
+    home = (home[0],home[1]+((not index)*2),home[2]+(index*2)) #Shift home position
 
     return position, home, unexplored_queue;
 
@@ -47,23 +47,23 @@ def appendTwoLinesToMatrix(mat, axis, position):
     '''
     if(axis == 0):
         if(position == 0):
-            l = [[0 for i in range(len(mat[0]))]]
-            l.extend([[0 for i in range(len(mat[0]))]])
-            l.extend(mat)
-            mat = l
+            l = [[0 for i in range(len(mat[0][0]))]]
+            l.extend([[0 for i in range(len(mat[0][0]))]])
+            l.extend(mat[0])
+            mat = [l]
         elif(position == 1):
-            mat.append([0 for i in range(len(mat[0]))])
-            mat.append([0 for i in range(len(mat[0]))])
+            mat[0].append([0 for i in range(len(mat[0][0]))])
+            mat[0].append([0 for i in range(len(mat[0][0]))])
     elif(axis == 1):
         if(position == 0):
-            for idx, elem in enumerate(mat):
+            for idx, elem in enumerate(mat[0]):
                 l = [0,0]
                 l.extend(elem)
-                mat[idx] = l
+                mat[0][idx] = l
         elif(position == 1):
-            for idx, elem in enumerate(mat):
-                mat[idx].append(0)
-                mat[idx].append(0)
+            for idx, elem in enumerate(mat[0]):
+                mat[0][idx].append(0)
+                mat[0][idx].append(0)
 
 
     return mat
