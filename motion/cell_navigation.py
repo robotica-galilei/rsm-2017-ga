@@ -171,28 +171,6 @@ def posiziona_assi(m, gyro):
     rotateDegrees(m, gyro, to_rotate)
 
 
-def fora_parallel(m, senalfa_prec, tof=None):
-        while True:
-            side, avg, cosalfa, senalfa,s_dif, z = tof.best_side('E','O')
-            side2, avg2, cosalfa2, senalfa2,s_dif2, z2 = tof.best_side('N','S')
-
-            if avg2 < avg and avg2 != -1:
-                side = side2
-                cosalfa = cosalfa2
-                senalfa = senalfa2
-                avg = avg2
-                z = z2
-
-            if s_dif<=2 and s_dif2<=2:
-                senalfa = math.sin(math.radius(senalfa))
-            error = z * senalfa
-            correzione = pid.get_pid(params.PID_p_ROTATION, params.PID_i_ROTATION, params.PID_d_ROTATION, error = error)
-            m.setSpeeds(-motors.MOTOR_DEFAULT_POWER_ROTATION*correzione, motors.MOTOR_DEFAULT_POWER_ROTATION*correzione)
-            if senalfa <= params.ERROR_SENALFA and senalfa>= -params.ERROR_SENALFA:
-                break
-
-        m.stop()
-
 
 """
 Here start the simple functions for robot motion execution

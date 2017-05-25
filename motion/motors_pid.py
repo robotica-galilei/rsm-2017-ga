@@ -2,50 +2,52 @@ import sys
 sys.path.append("../")
 
 import config.params as params
+import traction
 
-error_prec = [None for i in range(4)]
-error_now = None
+class ERROR:
 
-def update_error(error):
-    global error_prec
-    global error_now
+    def __init__(self, x=traction.x):
+        self.error_prec = [None for i in range(x)]
+        self.error_now = None
 
-    if error_prec[-1] == None:
-        error_prec[-1] = error
-        error_now = error
-    else:
-        del(error_prec[0])
-        error_prec.append(error_now)
-        error_now = error
+    def update_error(self, error):
 
-def P(k):
-    return error_now*k
+        if self.error_prec[-1] == None:
+            self.error_prec[-1] = error
+            self.error_now = error
+        else:
+            del(self.error_prec[0])
+            self.error_prec.append(self.error_now)
+            self.error_now = error
 
-def I(k):
-    error_sum = 0
-    num = 0
-    for i in error_prec:
-        if(i != None):
-            error_sum += i
-            num += 1
+    def P(self, k):
+        return self.error_now* k
 
-    if error_now != None:
-        error_sum+= error_now
+    def I(self, k):
+        error_sum = 0
 
-    return error_sum*k
+        for i in self.error_prec:
+            if(i != None):
+                error_sum += i
 
-def D(k):
-    avg = 0.
-    num = 0
-    for i in error_prec:
-        if(i != None):
-            avg += i
-            num += 1
-    avg /= num
-    return (error_now-avg)*k
+        if self.error_now != None:
+            error_sum+= self.error_now
 
-def get_pid(error = None):
-    if error != None:
-        update_error(error)
-    #return P(PID_p)+I(PID_i)+D(PID_d)
-    return 0
+        return error_sum* k
+
+    def D(self, k):
+        avg = 0.
+        num = 0
+        for i in self.error_prec:
+            if(i != None):
+                avg += i
+                num += 1
+        avg /= num
+        return (self.error_now-avg)*k
+
+    def get_pid(self, PID_p, PID_i, PID_d, error = None):
+        if error != None:
+            update_error(error)
+        return P(PID_p)+I(PID_i)+D(PID_d)
+        else:
+        return 0
