@@ -440,13 +440,15 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
 
         print(N_now, N_prec, abs(tof.n_cells_avg(avg+(dim.cell_dimension/2-precision))- N_prec))
         parallel(m, tof, gyro=gyro)
-
-        victims = sm.check_victim(pos,h)
+        victims = h.victims
         print("Victims: ", victims)
-        if (victims[0]): #and time.time()-h.last_read>5):
+        print("Time passed: ", time.time() - h.last_victim)
+        print("Last saved passed: ", time.time() - h.last_saved)
+        if (time.time() - h.last_victim < 0.5 and time.time() - h.last_saved > 1): #and time.time()-h.last_read>5):
             print("SAVING")
             time_before_victims = time.time()
             saveAllVictims(m, gyro, victims, k_kit, tof)
+            h.last_saved = time.time()
             '''
             if mat.item(pos)//512 == 1: #If i've seen the victims but not the visual
                 #mat.itemset(pos, 1024)

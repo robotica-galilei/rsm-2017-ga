@@ -3,10 +3,14 @@ sys.path.append("../")
 import rospy
 import time
 from std_msgs.msg import String
-import sensors.tof as tof
+try:
+    import sensors.tof as tof
+except:
+    sys.path.append("/root/rsm-2017-ga/")
+    import sensors.tof as tof
 
 def talker():
-    pub = rospy.Publisher('sensors', String, queue_size=1)
+    pub = rospy.Publisher('tof', String, queue_size=1)
     rospy.init_node('talker', anonymous=True)
     time_now = time.time()
     directions = ['N', 'S', 'E', 'O']

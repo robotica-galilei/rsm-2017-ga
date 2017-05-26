@@ -18,7 +18,7 @@ class Tof:
         if self.from_ros:
             self.last_values = {'N': -1, 'S': -1, 'E': -1, 'O': -1, 'NE': -1, 'NO': -1}
             rospy.init_node('listener', anonymous=True)
-            rospy.Subscriber("sensors", String, self.callback)
+            rospy.Subscriber("tof", String, self.callback)
         else:
             self.sens = {}
             #self.sens['NO'] = tof_60.VL6180X(pins['60_NO'], addresses['60_NO'])

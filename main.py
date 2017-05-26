@@ -295,11 +295,12 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
                 pass
             stop_function(timer_thread,m)
             #Commented because the thread should start with the button
-
+            '''
             try:
                 raw_input("Press enter to continue")
             except:
                 input("Press enter to continue")
+            '''
 
             if lost == False:
                 print("finished")
@@ -349,9 +350,9 @@ if __name__ == '__main__':
         import sensors.touch as touch
         ch = touch.Touch()
         import sensors.heat as heat
-        h = heat.Heat()
+        h = heat.Heat(from_ros = True)
         import sensors.color as color
-        col = color.Color()
+        col = color.Color(from_ros = True)
         import actuators.kit as kit
         k = kit.Kit()
         k.retract()
@@ -379,7 +380,7 @@ if __name__ == '__main__':
     GPIO.add_event_detect(params.START_STOP_BUTTON_PIN, GPIO.RISING) #Attaching interrupt for start and stop
 
     while True:
-        while False:
+        while True:
             if GPIO.event_detected(params.START_STOP_BUTTON_PIN) and time.time() - interrupt_time > 0.5:
                 interrupt_time = time.time()
                 break

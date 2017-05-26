@@ -3,6 +3,8 @@ sys.path.append("../")
 import logging
 import time
 import serial
+import rospy
+from std_msgs.msg import String
 
 import config.params as params
 import modules.GY906 as GY906
@@ -13,28 +15,48 @@ name_meaning=[None,'U','S','H']
 position_meaning=[None,'Incoming','Center','Passed']
 
 class Heat:
-    def __init__(self, addresses = params.heat_addresses, port = params.video_victims_port, baudrate = 115200):
+    def __init__(self, addresses = params.heat_addresses, port = params.video_victims_port, baudrate = 115200, from_ros= False):
         '''
         Init routine
         addresses is a dictionary containing the addresses of the sensor.
         addresses = {'N': 0x12, 'S': 0x13, 'E': 0x11, 'O': 0x10}
         '''
-        self.sens = {}
-        for key, item in addresses.items():
-            self.sens[key] = GY906.MLX90614(item, bus_num=1)
-        self.last_read = time.time()
+        self.from_ros = from_ros
+        if self.from_ros:
+            self.last_values = {'N': 0, 'E': 0, 'O': 0}
+            self.last_victim = 0
+            self.last_saved = 0
+            #rospy.init_node('heat_listener', anonymous=True)
+            rospy.Subscriber("heat", String, self.callback)
+        else:
+            self.sens = {}
+            for key, item in addresses.items():
+                self.sens[key] = GY906.MLX90614(item, bus_num=1)
+            self.last_read = time.time()
 
-        self.ser = serial.Serial(port = port, baudrate=baudrate)
-        self.ser.close()
-        self.ser.open()
+            self.ser = serial.Serial(port = port, baudrate=baudrate)
+            self.ser.close()
+            self.ser.open()
         self.starting_deg = 0
+
+    def callback(self, data):
+        #rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
+        direction, val = data.data.split(':')
+        self.last_values[direction] = float(val)
+        victims = self.isThereSomeVictim()
+        if victims[0]:
+            self.last_victim = time.time()
+            self.victims = victims
 
     def read_raw(self, dir):
         #Read just the single sensor
-        val = self.sens[dir].get_obj_temp()
-        if val < 10 or val > 80:
-            val = 10
-        return val
+        if not self.from_ros:
+            val = self.sens[dir].get_obj_temp()
+            if val < 10 or val > 80:
+                val = 10
+            return val
+        else:
+            return self.last_values[dir]
 
     def isThereSomeVideoVictim(self):
         '''
@@ -84,8 +106,9 @@ class Heat:
         for i in params.heat_directions:
             now = self.read_raw(i)
             if( now >= temp):
-                print(i + "Heat: ", now)
+                #print(i + "Heat: ", now)
                 victims.append(i)
             else:
-                print("No Heat: ", now)
+                #print("No Heat: ", now)
+                pass
         return len(victims) >= 1, victims
