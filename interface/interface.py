@@ -27,6 +27,7 @@ robot_status = 'Default' #Can be 'Exploring', 'Lost' or whatever you want
 robot_orientation = 0 #The orientation of the robot, integer number from 0 to 3
 x_pos = 0 ##Robot coords in the matrix
 y_pos = 0 ##
+z_pos = 0
 n_victims = 0 #Useless, simply shows on the screen the number of victims found
 elapsed_time = 0
 maze_map = []

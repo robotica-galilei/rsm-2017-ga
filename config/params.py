@@ -33,7 +33,7 @@ is_there_a_wall_threshold = 200
 '''
 Heat calibration
 '''
-HEAT_THRESHOLD = 32
+HEAT_THRESHOLD = 30
 
 '''
 Color calibration

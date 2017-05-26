@@ -2,19 +2,22 @@ import sys
 import os
 import time
 import utils.GPIO as GPIO
+import subprocess
+import signal
 
 if __name__ == '__main__':
     pin = "gpio65"
-    os.system("sh /root/rsm-2017-ga/start.sh")
-    os.system("sh /root/rsm-2017-ga/start_routine.sh")
+    #os.system("sh /root/rsm-2017-ga/start.sh")
+    #os.system("sh /root/rsm-2017-ga/start_routine.sh")
 
     GPIO.setup(pin, GPIO.IN)
 
-    os.system("pm2 start /root/rsm-2017-ga/main.py")
+    pro = subprocess.Popen("python /root/rsm-2017-ga/main.py", stdout=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
 
     while True:
         if GPIO.input(pin) == True:
             print("OMFG, you pressed da button!")
-            os.system("pm2 restart main")
-            time.sleep(10)
+            os.killpg(os.getpgid(pro.pid), signal.SIGTERM)
+            time.sleep(2)
+            pro = subprocess.Popen("python /root/rsm-2017-ga/main.py", stdout=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
         time.sleep(0.05)

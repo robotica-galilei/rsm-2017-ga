@@ -72,7 +72,7 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
     walls = sm.scanWalls((pos[0],pos[1],pos[2]),orientation, t)
     refresh_map(walls)
     if(not walls[orientation]):
-        temp_mat = cn.oneCellForward(m= m, mode= 'new_tof', tof= t , ch= ch, h= h, gyro= gyro, k= k, mat= mat, pos= pos, new_pos= path[1][0], deg_pos= deg_pos)
+        temp_mat = cn.oneCellForward(m= m, mode= 'new_tof', tof= t , ch= ch, h= h, gyro= gyro, k_kit= k, mat= mat, pos= pos, new_pos= path[1][0], deg_pos= deg_pos)
         pos=path[1][0]
     elif pos in unexplored_queue:
         unexplored_queue.remove(pos)
@@ -123,9 +123,13 @@ def refresh_map(walls):
     global sim_pos
     ##########Resize map, shift indexes, add walls and cells to queue
 
+    nearcell = (pos[0],pos[1],pos[2]-2)
     if walls[0]>0 or mat[pos[0]][pos[1]][pos[2]-1] > 500: #Left wall
         if(mat[pos[0]][pos[1]][pos[2]-1] < 500):
             mat[pos[0]][pos[1]][pos[2]-1] = 1 #Set wall
+        if nearcell in unexplored_queue and mp.bestPath(orientation,pos,[nearcell],mat, bridge):
+            unexplored_queue.remove(nearcell)
+
     else:
         mat[pos[0]][pos[1]][pos[2]-1] = 0
         if pos[2]==1:
@@ -134,9 +138,12 @@ def refresh_map(walls):
         mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1],pos[2]-2), unexplored_queue)
 
 
+    nearcell = (pos[0],pos[1]+2,pos[2])
     if walls[1]>0 or mat[pos[0]][pos[1]+1][pos[2]] > 500: #Rear wall
         if(mat[pos[0]][pos[1]+1][pos[2]] < 500):
             mat[pos[0]][pos[1]+1][pos[2]] = 1 #Set wall
+        if nearcell in unexplored_queue and mp.bestPath(orientation,pos,[nearcell],mat, bridge) == float('Inf'):
+            unexplored_queue.remove(nearcell)
     else:
         mat[pos[0]][pos[1]+1][pos[2]] = 0
         if pos[1]==len(mat[0])-2:
@@ -144,9 +151,12 @@ def refresh_map(walls):
         mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]+2,pos[2]), unexplored_queue)
 
 
+    nearcell = (pos[0],pos[1],pos[2]+2)
     if walls[2]>0 or mat[pos[0]][pos[1]][pos[2]+1] > 500: #Right wall
         if(mat[pos[0]][pos[1]][pos[2]+1] < 500):
             mat[pos[0]][pos[1]][pos[2]+1] = 1 #Set wall
+        if nearcell in unexplored_queue and mp.bestPath(orientation,pos,[nearcell],mat, bridge) == float('Inf'):
+            unexplored_queue.remove(nearcell)
     else:
         mat[pos[0]][pos[1]][pos[2]+1] = 0
         if pos[2]==len(mat[0][0])-2:
@@ -154,9 +164,12 @@ def refresh_map(walls):
         mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1],pos[2]+2), unexplored_queue)
 
 
+    nearcell = (pos[0],pos[1]-2,pos[2])
     if walls[3]>0 or mat[pos[0]][pos[1]-1][pos[2]] > 500: #Front wall
         if(mat[pos[0]][pos[1]-1][pos[2]] < 500):
             mat[pos[0]][pos[1]-1][pos[2]] = 1 #Set wall
+        if nearcell in unexplored_queue and mp.bestPath(orientation,pos,[nearcell],mat, bridge) == float('Inf'):
+            unexplored_queue.remove(nearcell)
     else:
         mat[pos[0]][pos[1]-1][pos[2]] = 0
         if pos[1]==1:
@@ -175,7 +188,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
     global orientation; orientation = 3 #Initial orientation, generally
     global unexplored_queue; unexplored_queue = [] #Queue containing all the unexplored cells
     global interrupt_time
-    bridge = []
+    global bridge; bridge = []
 
 
 
@@ -303,7 +316,8 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
                     server.setRobotStatus('Lost')
                 except Exception:
                     pass
-                lost = True
+                unexplored_queue = []
+
         if lost == True:
             try:
                 server.setRobotStatus('Lost. Roaming...')

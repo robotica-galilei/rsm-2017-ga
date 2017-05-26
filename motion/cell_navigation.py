@@ -175,13 +175,15 @@ def posiziona_assi(m, gyro):
 """
 Here start the simple functions for robot motion execution
 """
-def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOTOR_CELL_TIME, mode= 'time', ch=None, tof= None, gyro=None, h=None, k = None, mat = None, pos = None, new_pos = None, deg_pos=None):
+def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOTOR_CELL_TIME, mode= 'time', ch=None, tof= None, gyro=None, h=None, k_kit = None, mat = None, pos = None, new_pos = None, deg_pos=None):
     logging.info("Going one cell forward")
+
     if mode == 'wall':
         m.setSpeeds(power,power)
         while(tof.read_raw('N') > 90):
             for i in range(4):
                 tof.read_raw('S')
+
     elif mode == 'time':
         print("Sto per partire")
         started_time = time.time()
@@ -366,7 +368,7 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
         precision = 15
         side, avg, k = tof.best_side('N','S') #Find the most accurate side between front and rear
         if (side == 'S' and (avg == -1 or avg > 900)) or (side == 'N' and avg == -1):
-            oneCellForward(m, mode='time')
+            oneCellForward(m, mode='time', gyro=gyro)
             return
         N_prec = tof.n_cells_avg(avg) #N_cells before the movement
         N_now = N_prec
@@ -410,146 +412,50 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
             N_now = tof.n_cells_avg(avg)
             is_in_center = tof.is_in_cell_center(avg, precision = precision)
             #print('N: ', N_prec, N_now)
-        print(N_now, N_prec, abs(tof.n_cells_avg(avg+(dim.cell_dimension/2-precision))- N_prec))
-        parallel(m, tof, gyro=gyro)
 
-
-    elif mode == 'tof_fixed':
-        #### now it should be a wall follower
-        #side, avg, cosalfa, senalfa, s_div, z = tof.best_side('E','O')
-        side, avg, k = tof.best_side('N','S') #Find the mostaccurate side
-        gyro.update()
-        deg=gyro.yawsum
-
-        N_prec = tof.n_cells_init(avg2, 1, k = dim.cell_long)*z2 #N_cells before the movement
-        N_now = N_prec
-        x=0
-
-        #while (True):
-        if side2 == 'N':
-            avg_front = avg2
-        else:
-            avg_front = tof.read_raw(side2) -30
-        time_started = time.time()
-        print("Sto per partire")
-        while (N_prec >= N_now and avg_front >= dim.MIN_DISTANCE) or time.time()-time_started < 0.5: #While the number of cells is not changed or the distance from a wall is too low
-            print("N", N_prec, N_now)
-            #side, avg, cosalfa, senalfa, s_div, z = tof.best_side('E','O')
-            tof_sum = 0
-            t = 0
-            for i in range(3):
-                sen = tof.read_raw(side2) -30
-                if sen != -1:
-                    tof_sum += sen
-                    t += 1
-            if t != 0:
-                avg2 = tof_sum/t
-            else:
-                avg2 = 1250
-
-            if side2 == 'N':
-                avg_front = avg2
-            else:
-                avg_front = tof.read_raw(side2) -30
-
-            correction = 0
-            m.setSpeeds(power*(1+correction),power*(1-correction))
-
-            distance=tof.real_distance(avg2,1)
-
-            if z2 * distance <= (N_prec*dim.cell_long) and x < 3:
-                # I'm still in the same cell
-                x=0
-
-            if avg2 <= dim.MIN_DISTANCE:
-                x=3
-
-            else:
-                if x==0:
-                    x=1
-                    #not really sure about in which cell I am
-                if x==1:
-                    x=2
-                    #yes, I am sure about this shit
-                    #logging.info('Now we are in the next cell')
-                else:
-                    x=3
-                    #Next cell
-
-            if x < 3:
-                pass
-
-            else:
-                pos = new_pos
-
-
-            #Ramp
-            '''
-            gyro.update()
-            if gyro.pitch > 18: #Up
+            if gyro.pitch < -18: #Up
                 m.setSpeeds(-30,-30)
                 time.sleep(1)
                 m.setSpeeds(70,70)
                 time.sleep(0.6)
                 gyro.update()
-                while(gyro.pitch > 18):
-                    m.setSpeeds(70 + gyro.roll, 70 - gyro.roll)
+                while(gyro.pitch < -18):
+                    m.setSpeeds(65 + gyro.roll, 65 - gyro.roll, l_coeff = 20, r_coeff = 20)
                     gyro.update()
-                time.sleep(0.2)
-                m.stop()
-                break
-            if gyro.pitch < -6: #Down
-                m.setSpeeds(40,40)
+            if gyro.pitch > 6: #Down
+                m.setSpeeds(40,40, l_coeff = -20, r_coeff = -20)
                 time.sleep(0.05)
-                m.setSpeeds(30,30)
+                m.setSpeeds(30,30, l_coeff = -10, r_coeff = -10)
                 time.sleep(0.05)
-                m.setSpeeds(22,22)
+                m.setSpeeds(22,22, l_coeff = -7, r_coeff = -7)
                 time.sleep(0.05)
-                m.setSpeeds(18,18)
+                m.setSpeeds(18,18, l_coeff = -5, r_coeff = -5)
                 time.sleep(0.05)
-                m.setSpeeds(15,15)
+                m.setSpeeds(15,15, l_coeff = -3, r_coeff = -3)
                 time.sleep(0.1)
                 gyro.update()
                 while(gyro.pitch < -6):
                     gyro.update()
                     m.setSpeeds(25 - gyro.roll, 25 + gyro.roll)
-                time.sleep(1)
-                m.stop()
-                break
 
-
-            #Check victims
-
-            victims = sm.check_victim(pos,h)
-            print("Victims: ", victims)
-            if (victims[0]): #and time.time()-h.last_read>5):
-                time_before_victims = time.time()
-                if mat.item(pos)//512 == 1 and sm.are_there_visual_victims_in_the_list(victims[1]): #If i've seen the victims but not the visual (at least not all of them)
-                    mat.itemset(pos, 1024)
-                    saveAllVictims(m, gyro, victims, k, tof, only_visual = True)
-                elif mat.item(pos)//512 == 0: #First time i see victims here
-                    mat.itemset(pos, 512)
-                    saveAllVictims(m, gyro, victims, k, tof)
-
-            if ch.is_something_touched():
-                if ch.read('E'):
-                    m.setSpeeds(70,10)
-                else:
-                    m.setSpeeds(10,70)
-                time.sleep(0.2)
-                if ch.read('E') and ch.read('O'):
-                    gyro.update()
-                    gyro.starting_deg = gyro.yawsum
-                    break
-                    print("Letti tutti")
-                elif ch.read('E'):
-                    disincagna(m, gyro, -1, deg)
-                else:
-                    disincagna(m, gyro, 1, deg)
-            '''
-            N_now = z2*tof.n_cells(avg2, 1, k=dim.cell_long)
+        print(N_now, N_prec, abs(tof.n_cells_avg(avg+(dim.cell_dimension/2-precision))- N_prec))
         parallel(m, tof, gyro=gyro)
-        print("N", N_prec, N_now)
+
+        victims = sm.check_victim(pos,h)
+        print("Victims: ", victims)
+        if (victims[0]): #and time.time()-h.last_read>5):
+            print("SAVING")
+            time_before_victims = time.time()
+            saveAllVictims(m, gyro, victims, k_kit, tof)
+            '''
+            if mat.item(pos)//512 == 1: #If i've seen the victims but not the visual
+                #mat.itemset(pos, 1024)
+                saveAllVictims(m, gyro, victims, k, tof)
+            elif mat.item(pos)//512 == 0: #First time i see victims here
+                #mat.itemset(pos, 512)
+                saveAllVictims(m, gyro, victims, k, tof)
+            '''
+
     logging.info("Arrived in centre of the cell")
     m.stop()
     time.sleep(0.3)
@@ -565,7 +471,7 @@ def saveAllVictims(m, gyro, victims, k, tof, only_visual = False):
         k.release_one_kit()
     if (('E' in victims[1]  and not only_visual) or 'HE' in victims[1] or 'SE' in victims[1] or 'UE' in victims[1]) and tof.is_there_a_wall('E'):
         for i in range(turn):
-            m.rotateRight(gyro)
+            rotateRight(m, gyro)
         if 'E' in victims[1] or 'HE' in victims[1] or 'SE' in victims[1]:
             k.release_one_kit()
             if 'HE' in victims[1]:
@@ -577,7 +483,7 @@ def saveAllVictims(m, gyro, victims, k, tof, only_visual = False):
         turn += 1
     if 'S' in victims[1]  and not only_visual and tof.is_there_a_wall('S'):
         for i in range(turn):
-            m.rotateRight(gyro)
+            rotateRight(m, gyro)
         k.release_one_kit()
         turn = 1
     else:
@@ -585,9 +491,9 @@ def saveAllVictims(m, gyro, victims, k, tof, only_visual = False):
     if (('O' in victims[1]  and not only_visual) or 'HO' in victims[1] or 'SO' in victims[1] or 'UO' in victims[1]) and tof.is_there_a_wall('O'):
         if turn != 3:
             for i in range(turn):
-                m.rotateRight(gyro)
+                rotateRight(m, gyro)
         else:
-            m.rotateLeft(gyro)
+            rotateLeft(m, gyro)
         if 'O' in victims[1] or 'HO' in victims[1] or 'SO' in victims[1]:
             k.release_one_kit()
             if 'HO' in victims[1]:
@@ -600,7 +506,7 @@ def saveAllVictims(m, gyro, victims, k, tof, only_visual = False):
 
     if(turn < 4):
         for i in range(turn):
-            m.rotateRight(gyro)
+            rotateRight(m, gyro)
 
 
 def oneCellBack(m, mode= 'time', power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOTOR_CELL_TIME, tof=None):

@@ -47,23 +47,28 @@ def appendTwoLinesToMatrix(mat, axis, position):
     '''
     if(axis == 0):
         if(position == 0):
-            l = [[0 for i in range(len(mat[0][0]))]]
-            l.extend([[0 for i in range(len(mat[0][0]))]])
-            l.extend(mat[0])
-            mat = [l]
+            for idx, elem in enumerate(mat):
+                l = [[0 for i in range(len(mat[0][0]))]]
+                l.extend([[0 for i in range(len(mat[0][0]))]])
+                l.extend(mat[0])
+                mat[idx] = l
         elif(position == 1):
-            mat[0].append([0 for i in range(len(mat[0][0]))])
-            mat[0].append([0 for i in range(len(mat[0][0]))])
+            for idx, elem in enumerate(mat):
+                mat[idx].append([0 for i in range(len(mat[0][0]))])
+                mat[idx].append([0 for i in range(len(mat[0][0]))])
+
     elif(axis == 1):
         if(position == 0):
-            for idx, elem in enumerate(mat[0]):
-                l = [0,0]
-                l.extend(elem)
-                mat[0][idx] = l
+            for jdx, jelem in enumerate(mat):
+                for idx, elem in enumerate(mat[0]):
+                    l = [0,0]
+                    l.extend(elem)
+                    mat[jdx][idx] = l
         elif(position == 1):
-            for idx, elem in enumerate(mat[0]):
-                mat[0][idx].append(0)
-                mat[0][idx].append(0)
+            for jdx, jelem in enumerate(mat):
+                for idx, elem in enumerate(mat[0]):
+                    mat[jdx][idx].append(0)
+                    mat[jdx][idx].append(0)
 
 
     return mat

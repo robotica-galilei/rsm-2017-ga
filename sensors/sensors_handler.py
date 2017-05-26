@@ -18,7 +18,8 @@ def check_black(pos, col = None):
 def check_victim(pos, h = None):
     is_there_h, victim_list_h = h.isThereSomeVictim()
     try:
-        is_there_v, victim_list_v = h.isThereSomeVideoVictim()
+        #is_there_v, victim_list_v = h.isThereSomeVideoVictim()
+        is_there_v = False; victim_list_v = []
     except Exception:
         is_there_v = False; victim_list_v = [] #TODO comment when implementing video victims
     is_there = is_there_h or is_there_v
