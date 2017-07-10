@@ -17,7 +17,8 @@ if __name__ == '__main__':
     while True:
         if GPIO.input(pin) == True:
             print("OMFG, you pressed da button!")
-            os.killpg(os.getpgid(pro.pid), signal.SIGTERM)
+            os.killpg(os.getpgid(pro.pid), signal.SIGKILL)
+            #os.system("kill -9 " + os.getpgid(pro.pid))
             time.sleep(2)
             pro = subprocess.Popen("python /root/rsm-2017-ga/main.py", stdout=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
         time.sleep(0.05)

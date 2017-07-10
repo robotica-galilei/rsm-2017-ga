@@ -9,7 +9,8 @@ Pins and ports
 '''
 
 kit_servo_pin = "P9_22"
-START_STOP_BUTTON_PIN = "P8_16"
+START_STOP_BUTTON_PIN_ADA = "P8_16"
+START_STOP_BUTTON_PIN = "gpio46"
 imu_serial_port = "/dev/ttyO1"
 video_victims_port = "/dev/ttyO5"
 imu_baudrate = 115200
@@ -33,7 +34,7 @@ is_there_a_wall_threshold = 200
 '''
 Heat calibration
 '''
-HEAT_THRESHOLD = 30
+HEAT_THRESHOLD = 28
 
 '''
 Color calibration

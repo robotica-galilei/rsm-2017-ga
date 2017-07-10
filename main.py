@@ -22,10 +22,11 @@ class timer(threading.Thread):
         self.startingtime = time.time()
         while(self.stop_flag):
             time.sleep(0.5)
-            try:
-                self.server.setElapsedTime(int(time.time()-self.startingtime))
-            except Exception:
-                pass
+            if server != None:
+                try:
+                    self.server.setElapsedTime(int(time.time()-self.startingtime))
+                except Exception:
+                    pass
 
 
 def moveTo(path, m, t, ch, h, k, col, gyro):
@@ -54,16 +55,32 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
     if orientation!=new_dir:
         if abs(new_dir-orientation) == 2:
             cn.rotateRight(m, gyro)
+            orientation-=1
+            if orientation < 0:
+                orientation = 3
+            cn.saveAllVictims(m, gyro, h.isThereSomeVideoVictim(), k, t)
             cn.rotateRight(m, gyro)
+            orientation=new_dir
             time.sleep(0.3)
         elif new_dir-orientation == -3 or new_dir-orientation == 1:
             cn.rotateLeft(m, gyro)
+            orientation=new_dir
+            cn.saveAllVictims(m, gyro, h.isThereSomeVideoVictim(), k, t)
+            m.setSpeeds(-20,-20)
+            time.sleep(0.2)
+            m.stop()
             time.sleep(0.3)
         elif new_dir-orientation == 3 or new_dir-orientation == -1:
             pass
             cn.rotateRight(m, gyro)
+            orientation=new_dir
+            cn.saveAllVictims(m, gyro, h.isThereSomeVideoVictim(), k, t)
+            m.setSpeeds(-20,-20)
+            time.sleep(0.2)
+            m.stop()
             time.sleep(0.3)
-        orientation=new_dir
+    orientation=new_dir
+
 
     if time.time() - gyro.last_calibrated > 20 and t.is_there_a_wall('S'):
         cn.calibrate_gyro(m, gyro)
@@ -79,15 +96,15 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
     cn.parallel(m, t, gyro = gyro)
 
 
-    if sm.check_black(pos, col) and False: #To commentut
-        cn.posiziona_assi(gyro)
+    if col.is_cell_black(): # and False: #To comment out the False
+        cn.posiziona_assi(m,gyro)
         if pos in unexplored_queue:
             unexplored_queue.remove(pos)
-        mat, pos = refresh_map(sm.scanWalls((pos[0],pos[1],pos[2]),orientation, t), mat, pos)
-        mat[pos[0], pos[1], pos[2]] = 256
+        mat, pos = refresh_map(sm.scanWalls((pos[0],pos[1],pos[2]),orientation, t), add = False)
+        mat[pos[0]][pos[1]][pos[2]] = 256
         orientation = old_orientation
         pos = old_pos
-        cn.oneCellBack(m)
+        cn.oneCellBack(m, mode='time')
 
 
 
@@ -115,7 +132,7 @@ def nearcellToQueue(mat, nearcell, unexplored_queue):
         unexplored_queue.append(nearcell) #Add to queue
     return mat, unexplored_queue
 
-def refresh_map(walls):
+def refresh_map(walls, add = True):
     global mat
     global pos
     global home
@@ -132,10 +149,11 @@ def refresh_map(walls):
 
     else:
         mat[pos[0]][pos[1]][pos[2]-1] = 0
-        if pos[2]==1:
+        if add and pos[2]==1:
             mat = maman.appendTwoLinesToMatrix(mat, 1, 0)
             pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 1)
-        mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1],pos[2]-2), unexplored_queue)
+        if add:
+            mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1],pos[2]-2), unexplored_queue)
 
 
     nearcell = (pos[0],pos[1]+2,pos[2])
@@ -146,9 +164,10 @@ def refresh_map(walls):
             unexplored_queue.remove(nearcell)
     else:
         mat[pos[0]][pos[1]+1][pos[2]] = 0
-        if pos[1]==len(mat[0])-2:
+        if add and pos[1]==len(mat[0])-2:
             mat = maman.appendTwoLinesToMatrix(mat, 0, 1)
-        mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]+2,pos[2]), unexplored_queue)
+        if add:
+            mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]+2,pos[2]), unexplored_queue)
 
 
     nearcell = (pos[0],pos[1],pos[2]+2)
@@ -159,9 +178,10 @@ def refresh_map(walls):
             unexplored_queue.remove(nearcell)
     else:
         mat[pos[0]][pos[1]][pos[2]+1] = 0
-        if pos[2]==len(mat[0][0])-2:
+        if add and pos[2]==len(mat[0][0])-2:
             mat = maman.appendTwoLinesToMatrix(mat, 1, 1)
-        mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1],pos[2]+2), unexplored_queue)
+        if add:
+            mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1],pos[2]+2), unexplored_queue)
 
 
     nearcell = (pos[0],pos[1]-2,pos[2])
@@ -172,10 +192,11 @@ def refresh_map(walls):
             unexplored_queue.remove(nearcell)
     else:
         mat[pos[0]][pos[1]-1][pos[2]] = 0
-        if pos[1]==1:
+        if add and pos[1]==1:
             mat = maman.appendTwoLinesToMatrix(mat, 0, 0)
             pos, home, unexplored_queue = maman.updatePosition(pos, home, unexplored_queue, 0)
-        mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]-2,pos[2]), unexplored_queue)
+        if add:
+            mat, unexplored_queue = nearcellToQueue(mat, (pos[0],pos[1]-2,pos[2]), unexplored_queue)
 
     return mat, pos
 
@@ -194,15 +215,16 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
 
 
     ###Initial settings to be displayed
-    try:
-        server.setRobotStatus("Waiting for start")
-        server.setRobotPosition(pos)
-        server.setVictimsNumber(0)
-        server.setElapsedTime(0)
-        server.setMazeMap(mat)
-        server.setRobotOrientation(orientation)
-    except Exception:
-        pass
+    if server != None:
+        try:
+            server.setRobotStatus("Waiting for start")
+            server.setRobotPosition(pos)
+            server.setVictimsNumber(0)
+            server.setElapsedTime(0)
+            server.setMazeMap(mat)
+            server.setRobotOrientation(orientation)
+        except Exception:
+            pass
     ###
 
     #Commented because the thread should start with the button
@@ -221,12 +243,13 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
     while True:
         #Set current cell as explored
         mat[pos[0]][pos[1]][pos[2]] = 2
-        try:
-            server.setMazeMap(mat) #Update map
-            server.setRobotOrientation(orientation)
-            server.setRobotPosition(pos)
-        except:
-            pass
+        if server != None:
+            try:
+                server.setMazeMap(mat) #Update map
+                server.setRobotOrientation(orientation)
+                server.setRobotPosition(pos)
+            except:
+                pass
         '''
         try:
             raw_input("Continue...")
@@ -234,15 +257,17 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
             input("Continue...")
         '''
 
-
+        '''
         if GPIO.event_detected(params.START_STOP_BUTTON_PIN) and time.time() - interrupt_time > 4:
             interrupt_time = time.time()
             print("Stopped by user")
             sys.exit()
-        try:
-            server.setRobotStatus("Exploring")
-        except Exception:
-            pass
+        '''
+        if server != None:
+            try:
+                server.setRobotStatus("Exploring")
+            except Exception:
+                pass
 
         #Remove current cell from unexplored cells if needed
         if pos in unexplored_queue:
@@ -253,12 +278,13 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
         print("Walls", walls)
 
         refresh_map(walls) #To comment when activated advanced ramp
-        try:
-            server.setMazeMap(mat) #Update map
-            server.setRobotOrientation(orientation)
-            server.setRobotPosition(pos)
-        except:
-            pass
+        if server != None:
+            try:
+                server.setMazeMap(mat) #Update map
+                server.setRobotOrientation(orientation)
+                server.setRobotPosition(pos)
+            except:
+                pass
 
         ##########
         lost = False
@@ -266,10 +292,11 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
         if len(unexplored_queue)==0: #If there is no available cell to explore, the maze is done
             lost = False
             if pos!=home:
-                try:
-                    server.setRobotStatus("Done! Homing...")
-                except Exception:
-                    pass
+                if server != None:
+                    try:
+                        server.setRobotStatus("Done! Homing...")
+                    except Exception:
+                        pass
                 logging.info("Maze finished...")
                 destination=mp.bestPath(orientation,[pos[0],pos[1],pos[2]],[home],mat, bridge) #Find the best path to reach home
                 if destination[0] != float('Inf'):
@@ -289,10 +316,11 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
                         time.sleep(4)
                 else:
                     lost = True
-            try:
-                server.setRobotStatus("Done!")
-            except Exception:
-                pass
+            if server != None:
+                try:
+                    server.setRobotStatus("Done!")
+                except Exception:
+                    pass
             stop_function(timer_thread,m)
             #Commented because the thread should start with the button
             '''
@@ -313,17 +341,19 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
             if(destination[0] != float('Inf')):
                 moveTo(destination, m, t, ch, h, k, col, gyro)
             else:
-                try:
-                    server.setRobotStatus('Lost')
-                except Exception:
-                    pass
+                if server != None:
+                    try:
+                        server.setRobotStatus('Lost')
+                    except Exception:
+                        pass
                 unexplored_queue = []
 
         if lost == True:
-            try:
-                server.setRobotStatus('Lost. Roaming...')
-            except Exception:
-                pass
+            if server != None:
+                try:
+                    server.setRobotStatus('Lost. Roaming...')
+                except Exception:
+                    pass
             print('Lost. Roaming...')
             logging.warning("Lost")
             mat = [[[0,0,0],[0,0,0],[0,0,0]]]
@@ -344,7 +374,7 @@ if __name__ == '__main__':
         import sensors.sensors_handler as sm
         import sensors.tof as tof
         t = tof.Tof(from_ros = True)
-        t.activate_all()
+        #t.activate_all()
         import sensors.imu as imu
         gyro = imu.Imu()
         import sensors.touch as touch
@@ -356,7 +386,8 @@ if __name__ == '__main__':
         import actuators.kit as kit
         k = kit.Kit()
         k.retract()
-        import Adafruit_BBIO.GPIO as GPIO
+        import sensors.start_button as start_button
+        b = start_button.StartButton(from_ros = True)
     else:
         logging.info("Starting in simulation mode")
         import simulation.sensors as sm
@@ -366,9 +397,14 @@ if __name__ == '__main__':
         h = None
         col = None
         k = None
+
     try:
         server = Pyro4.Proxy("PYRONAME:robot.server") #Connect to server for graphical interface
-    except Exception:
+    except:
+        server = None
+    try:
+        server.ping()
+    except:
         server = None
 
     timer_thread = timer("Timer", server)
@@ -376,17 +412,14 @@ if __name__ == '__main__':
 
     print("Starting main loop")
     logging.info("Starting main loop")
-    GPIO.setup(params.START_STOP_BUTTON_PIN, GPIO.IN)
-    GPIO.add_event_detect(params.START_STOP_BUTTON_PIN, GPIO.RISING) #Attaching interrupt for start and stop
+
 
     while True:
-        while True:
-            if GPIO.event_detected(params.START_STOP_BUTTON_PIN) and time.time() - interrupt_time > 0.5:
-                interrupt_time = time.time()
-                break
-            else:
-                k.blink()
-                time.sleep(0.5)
+        while b.activated == False:
+            k.blink()
+            time.sleep(0.4)
+        time.sleep(0.2)
+        b.activated = False
         try:
             main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, h=h, k=k, col=col, server=server)
         except KeyboardInterrupt as e:

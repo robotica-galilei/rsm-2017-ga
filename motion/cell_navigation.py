@@ -168,7 +168,8 @@ def posiziona_assi(m, gyro):
         to_rotate = starting_deg-now
     else:
         to_rotate = (starting_deg-now)%90
-    rotateDegrees(m, gyro, to_rotate)
+    if abs(to_rotate) > 1:
+        rotateDegrees(m, gyro, to_rotate)
 
 
 
@@ -187,8 +188,21 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
     elif mode == 'time':
         print("Sto per partire")
         started_time = time.time()
+        gyro.update()
+        starting_deg = gyro.yawsum
         while time.time()-started_time < motors.MOTOR_CELL_TIME: #or (avg2 >= dim.MIN_DISTANCE): #While the number of cells is not changed or the distance from a wall is too low
             m.setSpeeds(motors.MOTOR_DEFAULT_POWER_LINEAR,motors.MOTOR_DEFAULT_POWER_LINEAR)
+            gyro.update()
+            if(abs(starting_deg-gyro.yawsum) > 10):
+                #Got stuck
+                if(starting_deg-gyro.yawsum > 0):
+                    disincagna(m, gyro, -1, deg= starting_deg)
+                else:
+                    disincagna(m, gyro, 1, deg= starting_deg)
+                first_slow_down = True
+                parallel(m, tof, gyro=gyro)
+                starting_deg = gyro.yawsum
+                started_time = time.time() - 0.2
             '''
             gyro.update()
             if gyro.pitch > 18: #Up
@@ -367,87 +381,131 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
     elif mode == 'new_tof':
         precision = 15
         side, avg, k = tof.best_side('N','S') #Find the most accurate side between front and rear
-        if (side == 'S' and (avg == -1 or avg > 900)) or (side == 'N' and avg == -1):
+        if (side == 'S' and (avg == -1 or avg > 600)) or (side == 'N' and avg == -1):
             oneCellForward(m, mode='time', gyro=gyro)
-            return
-        N_prec = tof.n_cells_avg(avg) #N_cells before the movement
-        N_now = N_prec
-        is_in_center = tof.is_in_cell_center(avg, precision = precision)
-        side_c, avg_c, k_c = tof.best_side('E','O') #Find the most accurate side between right and left to calculate the correction
-        correction = dim.cell_dimension/2 - avg_c - ((tof.n_cells_avg(avg_c)-1)*dim.cell_dimension + dim.robot_width/2)
-        correction *= 0.05
-        if correction > 3:
-            correction = 3
-        elif correction < -3:
-            correction = -3
-        rotateDegrees(m, gyro, -correction*k_c)
-        gyro.update()
-        starting_deg = gyro.yawsum
-        first_slow_down = True
-        avg_N = tof.read_fix('N')
-        print("Moving using %s", side)
-        while (((N_now == N_prec or not is_in_center) and abs(tof.n_cells_avg(avg+k*(dim.cell_dimension/2-precision))- N_prec) <= 1 )  or ((side == 'N' and avg_N > 65 and N_now == 1) or avg_N == -1)) and (avg_N > 55 or avg_N == -1):
-            print(N_now, N_prec, abs(tof.n_cells_avg(avg+k*(dim.cell_dimension/2-precision))- N_prec))
-            if N_now != N_prec:
-                m.setSpeeds(motors.MOTOR_PRECISION_POWER_LINEAR, motors.MOTOR_PRECISION_POWER_LINEAR)
-                if first_slow_down:
-                    parallel(m, tof, gyro=gyro)
-                    first_slow_down = False
-            else:
-                m.setSpeeds(motors.MOTOR_DEFAULT_POWER_LINEAR, motors.MOTOR_DEFAULT_POWER_LINEAR)
-
-            gyro.update()
-            if(abs(starting_deg-gyro.yawsum) > 10):
-                #Got stuck
-                if(starting_deg-gyro.yawsum > 0):
-                    disincagna(m, gyro, -1, deg= starting_deg)
-                else:
-                    disincagna(m, gyro, 1, deg= starting_deg)
-                first_slow_down = True
-                parallel(m, tof, gyro=gyro)
-
-            avg = tof.read_fix(side)
-            avg_N = tof.read_fix('N')
-            #print('C: ', correction)
-            N_now = tof.n_cells_avg(avg)
+        else:
+            N_prec = tof.n_cells_avg(avg) #N_cells before the movement
+            N_now = N_prec
             is_in_center = tof.is_in_cell_center(avg, precision = precision)
-            #print('N: ', N_prec, N_now)
+            side_c, avg_c, k_c = tof.best_side('E','O') #Find the most accurate side between right and left to calculate the correction
+            correction = dim.cell_dimension/2 - avg_c - ((tof.n_cells_avg(avg_c)-1)*dim.cell_dimension + dim.robot_width/2)
+            correction *= 0.05
+            if correction > 2:
+                correction = 2
+            elif correction < -2:
+                correction = -2
+            rotateDegrees(m, gyro, -correction*k_c)
+            gyro.update()
+            starting_deg = gyro.yawsum
+            first_slow_down = True
+            avg_N = tof.read_fix('N')
+            avg_N_prec = avg_N
+            started_slow = 0
+            started_time = time.time()
+            print("Moving using %s", side)
+            while ((((N_now == N_prec or not is_in_center) and abs(tof.n_cells_avg(avg+k*(dim.cell_dimension/2-precision))- N_prec) <= 1 )  or (side == 'N' and avg_N > 35 and avg_N_prec < 450)) and (avg_N > 30 or avg_N == -1) or time.time()-started_time < 0.8) and time.time()-started_time < 6:
+                #print(N_now, N_prec, abs(tof.n_cells_avg(avg+k*(dim.cell_dimension/2-precision))- N_prec))
+                if N_now != N_prec and (time.time()-started_slow < 3 or started_slow == 0):
+                    m.setSpeeds(motors.MOTOR_PRECISION_POWER_LINEAR, motors.MOTOR_PRECISION_POWER_LINEAR)
+                    if first_slow_down:
+                        parallel(m, tof, gyro=gyro)
+                        starting_deg = gyro.yawsum
+                        started_slow = time.time()
+                        first_slow_down = False
+                elif time.time()-started_slow < 3 or started_slow == 0:
+                    m.setSpeeds(motors.MOTOR_DEFAULT_POWER_LINEAR, motors.MOTOR_DEFAULT_POWER_LINEAR)
+                else:
+                    m.setSpeeds(-60, -60)
+                    time.sleep(0.4)
+                    m.setSpeeds(80,80)
+                    time.sleep(0.65)
+                    started_slow = 0
 
-            if gyro.pitch < -18: #Up
-                m.setSpeeds(-30,-30)
-                time.sleep(1)
-                m.setSpeeds(70,70)
-                time.sleep(0.6)
                 gyro.update()
-                while(gyro.pitch < -18):
-                    m.setSpeeds(65 + gyro.roll, 65 - gyro.roll, l_coeff = 20, r_coeff = 20)
-                    gyro.update()
-            if gyro.pitch > 6: #Down
-                m.setSpeeds(40,40, l_coeff = -20, r_coeff = -20)
-                time.sleep(0.05)
-                m.setSpeeds(30,30, l_coeff = -10, r_coeff = -10)
-                time.sleep(0.05)
-                m.setSpeeds(22,22, l_coeff = -7, r_coeff = -7)
-                time.sleep(0.05)
-                m.setSpeeds(18,18, l_coeff = -5, r_coeff = -5)
-                time.sleep(0.05)
-                m.setSpeeds(15,15, l_coeff = -3, r_coeff = -3)
-                time.sleep(0.1)
-                gyro.update()
-                while(gyro.pitch < -6):
-                    gyro.update()
-                    m.setSpeeds(25 - gyro.roll, 25 + gyro.roll)
+                if(abs(starting_deg-gyro.yawsum) > 10):
+                    #Got stuck
+                    if(starting_deg-gyro.yawsum > 0):
+                        disincagna(m, gyro, -1, deg= starting_deg)
+                        started_time = time.time()
+                        started_slow = 0
+                    else:
+                        disincagna(m, gyro, 1, deg= starting_deg)
+                        started_time = time.time()
+                        started_slow = 0
+                    first_slow_down = True
+                    parallel(m, tof, gyro=gyro)
+                    starting_deg = gyro.yawsum
 
-        print(N_now, N_prec, abs(tof.n_cells_avg(avg+(dim.cell_dimension/2-precision))- N_prec))
-        parallel(m, tof, gyro=gyro)
-        victims = h.victims
-        print("Victims: ", victims)
+                avg = tof.read_fix(side)
+                avg_N = tof.read_fix('N')
+                #print('C: ', correction)
+                N_now = tof.n_cells_avg(avg)
+                is_in_center = tof.is_in_cell_center(avg, precision = precision)
+                #print('N: ', N_prec, N_now)
+
+                if gyro.pitch < -12: #Up
+                    m.setSpeeds(-30,-30)
+                    time.sleep(1)
+                    m.setSpeeds(70,70)
+                    time.sleep(0.6)
+                    gyro.update()
+                    while(gyro.pitch < -12):
+                        side_c, avg_c, k_c = tof.best_side('E','O') #Find the most accurate side between right and left to calculate the correction
+                        correction = dim.cell_dimension/2 - avg_c - ((tof.n_cells_avg(avg_c)-1)*dim.cell_dimension + dim.robot_width/2)
+                        correction *= 0.1
+                        if correction > 2:
+                            correction = 2
+                        elif correction < -2:
+                            correction = -2
+                        m.setSpeeds(65 - gyro.roll + correction*k_c, 65 + gyro.roll - correction*k_c, l_coeff = 20, r_coeff = 20)
+                        gyro.update()
+                    m.setSpeeds(50,50)
+                    time.sleep(0.4)
+                    started_time = time.time()
+                    started_slow = 0
+                if gyro.pitch > 8: #Down
+                    m.setSpeeds(40,40, l_coeff = -20, r_coeff = -20)
+                    time.sleep(0.05)
+                    m.setSpeeds(30,30, l_coeff = -10, r_coeff = -10)
+                    time.sleep(0.05)
+                    m.setSpeeds(22,22, l_coeff = -7, r_coeff = -7)
+                    time.sleep(0.05)
+                    m.setSpeeds(18,18, l_coeff = -5, r_coeff = -5)
+                    time.sleep(0.05)
+                    m.setSpeeds(15,15, l_coeff = -3, r_coeff = -3)
+                    time.sleep(0.1)
+                    m.setSpeeds(30,30, l_coeff = -5, r_coeff = -5)
+                    time.sleep(0.1)
+                    gyro.update()
+                    while(gyro.pitch > 8):
+                        gyro.update()
+                        side_c, avg_c, k_c = tof.best_side('E','O') #Find the most accurate side between right and left to calculate the correction
+                        correction = dim.cell_dimension/2 - avg_c - ((tof.n_cells_avg(avg_c)-1)*dim.cell_dimension + dim.robot_width/2)
+                        correction *= 0.1
+                        if correction > 2:
+                            correction = 2
+                        elif correction < -2:
+                            correction = -2
+                        m.setSpeeds(35 + gyro.roll + correction*k_c, 35 - gyro.roll - correction*k_c)
+                        print("ROLL: ",  gyro.roll)
+                        print("CORR: ", correction*k_c)
+                    m.setSpeeds(40,40)
+                    time.sleep(0.5)
+                    started_time = time.time()
+                    started_slow = 0
+
+            print(N_now, N_prec, abs(tof.n_cells_avg(avg+(dim.cell_dimension/2-precision))- N_prec))
+            parallel(m, tof, gyro=gyro)
+        victims = sm.check_victim(h)
+        print("HeatVictims: ", h.isThereSomeVictim())
+        print("VideoVictims: ", h.isThereSomeVideoVictim())
         print("Time passed: ", time.time() - h.last_victim)
         print("Last saved passed: ", time.time() - h.last_saved)
-        if (time.time() - h.last_victim < 0.5 and time.time() - h.last_saved > 1): #and time.time()-h.last_read>5):
+        #saveAllVictims(m, gyro, h.isThereSomeVideoVictim, k_kit, tof)
+        if (time.time() - h.last_victim < 0.8 and time.time() - h.last_saved > 1.2): #and time.time()-h.last_read>5):
             print("SAVING")
             time_before_victims = time.time()
-            saveAllVictims(m, gyro, victims, k_kit, tof)
+            saveAllVictims(m, gyro, h.victims, k_kit, tof)
             h.last_saved = time.time()
             '''
             if mat.item(pos)//512 == 1: #If i've seen the victims but not the visual
@@ -457,12 +515,19 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
                 #mat.itemset(pos, 512)
                 saveAllVictims(m, gyro, victims, k, tof)
             '''
+        elif h.last_victim - h.last_saved > 2 and time.time() - h.last_victim < 2.1:
+            oneCellBack(m, mode='time')
+            saveAllVictims(m, gyro, h.victims, k_kit, tof)
+            k_kit.blink()
+            time.sleep(1)
+            oneCellForward(m, mode='time', gyro=gyro)
+
+        saveAllVictims(m, gyro, h.isThereSomeVideoVictim(), k_kit, tof)
 
     logging.info("Arrived in centre of the cell")
     m.stop()
     time.sleep(0.3)
     return mat
-
 
 def saveAllVictims(m, gyro, victims, k, tof, only_visual = False):
     m.stop()
@@ -471,12 +536,16 @@ def saveAllVictims(m, gyro, victims, k, tof, only_visual = False):
 
     if 'N' in victims[1] and not only_visual and tof.is_there_a_wall('N'):
         k.release_one_kit()
-    if (('E' in victims[1]  and not only_visual) or 'HE' in victims[1] or 'SE' in victims[1] or 'UE' in victims[1]) and tof.is_there_a_wall('E'):
+    if 'UE' in victims[1] or 'UO' in victims[1]:
+        k.blink()
+        time.sleep(1)
+    if (('E' in victims[1]  and not only_visual) or 'HE' in victims[1] or 'SE' in victims[1]) and tof.is_there_a_wall('E'):
         for i in range(turn):
             rotateRight(m, gyro)
         if 'E' in victims[1] or 'HE' in victims[1] or 'SE' in victims[1]:
             k.release_one_kit()
             if 'HE' in victims[1]:
+                time.sleep(1)
                 k.release_one_kit()
         else:
             k.blink()
@@ -490,7 +559,7 @@ def saveAllVictims(m, gyro, victims, k, tof, only_visual = False):
         turn = 1
     else:
         turn += 1
-    if (('O' in victims[1]  and not only_visual) or 'HO' in victims[1] or 'SO' in victims[1] or 'UO' in victims[1]) and tof.is_there_a_wall('O'):
+    if (('O' in victims[1]  and not only_visual) or 'HO' in victims[1] or 'SO' in victims[1]) and tof.is_there_a_wall('O'):
         if turn != 3:
             for i in range(turn):
                 rotateRight(m, gyro)
@@ -499,6 +568,7 @@ def saveAllVictims(m, gyro, victims, k, tof, only_visual = False):
         if 'O' in victims[1] or 'HO' in victims[1] or 'SO' in victims[1]:
             k.release_one_kit()
             if 'HO' in victims[1]:
+                time.sleep(1)
                 k.release_one_kit()
         else:
             k.blink()

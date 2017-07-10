@@ -26,17 +26,21 @@ class Heat:
             self.last_values = {'N': 0, 'E': 0, 'O': 0}
             self.last_victim = 0
             self.last_saved = 0
+            self.victims = [False,[]]
             #rospy.init_node('heat_listener', anonymous=True)
             rospy.Subscriber("heat", String, self.callback)
+            self.ser = serial.Serial(port = port, baudrate=baudrate, timeout=1)
+            self.ser.close()
+            self.ser.open()
+            if len(self.ser.readline()) < 1:
+                self.activate_video = False
+            else:
+                self.activate_video = True
         else:
             self.sens = {}
             for key, item in addresses.items():
                 self.sens[key] = GY906.MLX90614(item, bus_num=1)
             self.last_read = time.time()
-
-            self.ser = serial.Serial(port = port, baudrate=baudrate)
-            self.ser.close()
-            self.ser.open()
         self.starting_deg = 0
 
     def callback(self, data):
@@ -62,40 +66,32 @@ class Heat:
         '''
         Returns if something has been seen by the sensors
         '''
-        self.ser.flushInput()
-        while(self.ser.read() != '\r'):
-            pass
-        val=str(self.ser.readline())
-        #print (val)
-        bit_readings=list(val)
-        #print (bit_readings)
-        processed_readings=[]
-        for i in range(4):
-            processed_readings.append(int(bit_readings[2*i])*2+int(bit_readings[2*i+1]))
-        #print(processed_readings)
-        self.victims_found=[]
-        self.victims_found.append((name_meaning[processed_readings[0]],position_meaning[processed_readings[1]]))
-        self.victims_found.append((name_meaning[processed_readings[2]],position_meaning[processed_readings[3]]))
-        victims_a = []
-        stringa = ''
-        if self.victims_found[0][1]!='Center':
-                stringa += self.victims_found[0][0]+'O'
-        if self.victims_found[1][1]!='Center':
-                stringa += self.victims_found[1][0]+'E'
-        print
-        return len(stringa)>1, [stringa]
-        '''
-        if self.ser.isOpen():
+        if self.activate_video:
             self.ser.flushInput()
-            time_start = time.time()
-            while self.ser.read() != '#' and time.time() - time_start < 1:
+            while(self.ser.read() != '\r'):
                 pass
-            if time.time() - time_start >= 1:
-                return False, []
-            value = self.ser.readline()[4:][:-2].split(',');
-            value = [int(float(i)) for i in value]
-            return self
-        '''
+            val=str(self.ser.readline())
+            #print (val)
+            bit_readings=list(val)
+            #print (bit_readings)
+            processed_readings=[]
+            for i in range(4):
+                processed_readings.append(int(bit_readings[2*i])*2+int(bit_readings[2*i+1]))
+            #print(processed_readings)
+            self.victims_found=[]
+            self.victims_found.append((name_meaning[processed_readings[0]],position_meaning[processed_readings[1]]))
+            self.victims_found.append((name_meaning[processed_readings[2]],position_meaning[processed_readings[3]]))
+            print(self.victims_found)
+            victims_a = []
+            stringa = ''
+            if self.victims_found[0][0] != None: # and self.victims_found[0][1]!='Center':
+                    victims_a.append(self.victims_found[0][0]+'O')
+            if self.victims_found[1][0] != None: # and self.victims_found[1][1]!='Center':
+                    victims_a.append(self.victims_found[1][0]+'E')
+
+            return len(victims_a)>0, victims_a
+        else:
+            return [False, []]
 
 
     def isThereSomeVictim(self, temp=params.HEAT_THRESHOLD):

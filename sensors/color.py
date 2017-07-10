@@ -25,6 +25,7 @@ class Color:
     def callback(self, data):
         #rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
         self.last_values[0], self.last_values[1], self.last_values[2], self.last_values[3] = data.data.split(',')
+        self.last_values = [int(i) for i in self.last_values]
 
     def read_raw(self):
         '''
@@ -39,4 +40,5 @@ class Color:
         '''
         Returns if the read is above the threshold
         '''
-        return self.read_raw()[3] < thresh
+        print("COLOR: ", self.read_raw())
+        return self.read_raw()[0] < 30 and self.read_raw()[1] < 30 and self.read_raw()[2] < 30 and self.read_raw()[3] < 100
