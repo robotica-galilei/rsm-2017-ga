@@ -24,12 +24,10 @@ almost_black = (15, 15, 15)
 light_green = (153, 255, 204)
 
 #Settings
-screen_width = 800
-screen_height = 480
+screen_width = 1200
+screen_height = 1200
 margin = 20
-div_factor = 0.7
-divider = screen_height
-info_offset = -20
+divider = screen_height/2
 
 def render_text(message, foreground_color, background_color, font=None):
     if font is None:
@@ -53,12 +51,4 @@ def draw_layout(draw_surface):
 
     #base
     draw_surface.fill(white)
-    pygame.draw.rect(draw_surface, panel_color, (divider, 0, screen_width-divider, screen_height))
     pygame.draw.line(draw_surface, divider_color , (divider, 0), (divider,screen_height), 4)
-
-
-    #Borders
-    pygame.draw.line(draw_surface, map_margin_color, (margin, margin), (divider-margin, margin), 1)
-    pygame.draw.line(draw_surface, map_margin_color, (divider-margin, margin), (divider-margin, screen_height-margin), 1)
-    pygame.draw.line(draw_surface, map_margin_color, (margin, margin), (margin, screen_height-margin), 1)
-    pygame.draw.line(draw_surface, map_margin_color, (margin, screen_height-margin), (divider-margin, screen_height-margin), 1)
