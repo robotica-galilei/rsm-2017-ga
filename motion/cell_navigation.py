@@ -7,7 +7,6 @@ import math
 import actuators.motors as motors
 import config.params as params
 import config.dimensions as dim
-import motors_pid as pid
 import sensors.sensors_handler as sm
 
 
