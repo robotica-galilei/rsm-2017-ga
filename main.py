@@ -11,6 +11,14 @@ import logging
 import config.params as params
 import actuators.motors as motors
 import motion.cell_navigation as cn
+import sensors.sensors_handler as sm
+import sensors.tof as tof
+import sensors.imu as imu
+import sensors.touch as touch
+import sensors.heat as heat
+import sensors.color as color
+import actuators.kit as kit
+import sensors.start_button as start_button
 
 class timer(threading.Thread):
     def __init__(self,threadName, server):
@@ -369,34 +377,15 @@ if __name__ == '__main__':
     logging.basicConfig(filename='log_robot.log',level=logging.DEBUG)
     m = motors.Motor(params.motors_pins)
     m.stop()
-    if (len(sys.argv) >= 2 and sys.argv[1] == 'r') or True:
-        logging.info("Starting in race mode")
-        import sensors.sensors_handler as sm
-        import sensors.tof as tof
-        t = tof.Tof(from_ros = True)
-        #t.activate_all()
-        import sensors.imu as imu
-        gyro = imu.Imu()
-        import sensors.touch as touch
-        ch = touch.Touch()
-        import sensors.heat as heat
-        h = heat.Heat(from_ros = True)
-        import sensors.color as color
-        col = color.Color(from_ros = True)
-        import actuators.kit as kit
-        k = kit.Kit()
-        k.retract()
-        import sensors.start_button as start_button
-        b = start_button.StartButton(from_ros = True)
-    else:
-        logging.info("Starting in simulation mode")
-        import simulation.sensors as sm
-        t = None
-        gyro = None
-        ch = None
-        h = None
-        col = None
-        k = None
+    t = tof.Tof(from_ros = True)
+    #t.activate_all()
+    gyro = imu.Imu()
+    ch = touch.Touch()
+    h = heat.Heat(from_ros = True)
+    col = color.Color(from_ros = True)
+    k = kit.Kit()
+    k.retract()
+    b = start_button.StartButton(from_ros = True)
 
     try:
         server = Pyro4.Proxy("PYRONAME:robot.server") #Connect to server for graphical interface

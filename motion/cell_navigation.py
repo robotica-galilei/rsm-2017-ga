@@ -31,9 +31,14 @@ def rotateDegrees(m, gyro, degrees):
         while(gyro.update().yawsum <= now+degrees-5):
             pass
 
-        start = time.time()
         m.setSpeeds(-30,30)
-        while(gyro.update().yawsum <= now+degrees-2 and time.time()-start > 3):
+        start = time.time()
+        while gyro.update().yawsum <= now+degrees-3 and time.time()-start < 2:
+            pass
+
+        start = time.time()
+        m.setSpeeds(-20,20)
+        while(gyro.update().yawsum <= now+degrees-1 and time.time()-start < 1):
             pass
     elif degrees < -1:
         m.setSpeeds(60,-60)
@@ -42,7 +47,12 @@ def rotateDegrees(m, gyro, degrees):
 
         m.setSpeeds(30,-30)
         start = time.time()
-        while gyro.update().yawsum >= now+degrees+2 and time.time()-start > 3:
+        while gyro.update().yawsum >= now+degrees+3 and time.time()-start < 2:
+            pass
+
+        m.setSpeeds(20,-20)
+        start = time.time()
+        while gyro.update().yawsum >= now+degrees+1 and time.time()-start < 1:
             pass
     m.stop()
 
