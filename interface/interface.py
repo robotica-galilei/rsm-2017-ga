@@ -19,6 +19,7 @@ def callback(data):
     global y_pos
     global x_pos
     global robot_status
+    global elapsed_time
 
     #rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
     tag, val = data.data.split(':')
