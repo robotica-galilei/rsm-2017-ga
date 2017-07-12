@@ -1,7 +1,9 @@
-import Pyro4
+import rospy
 import sys
 import time
 import os
+import pickle
+from std_msgs.msg import String
 import importlib
 import numpy as np
 import algorithms.motion_planning as mp
@@ -21,21 +23,33 @@ import actuators.kit as kit
 import sensors.start_button as start_button
 
 class timer(threading.Thread):
-    def __init__(self,threadName, server):
+    def __init__(self,threadName, pub):
         threading.Thread.__init__(self)
         self.stop_flag = True
         self.threadName = threadName
-        self.server = server
+        self.pub = pub
     def run(self):
         self.startingtime = time.time()
         while(self.stop_flag):
             time.sleep(0.5)
-            if server != None:
+            if pub != None:
                 try:
-                    self.server.setElapsedTime(int(time.time()-self.startingtime))
+                    self.pub.publish("tim:" + str(int(time.time()-self.startingtime)))
                 except Exception:
                     pass
 
+def publish_robot_info(pub, mat = None, orientation = None, pos = None, time = None, status = None):
+    if pub != None:
+        if mat != None:
+            pub.publish("map:" + pickle.dumps(mat).decode("utf-8"))#Update map
+        if orientation != None:
+            pub.publish("ori:" + str(orientation))
+        if pos != None:
+            pub.publish("pos:" + pickle.dumps(pos).decode("utf-8"))
+        if time != None:
+            pub.publish("tim:" + str(time))
+        if status != None:
+            pub.publish("sta:" + str(status))
 
 def moveTo(path, m, t, ch, h, k, col, gyro):
     global pos
@@ -208,7 +222,7 @@ def refresh_map(walls, add = True):
 
     return mat, pos
 
-def main(timer_thread, m, t, gyro, ch, h, k, col, server):
+def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
 
     #Global variables
     global mat; mat = [[[0,0,0],[0,0,0],[0,0,0]]] #1x1 Matrix
@@ -223,16 +237,8 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
 
 
     ###Initial settings to be displayed
-    if server != None:
-        try:
-            server.setRobotStatus("Waiting for start")
-            server.setRobotPosition(pos)
-            server.setVictimsNumber(0)
-            server.setElapsedTime(0)
-            server.setMazeMap(mat)
-            server.setRobotOrientation(orientation)
-        except Exception:
-            pass
+    if pub != None:
+        publish_robot_info(pub=pub, mat=mat, orientation=orientation, pos=pos, time=0, status="Waiting for start")
     ###
 
     #Commented because the thread should start with the button
@@ -251,13 +257,8 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
     while True:
         #Set current cell as explored
         mat[pos[0]][pos[1]][pos[2]] = 2
-        if server != None:
-            try:
-                server.setMazeMap(mat) #Update map
-                server.setRobotOrientation(orientation)
-                server.setRobotPosition(pos)
-            except:
-                pass
+        if pub != None:
+            publish_robot_info(pub=pub, mat=mat, orientation=orientation, pos=pos)
         '''
         try:
             raw_input("Continue...")
@@ -271,11 +272,10 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
             print("Stopped by user")
             sys.exit()
         '''
-        if server != None:
-            try:
-                server.setRobotStatus("Exploring")
-            except Exception:
-                pass
+        if pub != None:
+            publish_robot_info(pub, status="Exploring")
+
+        publish_robot_info(pub, mat=mat, orientation=orientation, pos=pos)
 
         #Remove current cell from unexplored cells if needed
         if pos in unexplored_queue:
@@ -286,25 +286,16 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
         print("Walls", walls)
 
         refresh_map(walls) #To comment when activated advanced ramp
-        if server != None:
-            try:
-                server.setMazeMap(mat) #Update map
-                server.setRobotOrientation(orientation)
-                server.setRobotPosition(pos)
-            except:
-                pass
-
+        if pub != None:
+            publish_robot_info(pub=pub, mat=mat, orientation=orientation, pos=pos)
         ##########
         lost = False
         #Decide where to go
         if len(unexplored_queue)==0: #If there is no available cell to explore, the maze is done
             lost = False
             if pos!=home:
-                if server != None:
-                    try:
-                        server.setRobotStatus("Done! Homing...")
-                    except Exception:
-                        pass
+                if pub != None:
+                    publish_robot_info(pub, status="Done! Homing...")
                 logging.info("Maze finished...")
                 destination=mp.bestPath(orientation,[pos[0],pos[1],pos[2]],[home],mat, bridge) #Find the best path to reach home
                 if destination[0] != float('Inf'):
@@ -324,11 +315,8 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
                         time.sleep(4)
                 else:
                     lost = True
-            if server != None:
-                try:
-                    server.setRobotStatus("Done!")
-                except Exception:
-                    pass
+            if pub != None:
+                publish_robot_info(pub, status="Done!")
             stop_function(timer_thread,m)
             #Commented because the thread should start with the button
             '''
@@ -349,19 +337,13 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, server):
             if(destination[0] != float('Inf')):
                 moveTo(destination, m, t, ch, h, k, col, gyro)
             else:
-                if server != None:
-                    try:
-                        server.setRobotStatus('Lost')
-                    except Exception:
-                        pass
+                if pub != None:
+                    publish_robot_info(pub, status="Lost")
                 unexplored_queue = []
 
         if lost == True:
-            if server != None:
-                try:
-                    server.setRobotStatus('Lost. Roaming...')
-                except Exception:
-                    pass
+            if pub != None:
+                publish_robot_info(pub, status="Lost. Roaming...")
             print('Lost. Roaming...')
             logging.warning("Lost")
             mat = [[[0,0,0],[0,0,0],[0,0,0]]]
@@ -387,16 +369,9 @@ if __name__ == '__main__':
     k.retract()
     b = start_button.StartButton(from_ros = True)
 
-    try:
-        server = Pyro4.Proxy("PYRONAME:robot.server") #Connect to server for graphical interface
-    except:
-        server = None
-    try:
-        server.ping()
-    except:
-        server = None
+    pub = rospy.Publisher('navigation', String, queue_size=1) #Connect to server for graphical interface
 
-    timer_thread = timer("Timer", server)
+    timer_thread = timer("Timer", pub)
     timer_thread.start()
 
     print("Starting main loop")
@@ -410,7 +385,7 @@ if __name__ == '__main__':
         time.sleep(0.2)
         b.activated = False
         try:
-            main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, h=h, k=k, col=col, server=server)
+            main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, h=h, k=k, col=col, pub=pub)
         except KeyboardInterrupt as e:
             print("KeyboardInterrupt")
             logging.warning("KeyboardInterrupt")
