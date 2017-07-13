@@ -27,14 +27,14 @@ def rotateLeft(m, gyro, power= motors.MOTOR_DEFAULT_POWER_ROTATION, wait= motors
 def rotateDegrees(m, gyro, degrees):
     now = gyro.update().yawsum
     if degrees > 1:
-        if degrees > 3:
+        if degrees > 7:
             m.setSpeeds(-60,60)
-            while(gyro.update().yawsum <= now+degrees-5):
+            while gyro.update().yawsum <= now+degrees-7:
                 pass
 
         m.setSpeeds(-30,30)
         start = time.time()
-        while gyro.update().yawsum <= now+degrees-3 and time.time()-start < 2:
+        while gyro.update().yawsum <= now+degrees-4 and time.time()-start < 1:
             pass
 
         start = time.time()
@@ -42,14 +42,14 @@ def rotateDegrees(m, gyro, degrees):
         while(gyro.update().yawsum <= now+degrees-1 and time.time()-start < 1):
             pass
     elif degrees < -1:
-        if degrees < -3:
+        if degrees < -7:
             m.setSpeeds(60,-60)
-            while(gyro.update().yawsum >= now+degrees+5):
+            while gyro.update().yawsum >= now+degrees+7:
                 pass
 
         m.setSpeeds(30,-30)
         start = time.time()
-        while gyro.update().yawsum >= now+degrees+3 and time.time()-start < 2:
+        while gyro.update().yawsum >= now+degrees+4 and time.time()-start < 1:
             pass
 
         m.setSpeeds(20,-20)
