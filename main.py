@@ -173,9 +173,10 @@ def refresh_map(walls, add = True):
     if walls[0]>0 or mat[pos[0]][pos[1]][pos[2]-1] > 500: #Left wall
         if(mat[pos[0]][pos[1]][pos[2]-1] < 500):
             mat[pos[0]][pos[1]][pos[2]-1] = 1 #Set wall
-        if nearcell in unexplored_queue and mp.bestPath(orientation,pos,[nearcell],mat, bridge):
+        if nearcell in unexplored_queue and mp.bestPath(orientation,pos,[nearcell],mat, bridge)[0] == float('Inf'):
             unexplored_queue.remove(nearcell)
-
+            if mat[nearcell[0]][nearcell[1]][nearcell[2]] == 1:
+                mat[nearcell[0]][nearcell[1]][nearcell[2]] = 0
     else:
         mat[pos[0]][pos[1]][pos[2]-1] = 0
         if add and pos[2]==1:
@@ -189,8 +190,10 @@ def refresh_map(walls, add = True):
     if walls[1]>0 or mat[pos[0]][pos[1]+1][pos[2]] > 500: #Rear wall
         if(mat[pos[0]][pos[1]+1][pos[2]] < 500):
             mat[pos[0]][pos[1]+1][pos[2]] = 1 #Set wall
-        if nearcell in unexplored_queue and mp.bestPath(orientation,pos,[nearcell],mat, bridge) == float('Inf'):
+        if nearcell in unexplored_queue and mp.bestPath(orientation,pos,[nearcell],mat, bridge)[0] == float('Inf'):
             unexplored_queue.remove(nearcell)
+            if mat[nearcell[0]][nearcell[1]][nearcell[2]] == 1:
+                mat[nearcell[0]][nearcell[1]][nearcell[2]] = 0
     else:
         mat[pos[0]][pos[1]+1][pos[2]] = 0
         if add and pos[1]==len(mat[0])-2:
@@ -203,8 +206,10 @@ def refresh_map(walls, add = True):
     if walls[2]>0 or mat[pos[0]][pos[1]][pos[2]+1] > 500: #Right wall
         if(mat[pos[0]][pos[1]][pos[2]+1] < 500):
             mat[pos[0]][pos[1]][pos[2]+1] = 1 #Set wall
-        if nearcell in unexplored_queue and mp.bestPath(orientation,pos,[nearcell],mat, bridge) == float('Inf'):
+        if nearcell in unexplored_queue and mp.bestPath(orientation,pos,[nearcell],mat, bridge)[0] == float('Inf'):
             unexplored_queue.remove(nearcell)
+            if mat[nearcell[0]][nearcell[1]][nearcell[2]] == 1:
+                mat[nearcell[0]][nearcell[1]][nearcell[2]] = 0
     else:
         mat[pos[0]][pos[1]][pos[2]+1] = 0
         if add and pos[2]==len(mat[0][0])-2:
@@ -217,8 +222,10 @@ def refresh_map(walls, add = True):
     if walls[3]>0 or mat[pos[0]][pos[1]-1][pos[2]] > 500: #Front wall
         if(mat[pos[0]][pos[1]-1][pos[2]] < 500):
             mat[pos[0]][pos[1]-1][pos[2]] = 1 #Set wall
-        if nearcell in unexplored_queue and mp.bestPath(orientation,pos,[nearcell],mat, bridge) == float('Inf'):
+        if nearcell in unexplored_queue and mp.bestPath(orientation,pos,[nearcell],mat, bridge)[0] == float('Inf'):
             unexplored_queue.remove(nearcell)
+            if mat[nearcell[0]][nearcell[1]][nearcell[2]] == 1:
+                mat[nearcell[0]][nearcell[1]][nearcell[2]] = 0
     else:
         mat[pos[0]][pos[1]-1][pos[2]] = 0
         if add and pos[1]==1:
@@ -311,6 +318,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
                 if destination[0] != float('Inf'):
                     rospy.loginfo("LOG: Returning home")
                     while pos != home:
+                        publish_robot_info(pub, mat=mat, orientation=orientation, pos=pos)
                         destination=mp.bestPath(orientation,[pos[0],pos[1],pos[2]],[home],mat, bridge)
                         if destination[0] == float('Inf'):
                             lost = True
@@ -342,6 +350,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
                 time.sleep(10)
                 lost = True
         else:
+            rospy.logdebug("LOG: unexplored_queue: %s", unexplored_queue)
             destination=mp.bestPath(orientation,[pos[0],pos[1],pos[2]],unexplored_queue,mat, bridge) #Find the best path to reach the nearest cell
             #Move to destination
             if(destination[0] != float('Inf')):
