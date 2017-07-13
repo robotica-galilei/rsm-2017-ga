@@ -254,6 +254,8 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
     gyro.starting_deg = gyro.yawsum
     gyro.last_calibrated = time.time()
     cn.parallel(m, tof = t, gyro =  gyro)
+
+    rospy.loginfo("Starting while cycle")
     while True:
         #Set current cell as explored
         mat[pos[0]][pos[1]][pos[2]] = 2
@@ -283,6 +285,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
 
         #Read sensors
         walls = sm.scanWalls(pos,orientation, t)
+        rospy.loginfo("Walls: " + str(walls[0]) + "," + str(walls[1]) + "," + str(walls[2]) + "," + str(walls[3]))
         print("Walls", walls)
 
         refresh_map(walls) #To comment when activated advanced ramp
@@ -296,10 +299,10 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
             if pos!=home:
                 if pub != None:
                     publish_robot_info(pub, status="Done! Homing...")
-                logging.info("Maze finished...")
+                rospy.loginfo("Maze finished...")
                 destination=mp.bestPath(orientation,[pos[0],pos[1],pos[2]],[home],mat, bridge) #Find the best path to reach home
                 if destination[0] != float('Inf'):
-                    logging.info("Returning home")
+                    rospy.loginfo("Returning home")
                     while pos != home:
                         destination=mp.bestPath(orientation,[pos[0],pos[1],pos[2]],[home],mat, bridge)
                         if destination[0] == float('Inf'):
@@ -345,7 +348,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
             if pub != None:
                 publish_robot_info(pub, status="Lost. Roaming...")
             print('Lost. Roaming...')
-            logging.warning("Lost")
+            rospy.logwarn("Lost")
             mat = [[[0,0,0],[0,0,0],[0,0,0]]]
             pos = (0,1,1) #Initial position
             home = (0,1,1) #Position of the initial cell
@@ -355,6 +358,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
 
 
 if __name__ == '__main__':
+    rospy.loginfo("Finished library import")
     global interrupt_time; interrupt_time = time.time()
     logging.basicConfig(filename='log_robot.log',level=logging.DEBUG)
     m = motors.Motor(params.motors_pins)
@@ -371,6 +375,8 @@ if __name__ == '__main__':
 
     pub = rospy.Publisher('navigation', String, queue_size=1) #Connect to server for graphical interface
 
+    rospy.loginfo("Starting timer thread")
+
     timer_thread = timer("Timer", pub)
     timer_thread.start()
 
@@ -379,11 +385,13 @@ if __name__ == '__main__':
 
 
     while True:
+        rospy.loginfo("Waiting for start")
         while b.activated == False:
             k.blink()
             time.sleep(0.4)
         time.sleep(0.2)
         b.activated = False
+        rospy.loginfo("Starting main")
         try:
             main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, h=h, k=k, col=col, pub=pub)
         except KeyboardInterrupt as e:
