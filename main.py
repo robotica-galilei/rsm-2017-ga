@@ -111,13 +111,17 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
     walls = sm.scanWalls((pos[0],pos[1],pos[2]),orientation, t)
     refresh_map(walls)
     if(not walls[orientation]):
-        temp_mat = cn.oneCellForward(m= m, mode= 'new_tof', tof= t , ch= ch, h= h, gyro= gyro, k_kit= k, mat= mat, pos= pos, new_pos= path[1][0], deg_pos= deg_pos)
-        pos=path[1][0]
+        temp_mat, temp_pos, nav_error = cn.oneCellForward(m= m, mode= 'new_tof', tof= t , ch= ch, h= h, gyro= gyro, k_kit= k, col=col, mat= mat, pos= pos, new_pos= path[1][0], deg_pos= deg_pos)
+        #pos=path[1][0]
+        if nav_error and path[1][0] in unexplored_queue:
+            unexplored_queue.remove(path[1][0])
+        mat = temp_mat
+        pos = temp_pos
     elif pos in unexplored_queue:
         unexplored_queue.remove(pos)
     cn.parallel(m, t, gyro = gyro)
 
-
+    '''
     if col.is_cell_black(): # and False: #To comment out the False
         cn.posiziona_assi(m,gyro)
         if pos in unexplored_queue:
@@ -127,7 +131,7 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
         orientation = old_orientation
         pos = old_pos
         cn.oneCellBack(m, mode='time')
-
+    '''
 
 
 

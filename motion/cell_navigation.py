@@ -123,8 +123,9 @@ def posiziona_assi(m, gyro):
 """
 Here start the simple functions for robot motion execution
 """
-def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOTOR_CELL_TIME, mode= 'time', ch=None, tof= None, gyro=None, h=None, k_kit = None, mat = None, pos = None, new_pos = None, deg_pos=None):
+def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOTOR_CELL_TIME, mode= 'time', ch=None, tof= None, gyro=None, h=None, k_kit = None, col = None, mat = None, pos = None, new_pos = None, deg_pos=None):
     rospy.loginfo("Going one cell forward")
+    nav_error = False #Change to True if some navigation error happens and causes the robot to go back to previus position
 
     if mode == 'wall':
         m.setSpeeds(power,power)
@@ -444,6 +445,12 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
                     started_time = time.time()
                     started_slow = 0
 
+                if col.is_cell_black(): # and False: #To comment out the False
+                    mat[pos[0]][pos[1]][pos[2]] = 256
+                    nav_error = True
+                    oneCellBack(m, mode='time', wait=motors.MOTOR_CELL_TIME*0.5)
+                    break
+
             print(N_now, N_prec, abs(tof.n_cells_avg(avg+(dim.cell_dimension/2-precision))- N_prec))
             parallel(m, tof, gyro=gyro)
         victims = sm.check_victim(h)
@@ -477,7 +484,9 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
     logging.info("Arrived in centre of the cell")
     m.stop()
     time.sleep(0.3)
-    return mat
+    if not nav_error:
+        pos = new_pos
+    return mat, pos, nav_error
 
 def saveAllVictims(m, gyro, victims, k, tof, only_visual = False):
     m.stop()
