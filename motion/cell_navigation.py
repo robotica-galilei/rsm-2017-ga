@@ -79,11 +79,11 @@ def disincagna(m, gyro, dir, deg = None, largo = True): #Best name everf
     posiziona_assi(m, gyro)
     rotateDegrees(m, gyro, to_do*dir)
     m.setSpeeds(-20, -20)
-    time.sleep(1)
+    time.sleep(0.8)
     rotateDegrees(m, gyro, -(2*to_do)*dir)
 
     m.setSpeeds(20, 20)
-    time.sleep(0.8)
+    time.sleep(0.6)
 
     if deg != None and False:
         set_degrees(m, gyro, deg)
