@@ -56,7 +56,7 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
     global orientation
     global mat
     global unexplored_queue
-    del path[1][0] # Delete the first element (The total distance)
+    del path[1][0] # Delete the first element (The cell where the robot is)
 
     old_orientation = orientation
     old_pos = pos
@@ -114,11 +114,14 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
         temp_mat, temp_pos, nav_error = cn.oneCellForward(m= m, mode= 'new_tof', tof= t , ch= ch, h= h, gyro= gyro, k_kit= k, col=col, mat= mat, pos= pos, new_pos= path[1][0], deg_pos= deg_pos)
         #pos=path[1][0]
         if nav_error and path[1][0] in unexplored_queue:
+            rospy.loginfo("LOG: Nav Error, aborting deleting from route")
             unexplored_queue.remove(path[1][0])
         mat = temp_mat
         pos = temp_pos
-    elif pos in unexplored_queue:
-        unexplored_queue.remove(pos)
+    elif path[1][0] in unexplored_queue:
+        rospy.loginfo("LOG: Cannot reach next cell, aborting deleting from route")
+        unexplored_queue.remove(path[1][0])
+        mat[path[1][0][0]][path[1][0][1]][path[1][0][2]] = 0
     cn.parallel(m, t, gyro = gyro)
 
     '''
@@ -259,7 +262,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
     gyro.last_calibrated = time.time()
     cn.parallel(m, tof = t, gyro =  gyro)
 
-    rospy.loginfo("Starting while cycle")
+    rospy.loginfo("LOG: Starting while cycle")
     while True:
         #Set current cell as explored
         mat[pos[0]][pos[1]][pos[2]] = 2
@@ -289,7 +292,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
 
         #Read sensors
         walls = sm.scanWalls(pos,orientation, t)
-        rospy.loginfo("Walls: " + str(walls[0]) + "," + str(walls[1]) + "," + str(walls[2]) + "," + str(walls[3]))
+        rospy.loginfo("LOG: Walls: " + str(walls[0]) + "," + str(walls[1]) + "," + str(walls[2]) + "," + str(walls[3]))
         print("Walls", walls)
 
         refresh_map(walls) #To comment when activated advanced ramp
@@ -303,10 +306,10 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
             if pos!=home:
                 if pub != None:
                     publish_robot_info(pub, status="Done! Homing...")
-                rospy.loginfo("Maze finished...")
+                rospy.loginfo("LOG: Maze finished...")
                 destination=mp.bestPath(orientation,[pos[0],pos[1],pos[2]],[home],mat, bridge) #Find the best path to reach home
                 if destination[0] != float('Inf'):
-                    rospy.loginfo("Returning home")
+                    rospy.loginfo("LOG: Returning home")
                     while pos != home:
                         destination=mp.bestPath(orientation,[pos[0],pos[1],pos[2]],[home],mat, bridge)
                         if destination[0] == float('Inf'):
@@ -362,7 +365,8 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
 
 
 if __name__ == '__main__':
-    rospy.loginfo("Finished library import")
+    rospy.init_node('robot')
+    rospy.loginfo("LOG: Finished library import")
     global interrupt_time; interrupt_time = time.time()
     logging.basicConfig(filename='log_robot.log',level=logging.DEBUG)
     m = motors.Motor(params.motors_pins)
@@ -379,7 +383,7 @@ if __name__ == '__main__':
 
     pub = rospy.Publisher('navigation', String, queue_size=1) #Connect to server for graphical interface
 
-    rospy.loginfo("Starting timer thread")
+    rospy.loginfo("LOG: Starting timer thread")
 
     timer_thread = timer("Timer", pub)
     timer_thread.start()
@@ -389,13 +393,13 @@ if __name__ == '__main__':
 
 
     while True:
-        rospy.loginfo("Waiting for start")
+        rospy.loginfo("LOG: Waiting for start")
         while b.activated == False:
             k.blink()
             time.sleep(0.4)
         time.sleep(0.2)
         b.activated = False
-        rospy.loginfo("Starting main")
+        rospy.loginfo("LOG: Starting main")
         try:
             main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, h=h, k=k, col=col, pub=pub)
         except KeyboardInterrupt as e:

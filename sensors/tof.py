@@ -17,7 +17,6 @@ class Tof:
         self.from_ros = from_ros
         if self.from_ros:
             self.last_values = {'N': -1, 'S': -1, 'E': -1, 'O': -1, 'NE': -1, 'NO': -1}
-            rospy.init_node('listener', anonymous=True)
             rospy.Subscriber("tof", String, self.callback)
         else:
             self.sens = {}

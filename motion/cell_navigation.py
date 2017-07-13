@@ -71,7 +71,7 @@ def disincagna(m, gyro, dir, deg = None, largo = True): #Best name everf
     if largo:
         to_do = 30
     dir_lib = {1:'O', -1:'E'}
-    rospy.loginfo("Disincagna %s", dir_lib[dir])
+    rospy.loginfo("LOG: Disincagna %s", dir_lib[dir])
 
     if largo:
         m.setSpeeds(-20,-20)
@@ -124,7 +124,7 @@ def posiziona_assi(m, gyro):
 Here start the simple functions for robot motion execution
 """
 def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOTOR_CELL_TIME, mode= 'time', ch=None, tof= None, gyro=None, h=None, k_kit = None, col = None, mat = None, pos = None, new_pos = None, deg_pos=None):
-    rospy.loginfo("Going one cell forward")
+    rospy.loginfo("LOG: Going one cell forward")
     nav_error = False #Change to True if some navigation error happens and causes the robot to go back to previus position
 
     if mode == 'wall':
@@ -350,7 +350,7 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
             avg_N_prec = avg_N
             started_slow = 0
             started_time = time.time()
-            rospy.loginfo("Moving using %s", side)
+            rospy.loginfo("LOG: Moving using %s", side)
             while ((((N_now == N_prec or not is_in_center) and abs(tof.n_cells_avg(avg+k*(dim.cell_dimension/2-precision))- N_prec) <= 1 )  or (side == 'N' and avg_N > 35 and avg_N_prec < 450)) and (avg_N > 30 or avg_N == -1) or time.time()-started_time < 0.8) and time.time()-started_time < 6:
                 #print(N_now, N_prec, abs(tof.n_cells_avg(avg+k*(dim.cell_dimension/2-precision))- N_prec))
                 if N_now != N_prec and (time.time()-started_slow < 3 or started_slow == 0):
@@ -363,7 +363,7 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
                 elif time.time()-started_slow < 3 or started_slow == 0:
                     m.setSpeeds(motors.MOTOR_DEFAULT_POWER_LINEAR, motors.MOTOR_DEFAULT_POWER_LINEAR)
                 else:
-                    rospy.loginfo("Stuck on bumper")
+                    rospy.loginfo("LOG: Stuck on bumper")
                     m.setSpeeds(-60, -60)
                     time.sleep(0.4)
                     m.setSpeeds(80,80)
@@ -393,7 +393,7 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
                 #print('N: ', N_prec, N_now)
 
                 if gyro.pitch < -12: #Up
-                    rospy.loginfo("Ramp UP")
+                    rospy.loginfo("LOG: Ramp UP")
                     m.setSpeeds(-30,-30)
                     time.sleep(1)
                     m.setSpeeds(70,70)
@@ -414,7 +414,7 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
                     started_time = time.time()
                     started_slow = 0
                 if gyro.pitch > 8: #Down
-                    rospy.loginfo("Ramp Down")
+                    rospy.loginfo("LOG: Ramp Down")
                     m.setSpeeds(40,40, l_coeff = -20, r_coeff = -20)
                     time.sleep(0.05)
                     m.setSpeeds(30,30, l_coeff = -10, r_coeff = -10)
@@ -446,7 +446,7 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
                     started_slow = 0
 
                 if col.is_cell_black(): # and False: #To comment out the False
-                    mat[pos[0]][pos[1]][pos[2]] = 256
+                    mat[new_pos[0]][new_pos[1]][new_pos[2]] = 256
                     nav_error = True
                     oneCellBack(m, mode='time', wait=motors.MOTOR_CELL_TIME*0.5)
                     break
@@ -460,7 +460,7 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
         #print("Last saved passed: ", time.time() - h.last_saved)
         #saveAllVictims(m, gyro, h.isThereSomeVideoVictim, k_kit, tof)
         if (time.time() - h.last_victim < 0.8 and time.time() - h.last_saved > 1.2): #and time.time()-h.last_read>5):
-            rospy.loginfo("Saving heat victims")
+            rospy.loginfo("LOG: Saving heat victims")
             time_before_victims = time.time()
             saveAllVictims(m, gyro, h.victims, k_kit, tof)
             h.last_saved = time.time()
@@ -493,7 +493,7 @@ def saveAllVictims(m, gyro, victims, k, tof, only_visual = False):
 
     turn = 1
     if victims[0] == True:
-        rospy.loginfo("Victims: %s", victims[1])
+        rospy.loginfo("LOG: Victims: %s", victims[1])
     if 'N' in victims[1] and not only_visual and tof.is_there_a_wall('N'):
         k.release_one_kit()
     if 'UE' in victims[1] or 'UO' in victims[1]:
@@ -542,7 +542,7 @@ def saveAllVictims(m, gyro, victims, k, tof, only_visual = False):
 
 
 def oneCellBack(m, mode= 'time', power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOTOR_CELL_TIME, tof=None):
-    rospy.loginfo("Going one cell backward")
+    rospy.loginfo("LOG: Going one cell backward")
     if mode == 'wall':
         m.setSpeeds(-power,-power)
         while(tof.read_raw('S') > 90):
@@ -550,12 +550,12 @@ def oneCellBack(m, mode= 'time', power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait=
                 tof.read_raw('S')
     elif mode == 'time':
         m.setSpeeds(-50, -50)
-        time.sleep(1.2)
+        time.sleep(wait)
     m.stop()
 
 
 def calibrate_gyro(m, gyro= None):
-    rospy.loginfo("Calibrating Gyro")
+    rospy.loginfo("LOG: Calibrating Gyro")
     m.setSpeeds(-50,-50)
     time.sleep(0.7)
     m.setSpeeds(10,-70)
