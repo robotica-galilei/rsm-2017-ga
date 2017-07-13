@@ -24,7 +24,7 @@ sleep 5
 set -v
 
 {
-
+export ROS_IP=192.168.1.127
 roscore
 
 } &>> ${LOG_FILE}
