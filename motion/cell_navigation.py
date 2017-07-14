@@ -330,8 +330,10 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
         precision = 15
         side, avg, k = tof.best_side('N','S') #Find the most accurate side between front and rear
         if (side == 'S' and (avg == -1 or avg > 600)) or (side == 'N' and avg == -1):
+            rospy.logdebug("LOG: Going by time")
             oneCellForward(m, mode='time', gyro=gyro)
         else:
+            rospy.logdebug("LOG: Going using normal mode")
             N_prec = tof.n_cells_avg(avg) #N_cells before the movement
             N_now = N_prec
             is_in_center = tof.is_in_cell_center(avg, precision = precision)
@@ -351,7 +353,9 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
             started_slow = 0
             started_time = time.time()
             rospy.loginfo("LOG: Moving using %s", side)
-            while ((((N_now == N_prec or not is_in_center) and abs(tof.n_cells_avg(avg+k*(dim.cell_dimension/2-precision))- N_prec) <= 1 )  or (side == 'N' and avg_N > 35 and avg_N_prec < 450)) and (avg_N > 30 or avg_N == -1) or time.time()-started_time < 0.8) and time.time()-started_time < 6:
+            while ((((N_now == N_prec or not is_in_center) and abs(tof.n_cells_avg(avg+k*(dim.cell_dimension/2-precision))- N_prec) <= 1 ) or
+                (side == 'N' and avg_N > 35 and avg_N_prec < 450)) and (avg_N > 30 or avg_N == -1) or
+                time.time()-started_time < 0.8) and time.time()-started_time < 6:
                 #print(N_now, N_prec, abs(tof.n_cells_avg(avg+k*(dim.cell_dimension/2-precision))- N_prec))
                 if N_now != N_prec and (time.time()-started_slow < 3 or started_slow == 0):
                     m.setSpeeds(motors.MOTOR_PRECISION_POWER_LINEAR, motors.MOTOR_PRECISION_POWER_LINEAR)
@@ -370,7 +374,9 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
                     time.sleep(0.65)
                     started_slow = 0
 
+                rospy.logdebug("LOG: Reading gyro")
                 gyro.update()
+                rospy.logdebug("LOG: Gyro OK")
                 if(abs(starting_deg-gyro.yawsum) > 10):
                     #Got stuck
                     if(starting_deg-gyro.yawsum > 0):
@@ -453,6 +459,10 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
 
             print(N_now, N_prec, abs(tof.n_cells_avg(avg+(dim.cell_dimension/2-precision))- N_prec))
             parallel(m, tof, gyro=gyro)
+
+        m.stop()
+        time.sleep(0.3)
+        rospy.loginfo("LOG: Staring checking heat victims")
         victims = sm.check_victim(h)
         #print("HeatVictims: ", h.isThereSomeVictim())
         #print("VideoVictims: ", h.isThereSomeVideoVictim())
@@ -479,11 +489,11 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
             time.sleep(1)
             oneCellForward(m, mode='time', gyro=gyro)
 
+        rospy.loginfo("LOG: Starting checking video victims")
         saveAllVictims(m, gyro, h.isThereSomeVideoVictim(), k_kit, tof)
 
     logging.info("Arrived in centre of the cell")
-    m.stop()
-    time.sleep(0.3)
+
     if not nav_error:
         pos = new_pos
     return mat, pos, nav_error

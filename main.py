@@ -83,7 +83,6 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
             cn.saveAllVictims(m, gyro, h.isThereSomeVideoVictim(), k, t)
             cn.rotateRight(m, gyro)
             orientation=new_dir
-            time.sleep(0.3)
         elif new_dir-orientation == -3 or new_dir-orientation == 1:
             cn.rotateLeft(m, gyro)
             orientation=new_dir
@@ -91,7 +90,6 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
             m.setSpeeds(-20,-20)
             time.sleep(0.2)
             m.stop()
-            time.sleep(0.3)
         elif new_dir-orientation == 3 or new_dir-orientation == -1:
             pass
             cn.rotateRight(m, gyro)
@@ -100,9 +98,21 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
             m.setSpeeds(-20,-20)
             time.sleep(0.2)
             m.stop()
-            time.sleep(0.3)
+
+        #Wait new measurement after robot rotation
+        check_time = False
+        check_time_N = False
+        check_time_S = False
+        while not check_time:
+            if time.time() - t.time_last('N') < 0.2:
+                check_time_N = True
+            if time.time() - t.time_last('S') < 0.2:
+                check_time_S = True
+            if check_time_N and check_time_S:
+                check_time = True
+
     orientation=new_dir
-    publish_robot_info(pub, orientation=orientation):
+    publish_robot_info(pub, orientation=orientation)
 
 
     if time.time() - gyro.last_calibrated > 20 and t.is_there_a_wall('S'):
@@ -378,6 +388,8 @@ if __name__ == '__main__':
     rospy.init_node('robot', log_level=rospy.DEBUG)
     rospy.loginfo("LOG: ----------BOOT----------")
     rospy.loginfo("LOG: Finished library import")
+    pub = rospy.Publisher('navigation', String, queue_size=1) #Connect to server for graphical interface
+    publish_robot_info(pub, status="Boot completed", time=0)
     global interrupt_time; interrupt_time = time.time()
     logging.basicConfig(filename='log_robot.log',level=logging.DEBUG)
     m = motors.Motor(params.motors_pins)
@@ -392,7 +404,6 @@ if __name__ == '__main__':
     k.retract()
     b = start_button.StartButton(from_ros = True)
 
-    pub = rospy.Publisher('navigation', String, queue_size=1) #Connect to server for graphical interface
 
     rospy.loginfo("LOG: Starting timer thread")
 

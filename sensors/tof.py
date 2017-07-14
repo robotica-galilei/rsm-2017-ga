@@ -17,6 +17,7 @@ class Tof:
         self.from_ros = from_ros
         if self.from_ros:
             self.last_values = {'N': -1, 'S': -1, 'E': -1, 'O': -1, 'NE': -1, 'NO': -1}
+            self.last_time = {'N': -1, 'S': -1, 'E': -1, 'O': -1, 'NE': -1, 'NO': -1}
             rospy.Subscriber("tof", String, self.callback)
         else:
             self.sens = {}
@@ -37,6 +38,7 @@ class Tof:
         #rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
         direction, val = data.data.split(':')
         self.last_values[direction] = int(val)
+        self.last_time[direction] = time.time()
 
     def activate_all(self):
         if not self.from_ros:
@@ -82,6 +84,12 @@ class Tof:
                 return 0
         else:
             return -1
+
+    def time_last(self, dir):
+        if self.from_ros:
+            return self.last_time[dir]
+        else:
+            return 0
 
     def is_there_a_wall(self, dir):
         d = self.read_fix(dir)
