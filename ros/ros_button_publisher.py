@@ -12,7 +12,7 @@ except:
 
 def talker():
     pub = rospy.Publisher('button', String, queue_size=1)
-    rospy.init_node('button_talker', anonymous=True)
+    rospy.init_node('button_talker')
     b = button.StartButton()
 
     while not rospy.is_shutdown():

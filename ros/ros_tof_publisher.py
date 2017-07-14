@@ -11,7 +11,7 @@ except:
 
 def talker():
     pub = rospy.Publisher('tof', String, queue_size=1)
-    rospy.init_node('talker', anonymous=True)
+    rospy.init_node('tof_talker')
     time_now = time.time()
     directions = ['N', 'S', 'E', 'O']
     rates = {'N': 0.1, 'S': 0.1, 'E': 0.3, 'O': 0.3, 'NE': 0.3, 'NO': 0.3}

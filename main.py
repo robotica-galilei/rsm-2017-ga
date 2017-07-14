@@ -91,7 +91,6 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
             time.sleep(0.2)
             m.stop()
         elif new_dir-orientation == 3 or new_dir-orientation == -1:
-            pass
             cn.rotateRight(m, gyro)
             orientation=new_dir
             cn.saveAllVictims(m, gyro, h.isThereSomeVideoVictim(), k, t)
@@ -396,7 +395,7 @@ if __name__ == '__main__':
     m.stop()
     t = tof.Tof(from_ros = True)
     #t.activate_all()
-    gyro = imu.Imu()
+    gyro = imu.Imu(from_ros = True)
     ch = touch.Touch()
     h = heat.Heat(from_ros = True)
     col = color.Color(from_ros = True)

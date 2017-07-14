@@ -40,5 +40,5 @@ class Color:
         '''
         Returns if the read is above the threshold
         '''
-        print("COLOR: ", self.read_raw())
+        #print("COLOR: ", self.read_raw())
         return self.read_raw()[0] < 30 and self.read_raw()[1] < 30 and self.read_raw()[2] < 30 and self.read_raw()[3] < 100
