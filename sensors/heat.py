@@ -68,28 +68,33 @@ class Heat:
         '''
         if self.activate_video:
             self.ser.flushInput()
-            while(self.ser.read() != '\r'):
-                pass
-            val=str(self.ser.readline())
-            #print (val)
-            bit_readings=list(val)
-            #print (bit_readings)
-            processed_readings=[]
-            for i in range(4):
-                processed_readings.append(int(bit_readings[2*i])*2+int(bit_readings[2*i+1]))
-            #print(processed_readings)
-            self.victims_found=[]
-            self.victims_found.append((name_meaning[processed_readings[0]],position_meaning[processed_readings[1]]))
-            self.victims_found.append((name_meaning[processed_readings[2]],position_meaning[processed_readings[3]]))
-            print(self.victims_found)
-            victims_a = []
-            stringa = ''
-            if self.victims_found[0][0] != None: # and self.victims_found[0][1]!='Center':
-                    victims_a.append(self.victims_found[0][0]+'O')
-            if self.victims_found[1][0] != None: # and self.victims_found[1][1]!='Center':
-                    victims_a.append(self.victims_found[1][0]+'E')
+            i = 0
+            while(self.ser.read() != '\r' and i<100):
+                i += 1
+                time.sleep(0.01)
+            if i<100:
+                val=str(self.ser.readline())
+                #print (val)
+                bit_readings=list(val)
+                #print (bit_readings)
+                processed_readings=[]
+                for i in range(4):
+                    processed_readings.append(int(bit_readings[2*i])*2+int(bit_readings[2*i+1]))
+                #print(processed_readings)
+                self.victims_found=[]
+                self.victims_found.append((name_meaning[processed_readings[0]],position_meaning[processed_readings[1]]))
+                self.victims_found.append((name_meaning[processed_readings[2]],position_meaning[processed_readings[3]]))
+                print(self.victims_found)
+                victims_a = []
+                stringa = ''
+                if self.victims_found[0][0] != None: # and self.victims_found[0][1]!='Center':
+                        victims_a.append(self.victims_found[0][0]+'O')
+                if self.victims_found[1][0] != None: # and self.victims_found[1][1]!='Center':
+                        victims_a.append(self.victims_found[1][0]+'E')
 
-            return len(victims_a)>0, victims_a
+                return len(victims_a)>0, victims_a
+            else:
+                return [False, []]
         else:
             return [False, []]
 

@@ -102,6 +102,7 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
             m.stop()
             time.sleep(0.3)
     orientation=new_dir
+    publish_robot_info(pub, orientation=orientation):
 
 
     if time.time() - gyro.last_calibrated > 20 and t.is_there_a_wall('S'):
@@ -374,7 +375,8 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
 
 
 if __name__ == '__main__':
-    rospy.init_node('robot')
+    rospy.init_node('robot', log_level=rospy.DEBUG)
+    rospy.loginfo("LOG: ----------BOOT----------")
     rospy.loginfo("LOG: Finished library import")
     global interrupt_time; interrupt_time = time.time()
     logging.basicConfig(filename='log_robot.log',level=logging.DEBUG)
@@ -395,7 +397,6 @@ if __name__ == '__main__':
     rospy.loginfo("LOG: Starting timer thread")
 
     timer_thread = timer("Timer", pub)
-    timer_thread.start()
 
     print("Starting main loop")
     logging.info("Starting main loop")
@@ -403,6 +404,7 @@ if __name__ == '__main__':
 
     while True:
         rospy.loginfo("LOG: Waiting for start")
+        publish_robot_info(pub, status="Waiting for start")
         while b.activated == False:
             k.blink()
             time.sleep(0.4)
@@ -410,6 +412,7 @@ if __name__ == '__main__':
         b.activated = False
         rospy.loginfo("LOG: Starting main")
         try:
+            timer_thread.start()
             main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, h=h, k=k, col=col, pub=pub)
         except KeyboardInterrupt as e:
             print("KeyboardInterrupt")
