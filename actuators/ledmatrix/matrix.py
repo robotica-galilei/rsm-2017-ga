@@ -49,6 +49,10 @@ class displayMatrix:
         if render:
             self.display.write_display()
 
+    def sigFuckYou(self):
+        self.display.clear()
+        self.drawMap(maps.swasti,0)
+
     def sigDone(self):
         self.display.clear()
         self.drawMap(maps.tick,1)
@@ -72,7 +76,7 @@ class displayMatrix:
         for i in range(4):
             if walls[i]==1:
                 self.drawWall(i,render=False)
-        self.display.write_display()
+        self.drawMap(maps.robot,2)
 
 
     def sigDirection(self,dir,status=1):
@@ -93,6 +97,8 @@ class displayMatrix:
                     self.drawWall(side,color=3)
                     time.sleep(0.2)
                 self.drawWall(side)
+            else:
+                self.display.write_display()
 
     def shutDown(self):
         self.display.clear()

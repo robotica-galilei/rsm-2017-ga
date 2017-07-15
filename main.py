@@ -12,6 +12,7 @@ import threading
 import logging
 import config.params as params
 import actuators.motors as motors
+import actuators.ledmatrix.matrix as ledmatrix
 import motion.cell_navigation as cn
 import sensors.sensors_handler as sm
 import sensors.tof as tof
