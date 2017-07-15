@@ -30,6 +30,7 @@ sleep 7 #Give roscore some time to startup
 screen -d -m bash -c "while true; do python /root/rsm-2017-ga/ros/ros_tof_publisher.py; sleep 1; done"
 screen -d -m bash -c "while true; do python /root/rsm-2017-ga/ros/ros_temp_col_publisher.py; sleep 1; done"
 screen -d -m bash -c "while true; do python /root/rsm-2017-ga/ros/ros_button_publisher.py; sleep 1; done"
+screen -d -m bash -c "while true; do python /root/rsm-2017-ga/ros/ros_imu_publisher.py; sleep 1; done"
 screen -d -m bash -c "python /root/rsm-2017-ga/parti_ti_prego.py"
 
 } &>> ${LOG_FILE}
