@@ -57,7 +57,7 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
     global orientation
     global mat
     global unexplored_queue
-    del path[1][0] # Delete the first element (The total distance)
+    del path[1][0] # Delete the first element (The cell where the robot is)
 
     old_orientation = orientation
     old_pos = pos
@@ -84,7 +84,6 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
             cn.saveAllVictims(m, gyro, h.isThereSomeVideoVictim(), k, t)
             cn.rotateRight(m, gyro)
             orientation=new_dir
-            time.sleep(0.3)
         elif new_dir-orientation == -3 or new_dir-orientation == 1:
             cn.rotateLeft(m, gyro)
             orientation=new_dir
@@ -92,17 +91,28 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
             m.setSpeeds(-20,-20)
             time.sleep(0.2)
             m.stop()
-            time.sleep(0.3)
         elif new_dir-orientation == 3 or new_dir-orientation == -1:
-            pass
             cn.rotateRight(m, gyro)
             orientation=new_dir
             cn.saveAllVictims(m, gyro, h.isThereSomeVideoVictim(), k, t)
             m.setSpeeds(-20,-20)
             time.sleep(0.2)
             m.stop()
-            time.sleep(0.3)
+
+        #Wait new measurement after robot rotation
+        check_time = False
+        check_time_N = False
+        check_time_S = False
+        while not check_time:
+            if time.time() - t.time_last('N') < 0.2:
+                check_time_N = True
+            if time.time() - t.time_last('S') < 0.2:
+                check_time_S = True
+            if check_time_N and check_time_S:
+                check_time = True
+
     orientation=new_dir
+    publish_robot_info(pub, orientation=orientation)
 
 
     if time.time() - gyro.last_calibrated > 20 and t.is_there_a_wall('S'):
@@ -112,13 +122,20 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
     walls = sm.scanWalls((pos[0],pos[1],pos[2]),orientation, t)
     refresh_map(walls)
     if(not walls[orientation]):
-        temp_mat = cn.oneCellForward(m= m, mode= 'new_tof', tof= t , ch= ch, h= h, gyro= gyro, k_kit= k, mat= mat, pos= pos, new_pos= path[1][0], deg_pos= deg_pos)
-        pos=path[1][0]
-    elif pos in unexplored_queue:
-        unexplored_queue.remove(pos)
+        temp_mat, temp_pos, nav_error = cn.oneCellForward(m= m, mode= 'new_tof', tof= t , ch= ch, h= h, gyro= gyro, k_kit= k, col=col, mat= mat, pos= pos, new_pos= path[1][0], deg_pos= deg_pos)
+        #pos=path[1][0]
+        if nav_error and path[1][0] in unexplored_queue:
+            rospy.loginfo("LOG: Nav Error, aborting deleting from route")
+            unexplored_queue.remove(path[1][0])
+        mat = temp_mat
+        pos = temp_pos
+    elif path[1][0] in unexplored_queue:
+        rospy.loginfo("LOG: Cannot reach next cell, aborting deleting from route")
+        unexplored_queue.remove(path[1][0])
+        mat[path[1][0][0]][path[1][0][1]][path[1][0][2]] = 0
     cn.parallel(m, t, gyro = gyro)
 
-
+    '''
     if col.is_cell_black(): # and False: #To comment out the False
         cn.posiziona_assi(m,gyro)
         if pos in unexplored_queue:
@@ -128,7 +145,7 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
         orientation = old_orientation
         pos = old_pos
         cn.oneCellBack(m, mode='time')
-
+    '''
 
 
 
@@ -167,9 +184,10 @@ def refresh_map(walls, add = True):
     if walls[0]>0 or mat[pos[0]][pos[1]][pos[2]-1] > 500: #Left wall
         if(mat[pos[0]][pos[1]][pos[2]-1] < 500):
             mat[pos[0]][pos[1]][pos[2]-1] = 1 #Set wall
-        if nearcell in unexplored_queue and mp.bestPath(orientation,pos,[nearcell],mat, bridge):
+        if nearcell in unexplored_queue and mp.bestPath(orientation,pos,[nearcell],mat, bridge)[0] == float('Inf'):
             unexplored_queue.remove(nearcell)
-
+            if mat[nearcell[0]][nearcell[1]][nearcell[2]] == 1:
+                mat[nearcell[0]][nearcell[1]][nearcell[2]] = 0
     else:
         mat[pos[0]][pos[1]][pos[2]-1] = 0
         if add and pos[2]==1:
@@ -183,8 +201,10 @@ def refresh_map(walls, add = True):
     if walls[1]>0 or mat[pos[0]][pos[1]+1][pos[2]] > 500: #Rear wall
         if(mat[pos[0]][pos[1]+1][pos[2]] < 500):
             mat[pos[0]][pos[1]+1][pos[2]] = 1 #Set wall
-        if nearcell in unexplored_queue and mp.bestPath(orientation,pos,[nearcell],mat, bridge) == float('Inf'):
+        if nearcell in unexplored_queue and mp.bestPath(orientation,pos,[nearcell],mat, bridge)[0] == float('Inf'):
             unexplored_queue.remove(nearcell)
+            if mat[nearcell[0]][nearcell[1]][nearcell[2]] == 1:
+                mat[nearcell[0]][nearcell[1]][nearcell[2]] = 0
     else:
         mat[pos[0]][pos[1]+1][pos[2]] = 0
         if add and pos[1]==len(mat[0])-2:
@@ -197,8 +217,10 @@ def refresh_map(walls, add = True):
     if walls[2]>0 or mat[pos[0]][pos[1]][pos[2]+1] > 500: #Right wall
         if(mat[pos[0]][pos[1]][pos[2]+1] < 500):
             mat[pos[0]][pos[1]][pos[2]+1] = 1 #Set wall
-        if nearcell in unexplored_queue and mp.bestPath(orientation,pos,[nearcell],mat, bridge) == float('Inf'):
+        if nearcell in unexplored_queue and mp.bestPath(orientation,pos,[nearcell],mat, bridge)[0] == float('Inf'):
             unexplored_queue.remove(nearcell)
+            if mat[nearcell[0]][nearcell[1]][nearcell[2]] == 1:
+                mat[nearcell[0]][nearcell[1]][nearcell[2]] = 0
     else:
         mat[pos[0]][pos[1]][pos[2]+1] = 0
         if add and pos[2]==len(mat[0][0])-2:
@@ -211,8 +233,10 @@ def refresh_map(walls, add = True):
     if walls[3]>0 or mat[pos[0]][pos[1]-1][pos[2]] > 500: #Front wall
         if(mat[pos[0]][pos[1]-1][pos[2]] < 500):
             mat[pos[0]][pos[1]-1][pos[2]] = 1 #Set wall
-        if nearcell in unexplored_queue and mp.bestPath(orientation,pos,[nearcell],mat, bridge) == float('Inf'):
+        if nearcell in unexplored_queue and mp.bestPath(orientation,pos,[nearcell],mat, bridge)[0] == float('Inf'):
             unexplored_queue.remove(nearcell)
+            if mat[nearcell[0]][nearcell[1]][nearcell[2]] == 1:
+                mat[nearcell[0]][nearcell[1]][nearcell[2]] = 0
     else:
         mat[pos[0]][pos[1]-1][pos[2]] = 0
         if add and pos[1]==1:
@@ -255,6 +279,8 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
     gyro.starting_deg = gyro.yawsum
     gyro.last_calibrated = time.time()
     cn.parallel(m, tof = t, gyro =  gyro)
+
+    rospy.loginfo("LOG: Starting while cycle")
     while True:
         #Set current cell as explored
         mat[pos[0]][pos[1]][pos[2]] = 2
@@ -284,6 +310,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
 
         #Read sensors
         walls = sm.scanWalls(pos,orientation, t)
+        rospy.loginfo("LOG: Walls: " + str(walls[0]) + "," + str(walls[1]) + "," + str(walls[2]) + "," + str(walls[3]))
         print("Walls", walls)
 
         refresh_map(walls) #To comment when activated advanced ramp
@@ -297,11 +324,12 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
             if pos!=home:
                 if pub != None:
                     publish_robot_info(pub, status="Done! Homing...")
-                logging.info("Maze finished...")
+                rospy.loginfo("LOG: Maze finished...")
                 destination=mp.bestPath(orientation,[pos[0],pos[1],pos[2]],[home],mat, bridge) #Find the best path to reach home
                 if destination[0] != float('Inf'):
-                    logging.info("Returning home")
+                    rospy.loginfo("LOG: Returning home")
                     while pos != home:
+                        publish_robot_info(pub, mat=mat, orientation=orientation, pos=pos)
                         destination=mp.bestPath(orientation,[pos[0],pos[1],pos[2]],[home],mat, bridge)
                         if destination[0] == float('Inf'):
                             lost = True
@@ -333,6 +361,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
                 time.sleep(10)
                 lost = True
         else:
+            rospy.logdebug("LOG: unexplored_queue: %s", unexplored_queue)
             destination=mp.bestPath(orientation,[pos[0],pos[1],pos[2]],unexplored_queue,mat, bridge) #Find the best path to reach the nearest cell
             #Move to destination
             if(destination[0] != float('Inf')):
@@ -346,7 +375,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
             if pub != None:
                 publish_robot_info(pub, status="Lost. Roaming...")
             print('Lost. Roaming...')
-            logging.warning("Lost")
+            rospy.logwarn("Lost")
             mat = [[[0,0,0],[0,0,0],[0,0,0]]]
             pos = (0,1,1) #Initial position
             home = (0,1,1) #Position of the initial cell
@@ -356,13 +385,18 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
 
 
 if __name__ == '__main__':
+    rospy.init_node('robot', log_level=rospy.DEBUG)
+    rospy.loginfo("LOG: ----------BOOT----------")
+    rospy.loginfo("LOG: Finished library import")
+    pub = rospy.Publisher('navigation', String, queue_size=1) #Connect to server for graphical interface
+    publish_robot_info(pub, status="Boot completed", time=0)
     global interrupt_time; interrupt_time = time.time()
     logging.basicConfig(filename='log_robot.log',level=logging.DEBUG)
     m = motors.Motor(params.motors_pins)
     m.stop()
     t = tof.Tof(from_ros = True)
     #t.activate_all()
-    gyro = imu.Imu()
+    gyro = imu.Imu(from_ros = True)
     ch = touch.Touch()
     h = heat.Heat(from_ros = True)
     col = color.Color(from_ros = True)
@@ -370,22 +404,26 @@ if __name__ == '__main__':
     k.retract()
     b = start_button.StartButton(from_ros = True)
 
-    pub = rospy.Publisher('navigation', String, queue_size=1) #Connect to server for graphical interface
+
+    rospy.loginfo("LOG: Starting timer thread")
 
     timer_thread = timer("Timer", pub)
-    timer_thread.start()
 
     print("Starting main loop")
     logging.info("Starting main loop")
 
 
     while True:
+        rospy.loginfo("LOG: Waiting for start")
+        publish_robot_info(pub, status="Waiting for start")
         while b.activated == False:
             k.blink()
             time.sleep(0.4)
         time.sleep(0.2)
         b.activated = False
+        rospy.loginfo("LOG: Starting main")
         try:
+            timer_thread.start()
             main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, h=h, k=k, col=col, pub=pub)
         except KeyboardInterrupt as e:
             print("KeyboardInterrupt")

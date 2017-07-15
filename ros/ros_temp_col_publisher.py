@@ -15,7 +15,7 @@ except:
 def talker():
     pub_heat = rospy.Publisher('heat', String, queue_size=1)
     pub_color = rospy.Publisher('color', String, queue_size=1)
-    rospy.init_node('talker', anonymous=True)
+    rospy.init_node('heat_color_talker')
     time_now = time.time()
     directions = ['N', 'E', 'O']
     rates = {'N': 0.1, 'E': 0.3, 'O': 0.3, 'COLOR': 0.3}
