@@ -1,15 +1,10 @@
 import sys
 sys.path.append("../")
 import time
-import logging
-import math
 
 import Adafruit_BBIO.PWM as PWM
 import utils.GPIO as GPIO
 import config.params as params
-import config.dimensions as dim
-import motors_pid as pid
-import sensors.sensors_handler as sm
 
 
 MOTOR_CELL_TIME     =       1.3
