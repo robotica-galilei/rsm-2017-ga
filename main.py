@@ -133,21 +133,11 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
         rospy.loginfo("LOG: Cannot reach next cell, aborting deleting from route")
         unexplored_queue.remove(path[1][0])
         mat[path[1][0][0]][path[1][0][1]][path[1][0][2]] = 0
+    if t.read_raw('E') < 30 and t.read_raw('E') != -1:
+            cn.disincagna(m, gyro, -1, coeff=0.5)
+    if t.read_raw('O') < 30 and t.read_raw('O') != -1:
+            cn.disincagna(m, gyro, 1, coeff=0.5)
     #cn.parallel(m, t, gyro = gyro)
-
-    '''
-    if col.is_cell_black(): # and False: #To comment out the False
-        cn.posiziona_assi(m,gyro)
-        if pos in unexplored_queue:
-            unexplored_queue.remove(pos)
-        mat, pos = refresh_map(sm.scanWalls((pos[0],pos[1],pos[2]),orientation, t), add = False)
-        mat[pos[0]][pos[1]][pos[2]] = 256
-        orientation = old_orientation
-        pos = old_pos
-        cn.oneCellBack(m, mode='time')
-    '''
-
-
 
 
 def stop_function(timer, m):
@@ -310,7 +300,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
 
         #Read sensors
         walls = sm.scanWalls(pos,orientation, t)
-        rospy.loginfo("LOG: Walls: " + str(walls[0]) + "," + str(walls[1]) + "," + str(walls[2]) + "," + str(walls[3]))
+        rospy.loginfo("LOG: Walls: %s", walls)
         print("Walls", walls)
 
         refresh_map(walls) #To comment when activated advanced ramp

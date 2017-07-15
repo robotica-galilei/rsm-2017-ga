@@ -67,9 +67,8 @@ def set_degrees(m, gyro, degrees):
 
 def disincagna(m, gyro, dir, coeff = 1, deg = None, largo = True): #Best name everf
 
-    to_do = 20
-    if largo:
-        to_do = 30
+    to_do = round(20*coeff)
+    
     dir_lib = {1:'O', -1:'E'}
     rospy.loginfo("LOG: Disincagna %s", dir_lib[dir])
 
