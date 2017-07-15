@@ -14,10 +14,13 @@ def talker():
     rospy.init_node('imu_talker')
     time_now = time.time()
     gyro = imu.Imu()
+    precedent = time.time()
     while not rospy.is_shutdown():
         gyro.update()
         pub.publish(str(gyro.yaw) + ":" + str(gyro.pitch) + ":" + str(gyro.roll) + ":" + str(gyro.yawsum))
-        time.sleep(0.01)
+        print(time.time()-precedent)
+        precedent = time.time()
+        #time.sleep(0.01)
 
 if __name__ == '__main__':
     try:

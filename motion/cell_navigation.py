@@ -28,7 +28,7 @@ def rotateDegrees(m, gyro, degrees):
     now = gyro.update().yawsum
     if degrees > 1:
         if degrees > 7:
-            m.setSpeeds(-60,60)
+            m.setSpeeds(-50,50)
             while gyro.update().yawsum <= now+degrees-7:
                 pass
 
@@ -43,7 +43,7 @@ def rotateDegrees(m, gyro, degrees):
             pass
     elif degrees < -1:
         if degrees < -7:
-            m.setSpeeds(60,-60)
+            m.setSpeeds(50,-50)
             while gyro.update().yawsum >= now+degrees+7:
                 pass
 
@@ -65,7 +65,7 @@ def set_degrees(m, gyro, degrees):
     rotateDegrees(m, gyro, -diff)
 
 
-def disincagna(m, gyro, dir, deg = None, largo = True): #Best name everf
+def disincagna(m, gyro, dir, coeff = 1, deg = None, largo = True): #Best name everf
 
     to_do = 20
     if largo:
@@ -79,11 +79,11 @@ def disincagna(m, gyro, dir, deg = None, largo = True): #Best name everf
     posiziona_assi(m, gyro)
     rotateDegrees(m, gyro, to_do*dir)
     m.setSpeeds(-20, -20)
-    time.sleep(0.8)
+    time.sleep(0.8*coeff)
     rotateDegrees(m, gyro, -(2*to_do)*dir)
 
     m.setSpeeds(20, 20)
-    time.sleep(0.6)
+    time.sleep(0.6*coeff)
 
     if deg != None and False:
         set_degrees(m, gyro, deg)
@@ -117,12 +117,12 @@ def posiziona_assi(m, gyro):
     """
     gyro.update()
     starting_deg = gyro.starting_deg
-    starting_deg = starting_deg % 90
-    now = gyro.yawsum % 90
+    starting_deg = int(starting_deg)%90
+    now = int(gyro.yawsum)%90
     if abs(starting_deg-now) <=45:
         to_rotate = starting_deg-now
     else:
-        to_rotate = (starting_deg-now)%90
+        to_rotate = int(starting_deg-now)%90
     if abs(to_rotate) > 1:
         rotateDegrees(m, gyro, to_rotate)
 
@@ -365,15 +365,15 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
 
             while (time.time()-started_time < 6 and
                 ((((N_now == N_prec or not is_in_center) and abs(tof.n_cells_avg(avg+k*(dim.cell_dimension/2-precision))- N_prec) <= 1 ) or
-                (side == 'N' and avg_N > 45 and avg_N_prec < 450)) and (avg_N > 30 or avg_N == -1) or
-                time.time()-started_time < 0.8)):
+                (side == 'N' and avg_N > 65 and avg_N_prec < 450)) and (avg_N > 50 or avg_N == -1) or
+                time.time()-started_time < 0.6)):
 
                 rospy.logdebug("LOG: Calculating speed")
                 #print(N_now, N_prec, abs(tof.n_cells_avg(avg+k*(dim.cell_dimension/2-precision))- N_prec))
                 if N_now != N_prec and (time.time()-started_slow < 3 or started_slow == 0):
                     m.setSpeeds(motors.MOTOR_PRECISION_POWER_LINEAR, motors.MOTOR_PRECISION_POWER_LINEAR)
                     if first_slow_down:
-                        parallel(m, tof, gyro=gyro)
+                        #parallel(m, tof, gyro=gyro)
                         starting_deg = gyro.yawsum
                         started_slow = time.time()
                         first_slow_down = False
@@ -475,12 +475,28 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
                 except:
                     rospy.logerr("LOG: ERROR reading black cell")
                 rospy.logdebug("LOG: Finished cycle")
-
+            m.stop()
+            time.sleep(0.2)
+            '''
+            rospy.logdebug("LOG: precision test")
+            rospy.logdebug("LOG: precision 50 - " + str(tof.is_in_cell_center(tof.read_fix(side), precision = 50)))
+            rospy.logdebug("LOG: precision 40 - " + str(tof.is_in_cell_center(tof.read_fix(side), precision = 40)))
+            rospy.logdebug("LOG: precision 30 - " + str(tof.is_in_cell_center(tof.read_fix(side), precision = 30)))
+            rospy.logdebug("LOG: precision 20 - " + str(tof.is_in_cell_center(tof.read_fix(side), precision = 20)))
+            rospy.logdebug("LOG: precision 10 - " + str(tof.is_in_cell_center(tof.read_fix(side), precision = 10)))
+            rospy.logdebug("LOG: precision 5 - " + str(tof.is_in_cell_center(tof.read_fix(side), precision = 5)))
+            '''
+            side, avg, k = tof.best_side('N','S') #Find the most accurate side between front and rear
+            to_step_back = 0
+            for i in range(25,51,5):
+                if not tof.is_in_cell_center(avg, precision = i):
+                    to_step_back = precision
+            stepBack(m, 0.02*to_step_back)
             print(N_now, N_prec, abs(tof.n_cells_avg(avg+(dim.cell_dimension/2-precision))- N_prec))
             parallel(m, tof, gyro=gyro)
 
         m.stop()
-        time.sleep(0.3)
+        #time.sleep(0.3)
         rospy.logdebug("LOG: Starting checking heat victims")
         victims = sm.check_victim(h)
         #print("HeatVictims: ", h.isThereSomeVictim())
@@ -580,6 +596,12 @@ def oneCellBack(m, mode= 'time', power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait=
     elif mode == 'time':
         m.setSpeeds(-50, -50)
         time.sleep(wait)
+    m.stop()
+
+def stepBack(m, wait = 0.3):
+    rospy.loginfo("LOG: StepBack alignment")
+    m.setSpeeds(-30,-30)
+    time.sleep(wait)
     m.stop()
 
 

@@ -12,7 +12,7 @@ import threading
 import logging
 import config.params as params
 import actuators.motors as motors
-import actuators.ledmatrix.matrix as ledmatrix
+#import actuators.ledmatrix.matrix as ledmatrix
 import motion.cell_navigation as cn
 import sensors.sensors_handler as sm
 import sensors.tof as tof
@@ -133,7 +133,7 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
         rospy.loginfo("LOG: Cannot reach next cell, aborting deleting from route")
         unexplored_queue.remove(path[1][0])
         mat[path[1][0][0]][path[1][0][1]][path[1][0][2]] = 0
-    cn.parallel(m, t, gyro = gyro)
+    #cn.parallel(m, t, gyro = gyro)
 
     '''
     if col.is_cell_black(): # and False: #To comment out the False
@@ -278,7 +278,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
     gyro.update()
     gyro.starting_deg = gyro.yawsum
     gyro.last_calibrated = time.time()
-    cn.parallel(m, tof = t, gyro =  gyro)
+    #cn.parallel(m, tof = t, gyro =  gyro) #Useless at beginning
 
     rospy.loginfo("LOG: Starting while cycle")
     while True:
