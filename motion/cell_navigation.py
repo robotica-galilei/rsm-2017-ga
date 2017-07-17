@@ -68,7 +68,7 @@ def set_degrees(m, gyro, degrees):
 def disincagna(m, gyro, dir, coeff = 1, deg = None, largo = True): #Best name everf
 
     to_do = round(20*coeff)
-    
+
     dir_lib = {1:'O', -1:'E'}
     rospy.loginfo("LOG: Disincagna %s", dir_lib[dir])
 
@@ -121,7 +121,7 @@ def posiziona_assi(m, gyro):
     if abs(starting_deg-now) <=45:
         to_rotate = starting_deg-now
     else:
-        to_rotate = int(starting_deg-now)%90
+        to_rotate = int(now-starting_deg)%90
     if abs(to_rotate) > 1:
         rotateDegrees(m, gyro, to_rotate)
 
