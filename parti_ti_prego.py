@@ -28,7 +28,7 @@ if __name__ == '__main__':
                 os.killpg(os.getpgid(pro.pid), signal.SIGKILL)
                 m.stop()
                 #os.system("kill -9 " + os.getpgid(pro.pid))
-                time.sleep(2)
+                time.sleep(1)
                 pro = subprocess.Popen("python /root/rsm-2017-ga/main.py", stdout=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
             else:
                 os.system("killall -9 screen")
