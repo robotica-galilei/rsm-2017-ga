@@ -25,6 +25,10 @@ class Imu:
         self.last_calibrated = 0
         self.error_occurred = False
         self.last_values = 0
+        self.yaw = 0
+        self.pitch = 0
+        self.roll = 0
+        self.yawsum = 0
 
     def callback(self, data):
         self.yaw, self.pitch, self.roll, self.yawsum = data.data.split(':')
