@@ -3,6 +3,7 @@ sys.path.append("../")
 import logging
 import rospy
 from std_msgs.msg import String
+import time
 
 import config.params as params
 import modules.TCS34725 as TCS34725
@@ -42,3 +43,19 @@ class Color:
         '''
         #print("COLOR: ", self.read_raw())
         return self.read_raw()[0] < 30 and self.read_raw()[1] < 30 and self.read_raw()[2] < 30 and self.read_raw()[3] < 100
+
+    def is_cell_silver(self, thresh=None):
+        '''
+        Returns if the read is silver
+        '''
+        avg = 0
+        r = 0
+        g = 0
+        b = 0
+        for i in range(10):
+            r, g, b = self.read_raw()[0], self.read_raw()[1], self.read_raw()[2]
+            k_color = TCS34725.calculate_color_temperature(r,g,b)
+            avg += k_color
+            time.sleep(0.01)
+        avg /= 10
+        return avg > 5600 and avg < 6800 and r > 50 and g > 50 and b > 50, avg

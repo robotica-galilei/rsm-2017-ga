@@ -57,6 +57,7 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
     global orientation
     global mat
     global unexplored_queue
+    global home
     del path[1][0] # Delete the first element (The cell where the robot is)
 
     old_orientation = orientation
@@ -138,6 +139,22 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
     if t.read_raw('O') < 30 and t.read_raw('O') != -1:
             cn.disincagna(m, gyro, 1, coeff=0.5)
     #cn.parallel(m, t, gyro = gyro)
+    a = col.is_cell_silver()
+    if a[0]:
+        #saveNavigationCheckpoint(mat, pos, home, unexplored_queue)
+        rospy.loginfo("LOG: CHECKPOINT")
+    else:
+        rospy.loginfo("LOG: No silver %s", a[1])
+
+
+def saveNavigationCheckpoint(mat, pos, home, unexplored_queue):
+    with open('/root/rsm-2017-ga/checkpoint.pickle', 'wb') as handle:
+        pickle.dump((mat, pos, home, unexplored_queue, time.time()), handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def getLastNavigationCheckpoint():
+    with open('/root/rsm-2017-ga/checkpoint.pickle', 'rb') as handle:
+        return pickle.load(handle)
 
 
 def stop_function(timer, m):
