@@ -27,8 +27,8 @@ def rotateLeft(m, gyro, power= motors.MOTOR_DEFAULT_POWER_ROTATION, wait= motors
 def rotateDegrees(m, gyro, degrees):
     now = gyro.update().yawsum
     if degrees > 1:
+        m.setSpeeds(-50,50)
         if degrees > 7:
-            m.setSpeeds(-50,50)
             while gyro.update().yawsum <= now+degrees-7:
                 pass
 
@@ -42,8 +42,8 @@ def rotateDegrees(m, gyro, degrees):
         while(gyro.update().yawsum <= now+degrees-1 and time.time()-start < 1):
             pass
     elif degrees < -1:
+        m.setSpeeds(50,-50)
         if degrees < -7:
-            m.setSpeeds(50,-50)
             while gyro.update().yawsum >= now+degrees+7:
                 pass
 
@@ -73,8 +73,8 @@ def disincagna(m, gyro, dir, coeff = 1, deg = None, largo = True): #Best name ev
     rospy.loginfo("LOG: Disincagna %s", dir_lib[dir])
 
     if largo:
-        m.setSpeeds(-20,-20)
-        time.sleep(0.4)
+        m.setSpeeds(-40,-40)
+        time.sleep(0.2)
     posiziona_assi(m, gyro)
     rotateDegrees(m, gyro, to_do*dir)
     m.setSpeeds(-20, -20)
@@ -89,8 +89,8 @@ def disincagna(m, gyro, dir, coeff = 1, deg = None, largo = True): #Best name ev
     else:
         rotateDegrees(m, gyro, to_do*dir)
     if largo:
-        m.setSpeeds(20,20)
-    time.sleep(0.4)
+        m.setSpeeds(40,40)
+        time.sleep(0.2)
 
 
 def parallel(m, tof = None, times = 1, gyro = None, deg = None, slow = False):
@@ -100,7 +100,9 @@ def parallel(m, tof = None, times = 1, gyro = None, deg = None, slow = False):
     print("Parallel")
     gyro.update()
     before = gyro.yawsum
+
     posiziona_assi(m, gyro)
+
     gyro.update()
     after = gyro.yawsum
     print("END Parallel")
@@ -122,6 +124,7 @@ def posiziona_assi(m, gyro):
         to_rotate = starting_deg-now
     else:
         to_rotate = int(now-starting_deg)%90
+    rospy.logerr(to_rotate)
     if abs(to_rotate) > 1:
         rotateDegrees(m, gyro, to_rotate)
 
@@ -222,116 +225,6 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
             pass
         print("Ho finito il ciclo, merde")
         parallel(m, tof, gyro=gyro)
-
-    elif mode == 'gyro':
-        logging.debug("Going by gyro")
-        m.setSpeeds(power, power)
-        north = tof.read_fix('N')[0]
-        south = tof.read_fix('S')[0]
-        now_north = north
-        now_south = south
-        gyro.update()
-        deg = gyro.yawsum
-        boost = 0
-        a_tempo = False
-
-        avg_e = tof.read_fix('E')[0]
-        avg_o = tof.read_fix('O')[0]
-
-        if avg_e < 20:
-            logging.info("Disincagna TOF E")
-            #disincagna(m, gyro, -1, largo=0)
-            #parallel(m, tof,times =2, gyro=gyro, deg=deg_pos)
-        elif avg_o < 20:
-            logging.info("Disincagna TOF O")
-            #disincagna(m, gyro, 1, largo=0)
-            #parallel(m, tof,times =2, gyro=gyro, deg=deg_pos)
-
-        if not a_tempo:
-            started_time = time.time()
-            while True:
-                #side1, avg1, cosalfa1, senalfa1, z1 = tof.best_side('E','O')
-                #side2, avg2, cosalfa2, senalfa2, z2 = tof.best_side('N','S')
-                #print("Cell difference", (now,front))
-                victims = sm.check_victim(pos,h)
-                print("Victims, ", victims)
-                if (victims[0]): #and time.time()-h.last_read>5):
-                    time_before_victims = time.time()
-                    if mat.item(pos)//512 == 1: #If i've seen the victims but not the visual
-                        mat.itemset(pos, 1024)
-                        saveAllVictims(m, gyro, victims, k, tof)
-                    elif mat.item(pos)//512 == 0: #First time i see victims here
-                        mat.itemset(pos, 512)
-                        saveAllVictims(m, gyro, victims, k, tof)
-                    #m.setSpeeds(50,50)
-                    #time.sleep(0.2)
-                    #m.stop()
-                    h.last_read = time.time()
-                    started_time += time.time() - time_before_victims
-                avg = tof.read_fix('N')[0]
-                if gyro.pitch < 20 and gyro.pitch > -20:
-                    time_passed = time.time()-started_time
-                    if  (now_north != -1 and north != -1 and north < 900 and north-now_north > dim.cell_dimension_gyro) or (now_south != -1 and south != -1 and south < 900 and now_south-south > dim.cell_dimension_gyro) and time_passed > motors.MOTOR_MIN_CELL_TIME:
-                        now_north = tof.read_fix('N')[0]
-                        now_south = tof.read_fix('S')[0]
-                        if  (now_north != -1 and north != -1 and north < 900 and north-now_north > dim.cell_dimension_gyro) or (now_south != -1 and south != -1 and south < 900 and now_south-south > dim.cell_dimension_gyro) and time_passed > motors.MOTOR_MIN_CELL_TIME:
-                            print("Tof has recorded cell difference")
-                            print(north,now_north)
-                            print(south,now_south)
-                            break
-                    if avg < 100 and avg != -1:
-                        print("Front avg recorded wall")
-                        break
-                    if not time.time()-started_time < motors.MOTOR_CELL_TIME:
-                        print("Max time passed")
-                        break
-                    now_north = tof.read_fix('N')[0]
-                    now_south = tof.read_fix('S')[0]
-
-                if ch.is_something_touched():
-                    time.sleep(0.3)
-                    if ch.read('E') and ch.read('O'):
-                        break
-                    time_before_victims = time.time()
-                    if ch.read('E'):
-                        disincagna(m, gyro, -1, deg)
-                    else:
-                        disincagna(m, gyro, 1, deg)
-                    started_time += time.time() - time_before_victims
-
-                gyro.update()
-                correction = deg - gyro.yawsum
-
-                if gyro.pitch > 18:
-                    m.setSpeeds(-30,-30)
-                    time.sleep(1)
-                    m.setSpeeds(70,70)
-                    time.sleep(0.6)
-                    gyro.update()
-                    while(gyro.pitch > 18):
-                        m.setSpeeds(70 + gyro.roll, 70 - gyro.roll)
-                        gyro.update()
-                if gyro.pitch < -6:
-                    m.setSpeeds(40,40)
-                    time.sleep(0.05)
-                    m.setSpeeds(30,30)
-                    time.sleep(0.05)
-                    m.setSpeeds(22,22)
-                    time.sleep(0.05)
-                    m.setSpeeds(18,18)
-                    time.sleep(0.05)
-                    m.setSpeeds(15,15)
-                    time.sleep(0.1)
-                    gyro.update()
-                    while(gyro.pitch < -6):
-                        gyro.update()
-                        m.setSpeeds(25 - gyro.roll, 25 + gyro.roll)
-
-                m.setSpeeds(power - correction, power + correction )
-        else:
-            m.setSpeeds(motors.MOTOR_DEFAULT_POWER_LINEAR, motors.MOTOR_DEFAULT_POWER_LINEAR)
-            time.sleep(motors.MOTOR_CELL_TIME)
-            m.stop()
 
     elif mode == 'new_tof':
         precision = 15
@@ -622,7 +515,9 @@ def calibrate_gyro(m, gyro= None):
 
     gyro.update()
     gyro.starting_deg = gyro.yawsum
+    gyro.last_calibrated = time.time()
 
     m.setSpeeds(30,30)
     time.sleep(0.5)
-    parallel(m, gyro=gyro)
+
+    #parallel(m, gyro=gyro)

@@ -143,6 +143,7 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
     if a[0]:
         #saveNavigationCheckpoint(mat, pos, home, unexplored_queue)
         rospy.loginfo("LOG: CHECKPOINT")
+        mat[pos[0]][pos[1]][pos[2]] = 128
     else:
         rospy.loginfo("LOG: No silver %s", a[1])
 
@@ -290,7 +291,9 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
     rospy.loginfo("LOG: Starting while cycle")
     while True:
         #Set current cell as explored
-        mat[pos[0]][pos[1]][pos[2]] = 2
+        if mat[pos[0]][pos[1]][pos[2]] >= 2:
+            mat[pos[0]][pos[1]][pos[2]] = 2
+
         if pub != None:
             publish_robot_info(pub=pub, mat=mat, orientation=orientation, pos=pos)
         '''
@@ -344,11 +347,11 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
                         moveTo(destination, m, t, ch, h, k, col, gyro)
                     if lost == False:
                         k.blink()
-                        time.sleep(4)
+                        time.sleep(3)
                         k.blink()
-                        time.sleep(4)
+                        time.sleep(3)
                         k.blink()
-                        time.sleep(4)
+                        time.sleep(3)
                 else:
                     lost = True
             if pub != None:
@@ -365,7 +368,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
             if lost == False:
                 print("finished")
                 #sys.exit()
-                time.sleep(10)
+                time.sleep(2)
                 lost = True
         else:
             rospy.logdebug("LOG: unexplored_queue: %s", unexplored_queue)
