@@ -122,7 +122,12 @@ def posiziona_assi(m, gyro):
     if abs(starting_deg-now) <=45:
         to_rotate = starting_deg-now
     else:
-        to_rotate = int(now-starting_deg)%90
+        to_rotate = int(starting_deg-now)%90
+    if to_rotate > 45:
+        to_rotate -= 90
+    if to_rotate < -45:
+        to_rotate +=90
+
     if abs(to_rotate) > 1:
         rotateDegrees(m, gyro, to_rotate)
 
@@ -194,8 +199,8 @@ def oneCellForward(m, power= params.MOTOR_DEFAULT_POWER_LINEAR, wait= params.MOT
 
 
             while (time.time()-started_time < 6 and
-                ((((N_now == N_prec or not is_in_center) and abs(tof.n_cells_avg(avg+prediction+k*(dim.cell_dimension/2-precision))- N_prec) <= 1 ) or
-                (side == 'N' and avg_N-abs(prediction) > 65 and avg_N_prec-abs(prediction) < 450)) and (avg_N-abs(prediction) > 50 or avg_N-abs(prediction) == -1) or
+                ((((N_now == N_prec or not is_in_center) and abs(tof.n_cells_avg(avg + prediction + k*(dim.cell_dimension/2-precision))- N_prec) <= 1 ) or
+                (side == 'N' and avg_N-abs(prediction) > 65 and avg_N_prec-abs(prediction) < 450)) and (avg_N-abs(prediction) > 50 or avg_N == -1) or
                 time.time()-started_time < 0.6)):
 
                 rospy.logdebug("LOG: Calculating speed")
@@ -240,9 +245,9 @@ def oneCellForward(m, power= params.MOTOR_DEFAULT_POWER_LINEAR, wait= params.MOT
 
                 avg = tof.read_fix(side)
                 avg_N = tof.read_fix('N')
-                correction = (time.time()-tof.last_time[side])*1000*0.005*actual_speed #0.005mm per unit per millisecond
+                prediction = (time.time()-tof.last_time[side])*1000*0.005*actual_speed #0.005mm per unit per millisecond
                 if side == 'N':
-                    correction *=-1
+                    prediction *=-1
                 #print('C: ', correction)
                 N_now = tof.n_cells_avg(avg + prediction)
                 is_in_center = tof.is_in_cell_center(avg + prediction, precision = precision)
@@ -339,7 +344,7 @@ def oneCellForward(m, power= params.MOTOR_DEFAULT_POWER_LINEAR, wait= params.MOT
             '''
             side, avg, k = tof.best_side('N','S') #Find the most accurate side between front and rear
             to_step_back = 0
-            for i in range(30,51,5):
+            for i in range(25,56,5):
                 if not tof.is_in_cell_center(avg, precision = i):
                     to_step_back = precision
             stepBack(m, 0.01*to_step_back)
@@ -357,8 +362,6 @@ def oneCellForward(m, power= params.MOTOR_DEFAULT_POWER_LINEAR, wait= params.MOT
         #saveAllVictims(m, gyro, h.isThereSomeVideoVictim, k_kit, tof)
 
         saveAllVictims(m, gyro, h.isThereSomeVideoVictim(), k_kit, tof)
-
-    logging.info("Arrived in centre of the cell")
 
     if not nav_error:
         pos = new_pos
