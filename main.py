@@ -5,11 +5,9 @@ import os
 import pickle
 from std_msgs.msg import String
 import importlib
-import numpy as np
 import algorithms.motion_planning as mp
 import algorithms.map_management as maman
 import threading
-import logging
 import config.params as params
 import actuators.motors as motors
 #import actuators.ledmatrix.matrix as ledmatrix
@@ -161,7 +159,6 @@ def getLastNavigationCheckpoint():
 def stop_function(timer, m):
     timer.stop_flag = False
     m.stop()
-    os.system("rosnode kill listener")
 
 def nearcellToQueue(mat, nearcell, unexplored_queue):
     '''
@@ -291,7 +288,7 @@ def main(timer_thread, m, t, gyro, ch, h, k, col, pub):
     rospy.loginfo("LOG: Starting while cycle")
     while True:
         #Set current cell as explored
-        if mat[pos[0]][pos[1]][pos[2]] >= 2:
+        if mat[pos[0]][pos[1]][pos[2]] < 2:
             mat[pos[0]][pos[1]][pos[2]] = 2
 
         if pub != None:
@@ -401,7 +398,6 @@ if __name__ == '__main__':
     pub = rospy.Publisher('navigation', String, queue_size=1) #Connect to server for graphical interface
     publish_robot_info(pub, status="Boot completed", time=0)
     global interrupt_time; interrupt_time = time.time()
-    logging.basicConfig(filename='log_robot.log',level=logging.DEBUG)
     m = motors.Motor(params.motors_pins)
     m.stop()
     t = tof.Tof(from_ros = True)
@@ -420,7 +416,6 @@ if __name__ == '__main__':
     timer_thread = timer("Timer", pub)
 
     print("Starting main loop")
-    logging.info("Starting main loop")
 
 
     while True:
@@ -437,16 +432,13 @@ if __name__ == '__main__':
             main(timer_thread=timer_thread, m=m, t=t, gyro=gyro, ch=ch, h=h, k=k, col=col, pub=pub)
         except KeyboardInterrupt as e:
             print("KeyboardInterrupt")
-            logging.warning("KeyboardInterrupt")
             stop_function(timer=timer_thread, m=m)
             break
         except SystemExit as e:
             print("SystemExit")
-            logging.warning("SystemExit")
             stop_function(timer=timer_thread, m=m)
         '''
         except Exception as e:
-            logging.critical("%s", e)
             stop_function(timer=timer_thread, m=m)
             raise e
         '''
