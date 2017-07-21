@@ -83,7 +83,7 @@ def draw_cell(draw_surface, x0, y0, x, y, cell_size, wall_map):
         special = 2;
     if(wall_map[x*2+1][y*2+1] >= 512): #Check victim
         special = 3;
-    if(wall_map[x*2+1][y*2+1] >= 1024): #Check victim
+    if(wall_map[x*2+1][y*2+1] >= 1024): #Check bridge
         special = 4;
 
     #Cell specialties
