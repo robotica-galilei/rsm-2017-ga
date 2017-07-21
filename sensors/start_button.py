@@ -15,7 +15,6 @@ class StartButton:
         self.from_ros = from_ros
         if self.from_ros:
             self.activated = False
-            #rospy.init_node('color_listener', anonymous=True)
             rospy.Subscriber("button", String, self.callback)
         else:
             self.gpio = gpio

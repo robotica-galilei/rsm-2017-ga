@@ -15,11 +15,15 @@ def talker():
     rospy.init_node('button_talker')
     b = button.StartButton()
 
+    val = False; last_val = False
+
     while not rospy.is_shutdown():
         val = b.read_raw()
-        msg = str(val)
-        rospy.loginfo('%s', msg)
-        pub.publish(msg)
+        if val == True or last_val == True:
+            msg = str(val)
+            rospy.logdebug('%s', msg)
+            pub.publish(msg)
+        last_val = val
         time.sleep(0.005)
 
 if __name__ == '__main__':
