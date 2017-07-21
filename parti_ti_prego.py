@@ -28,11 +28,11 @@ if __name__ == '__main__':
             print("OMFG, you pressed da button!")
             if pressed_time < 3:
                 #os.killpg(os.getpgid(pro.pid), signal.SIGKILL)
-                os.system("pkill -9 -f \"SCREEN -m -d bash -c python /root/rsm-2017-ga/main.py\"")
+                os.system("pkill -9 -f \"python /root/rsm-2017-ga/main.py\"")
                 m.stop()
                 #os.system("kill -9 " + os.getpgid(pro.pid))
                 time.sleep(1)
-                pro = subprocess.Popen(os_command, stdout=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
+                pro = subprocess.Popen(os_command, stdout=open(os.devnull, 'wb'), shell=True, preexec_fn=os.setsid)
             else:
                 os.system("killall -9 screen")
                 os.system("killall -9 python")

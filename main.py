@@ -4,7 +4,6 @@ import time
 import os
 import pickle
 from std_msgs.msg import String
-import importlib
 import algorithms.motion_planning as mp
 import algorithms.map_management as maman
 import threading

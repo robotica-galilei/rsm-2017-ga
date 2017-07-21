@@ -1,6 +1,5 @@
-import numpy as np
 try:
-    import Queue
+    import Queue as queue
 except:
     import queue
 
@@ -54,10 +53,8 @@ def dijkstra(direction,start, end ,mat, bridge):
         for i in range(1, len(mat[0])-1,2):
             for j in range(1, len(mat[0][0])-1,2):
                 path[f][i][j].append((f,i,j))
-    try:
-        q = queue.PriorityQueue()
-    except:
-        q = Queue.PriorityQueue()
+
+    q = queue.PriorityQueue()
     q.put((0,start,direction))
     visited[start[0]][start[1]][start[2]] = 1
     dist[start[0]][start[1]][start[2]] = 0

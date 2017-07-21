@@ -7,14 +7,6 @@ import utils.GPIO as GPIO
 import config.params as params
 
 
-MOTOR_CELL_TIME     =       1.3
-MOTOR_MIN_CELL_TIME     =       0.4
-MOTOR_ROTATION_TIME =       1.5
-MOTOR_DEFAULT_POWER_LINEAR      =       50
-MOTOR_PRECISION_POWER_LINEAR      =       25
-MOTOR_DEFAULT_POWER_ROTATION    =       70
-
-
 class Motor:
     def __init__(self, pins = params.motors_pins):
         """

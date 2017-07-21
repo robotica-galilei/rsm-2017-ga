@@ -1,5 +1,3 @@
-import numpy as np
-
 def getAbsoluteDirection(robotDirection, robotSensor):
     '''
     Function that gets the absolute direction of the sensor given the absolute

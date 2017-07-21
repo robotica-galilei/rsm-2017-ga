@@ -1,23 +1,20 @@
 import sys
 sys.path.append("../")
 import time
-import logging
-import math
 import rospy
-import actuators.motors as motors
 import config.params as params
 import config.dimensions as dim
 import sensors.sensors_handler as sm
 
 
-def rotateRight(m, gyro, power= motors.MOTOR_DEFAULT_POWER_ROTATION, wait= motors.MOTOR_ROTATION_TIME):
+def rotateRight(m, gyro, power= params.MOTOR_DEFAULT_POWER_ROTATION, wait= params.MOTOR_ROTATION_TIME):
     rotateDegrees(m, gyro=gyro, degrees=-90)
 
     parallel(m, gyro=gyro)
     m.stop()
 
 
-def rotateLeft(m, gyro, power= motors.MOTOR_DEFAULT_POWER_ROTATION, wait= motors.MOTOR_ROTATION_TIME):
+def rotateLeft(m, gyro, power= params.MOTOR_DEFAULT_POWER_ROTATION, wait= params.MOTOR_ROTATION_TIME):
     rotateDegrees(m, gyro=gyro, degrees=90)
 
     parallel(m, gyro=gyro)
@@ -134,7 +131,7 @@ def posiziona_assi(m, gyro):
 """
 Here start the simple functions for robot motion execution
 """
-def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOTOR_CELL_TIME, mode= 'time', ch=None, tof= None, gyro=None, h=None, k_kit = None, col = None, mat = None, pos = None, new_pos = None, deg_pos=None):
+def oneCellForward(m, power= params.MOTOR_DEFAULT_POWER_LINEAR, wait= params.MOTOR_CELL_TIME, mode= 'time', ch=None, tof= None, gyro=None, h=None, k_kit = None, col = None, mat = None, pos = None, new_pos = None, deg_pos=None):
     rospy.loginfo("LOG: Going one cell forward")
     nav_error = False #Change to True if some navigation error happens and causes the robot to go back to previus position
 
@@ -149,8 +146,8 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
         started_time = time.time()
         gyro.update()
         starting_deg = gyro.get_yawsum()
-        while time.time()-started_time < motors.MOTOR_CELL_TIME: #or (avg2 >= dim.MIN_DISTANCE): #While the number of cells is not changed or the distance from a wall is too low
-            m.setSpeeds(motors.MOTOR_DEFAULT_POWER_LINEAR,motors.MOTOR_DEFAULT_POWER_LINEAR)
+        while time.time()-started_time < params.MOTOR_CELL_TIME: #or (avg2 >= dim.MIN_DISTANCE): #While the number of cells is not changed or the distance from a wall is too low
+            m.setSpeeds(params.MOTOR_DEFAULT_POWER_LINEAR,params.MOTOR_DEFAULT_POWER_LINEAR)
             gyro.update()
             if(abs(starting_deg-gyro.get_yawsum()) > 10):
                 #Got stuck
@@ -190,26 +187,30 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
             avg_N = tof.read_fix('N')
             avg_N_prec = avg_N
             started_slow = 0
+            actual_speed = 0
+            prediction = 0
             started_time = time.time()
             rospy.loginfo("LOG: Moving using %s", side)
 
 
             while (time.time()-started_time < 6 and
-                ((((N_now == N_prec or not is_in_center) and abs(tof.n_cells_avg(avg+k*(dim.cell_dimension/2-precision))- N_prec) <= 1 ) or
-                (side == 'N' and avg_N > 65 and avg_N_prec < 450)) and (avg_N > 50 or avg_N == -1) or
+                ((((N_now == N_prec or not is_in_center) and abs(tof.n_cells_avg(avg+prediction+k*(dim.cell_dimension/2-precision))- N_prec) <= 1 ) or
+                (side == 'N' and avg_N-abs(prediction) > 65 and avg_N_prec-abs(prediction) < 450)) and (avg_N-abs(prediction) > 50 or avg_N-abs(prediction) == -1) or
                 time.time()-started_time < 0.6)):
 
                 rospy.logdebug("LOG: Calculating speed")
                 #print(N_now, N_prec, abs(tof.n_cells_avg(avg+k*(dim.cell_dimension/2-precision))- N_prec))
                 if N_now != N_prec and (time.time()-started_slow < 4 or started_slow == 0):
-                    m.setSpeeds(motors.MOTOR_PRECISION_POWER_LINEAR, motors.MOTOR_PRECISION_POWER_LINEAR)
+                    m.setSpeeds(params.MOTOR_PRECISION_POWER_LINEAR, params.MOTOR_PRECISION_POWER_LINEAR)
+                    actual_speed = params.MOTOR_PRECISION_POWER_LINEAR
                     if first_slow_down:
                         #parallel(m, tof, gyro=gyro)
                         starting_deg = gyro.get_yawsum()
                         started_slow = time.time()
                         first_slow_down = False
                 elif time.time()-started_slow < 3 or started_slow == 0:
-                    m.setSpeeds(motors.MOTOR_DEFAULT_POWER_LINEAR, motors.MOTOR_DEFAULT_POWER_LINEAR)
+                    m.setSpeeds(params.MOTOR_DEFAULT_POWER_LINEAR, params.MOTOR_DEFAULT_POWER_LINEAR)
+                    actual_speed = params.MOTOR_DEFAULT_POWER_LINEAR
                 else:
                     rospy.loginfo("LOG: Stuck on bumper")
                     m.setSpeeds(-60, -60)
@@ -239,9 +240,12 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
 
                 avg = tof.read_fix(side)
                 avg_N = tof.read_fix('N')
+                correction = (time.time()-tof.last_time[side])*1000*0.005*actual_speed #0.005mm per unit per millisecond
+                if side == 'N':
+                    correction *=-1
                 #print('C: ', correction)
-                N_now = tof.n_cells_avg(avg)
-                is_in_center = tof.is_in_cell_center(avg, precision = precision)
+                N_now = tof.n_cells_avg(avg + prediction)
+                is_in_center = tof.is_in_cell_center(avg + prediction, precision = precision)
                 #print('N: ', N_prec, N_now)
                 rospy.logdebug("LOG: Checking ramp")
                 if gyro.pitch < -12: #Up
@@ -302,7 +306,7 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
                     if col.is_cell_black():
                         mat[new_pos[0]][new_pos[1]][new_pos[2]] = 256
                         nav_error = True
-                        oneCellBack(m, mode='time', wait=motors.MOTOR_CELL_TIME*0.8)
+                        oneCellBack(m, mode='time', wait=params.MOTOR_CELL_TIME*0.8)
                         break
                 except:
                     rospy.logerr("LOG: ERROR reading black cell")
@@ -335,10 +339,10 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
             '''
             side, avg, k = tof.best_side('N','S') #Find the most accurate side between front and rear
             to_step_back = 0
-            for i in range(25,51,5):
+            for i in range(30,51,5):
                 if not tof.is_in_cell_center(avg, precision = i):
                     to_step_back = precision
-            stepBack(m, 0.02*to_step_back)
+            stepBack(m, 0.01*to_step_back)
             print(N_now, N_prec, abs(tof.n_cells_avg(avg+(dim.cell_dimension/2-precision))- N_prec))
             parallel(m, tof, gyro=gyro)
 
@@ -415,7 +419,7 @@ def saveAllVictims(m, gyro, victims, k, tof, only_visual = False):
             rotateRight(m, gyro)
 
 
-def oneCellBack(m, mode= 'time', power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOTOR_CELL_TIME, tof=None):
+def oneCellBack(m, mode= 'time', power= params.MOTOR_DEFAULT_POWER_LINEAR, wait= params.MOTOR_CELL_TIME, tof=None):
     rospy.loginfo("LOG: Going one cell backward")
     if mode == 'wall':
         m.setSpeeds(-power,-power)

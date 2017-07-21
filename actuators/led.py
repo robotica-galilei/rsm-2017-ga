@@ -1,7 +1,6 @@
 import sys
 sys.path.append("../")
 import time
-import logging
 
 import config.params as params
 import utils.GPIO as GPIO
