@@ -22,44 +22,44 @@ def rotateLeft(m, gyro, power= params.MOTOR_DEFAULT_POWER_ROTATION, wait= params
 
 
 def rotateDegrees(m, gyro, degrees):
-    now = gyro.update().get_yawsum()
+    now = gyro.get_yawsum()
     if degrees > 1:
         m.setSpeeds(-50,50)
         time.sleep(0.005)
         if degrees > 7:
-            while gyro.update().get_yawsum() <= now+degrees-7:
+            while gyro.get_yawsum() <= now+degrees-7:
                 pass
 
         m.setSpeeds(-30,30)
         start = time.time()
-        while gyro.update().get_yawsum() <= now+degrees-4 and time.time()-start < 1:
+        while gyro.get_yawsum() <= now+degrees-4 and time.time()-start < 0.7:
             pass
 
         start = time.time()
         m.setSpeeds(-20,20)
-        while(gyro.update().get_yawsum() <= now+degrees-1 and time.time()-start < 1):
+        while(gyro.get_yawsum() <= now+degrees-1 and time.time()-start < 0.3):
             pass
     elif degrees < -1:
         m.setSpeeds(50,-50)
         time.sleep(0.005)
         if degrees < -7:
-            while gyro.update().get_yawsum() >= now+degrees+7:
+            while gyro.get_yawsum() >= now+degrees+7:
                 pass
 
         m.setSpeeds(30,-30)
         start = time.time()
-        while gyro.update().get_yawsum() >= now+degrees+4 and time.time()-start < 1:
+        while gyro.get_yawsum() >= now+degrees+4 and time.time()-start < 0.7:
             pass
 
         m.setSpeeds(20,-20)
         start = time.time()
-        while gyro.update().get_yawsum() >= now+degrees+1 and time.time()-start < 1:
+        while gyro.get_yawsum() >= now+degrees+1 and time.time()-start < 0.3:
             pass
     m.stop()
 
 
 def set_degrees(m, gyro, degrees):
-    now = gyro.update().get_yawsum()
+    now = gyro.get_yawsum()
     diff = (now-degrees)%360
     rotateDegrees(m, gyro, -diff)
 
@@ -90,6 +90,7 @@ def disincagna(m, gyro, dir, coeff = 1, deg = None, largo = True): #Best name ev
     if largo:
         m.setSpeeds(40,40)
         time.sleep(0.2)
+    m.stop()
 
 
 def parallel(m, tof = None, times = 1, gyro = None, deg = None, slow = False):
@@ -97,12 +98,12 @@ def parallel(m, tof = None, times = 1, gyro = None, deg = None, slow = False):
     Move the robot parallel to the walls
     """
     print("Parallel")
-    gyro.update()
+    gyro
     before = gyro.get_yawsum()
 
     posiziona_assi(m, gyro)
 
-    gyro.update()
+    gyro
     after = gyro.get_yawsum()
     print("END Parallel")
     if(abs(before-after)>45):
@@ -115,7 +116,7 @@ def posiziona_assi(m, gyro):
     """
     Move the robot parallel to the walls using the gyro
     """
-    gyro.update()
+    gyro
     starting_deg = gyro.starting_deg
     starting_deg = int(starting_deg)%90
     now = int(gyro.get_yawsum())%90
@@ -149,11 +150,11 @@ def oneCellForward(m, power= params.MOTOR_DEFAULT_POWER_LINEAR, wait= params.MOT
     elif mode == 'time':
         print("Sto per partire")
         started_time = time.time()
-        gyro.update()
+        gyro
         starting_deg = gyro.get_yawsum()
         while time.time()-started_time < params.MOTOR_CELL_TIME: #or (avg2 >= dim.MIN_DISTANCE): #While the number of cells is not changed or the distance from a wall is too low
             m.setSpeeds(params.MOTOR_DEFAULT_POWER_LINEAR,params.MOTOR_DEFAULT_POWER_LINEAR)
-            gyro.update()
+            gyro
             if(abs(starting_deg-gyro.get_yawsum()) > 10):
                 #Got stuck
                 if(starting_deg-gyro.get_yawsum() > 0):
@@ -186,7 +187,7 @@ def oneCellForward(m, power= params.MOTOR_DEFAULT_POWER_LINEAR, wait= params.MOT
             elif correction < -4:
                 correction = -4
             rotateDegrees(m, gyro, -correction*k_c)
-            gyro.update()
+            gyro
             starting_deg = gyro.get_yawsum()
             first_slow_down = True
             avg_N = tof.read_fix('N')
@@ -226,7 +227,7 @@ def oneCellForward(m, power= params.MOTOR_DEFAULT_POWER_LINEAR, wait= params.MOT
                     m.setSpeeds(20,20)
 
                 rospy.logdebug("LOG: Reading gyro")
-                gyro.update()
+                gyro
                 rospy.logdebug("LOG: Gyro OK")
                 if(abs(starting_deg-gyro.get_yawsum()) > 10):
                     rospy.loginfo("LOG: Disincagna")
@@ -259,7 +260,7 @@ def oneCellForward(m, power= params.MOTOR_DEFAULT_POWER_LINEAR, wait= params.MOT
                     time.sleep(1)
                     m.setSpeeds(70,70)
                     time.sleep(0.6)
-                    gyro.update()
+                    gyro
                     while(gyro.pitch < -12):
                         side_c, avg_c, k_c = tof.best_side('E','O') #Find the most accurate side between right and left to calculate the correction
                         correction = dim.cell_dimension/2 - avg_c - ((tof.n_cells_avg(avg_c)-1)*dim.cell_dimension + dim.robot_width/2)
@@ -269,7 +270,7 @@ def oneCellForward(m, power= params.MOTOR_DEFAULT_POWER_LINEAR, wait= params.MOT
                         elif correction < -2:
                             correction = -2
                         m.setSpeeds(65 - gyro.roll + correction*k_c, 65 + gyro.roll - correction*k_c, l_coeff = 20, r_coeff = 20)
-                        gyro.update()
+                        gyro
                     m.setSpeeds(50,50)
                     time.sleep(0.4)
                     started_time = time.time()
@@ -288,9 +289,9 @@ def oneCellForward(m, power= params.MOTOR_DEFAULT_POWER_LINEAR, wait= params.MOT
                     time.sleep(0.1)
                     m.setSpeeds(30,30, l_coeff = -5, r_coeff = -5)
                     time.sleep(0.1)
-                    gyro.update()
+                    gyro
                     while(gyro.pitch > 8):
-                        gyro.update()
+                        gyro
                         side_c, avg_c, k_c = tof.best_side('E','O') #Find the most accurate side between right and left to calculate the correction
                         correction = dim.cell_dimension/2 - avg_c - ((tof.n_cells_avg(avg_c)-1)*dim.cell_dimension + dim.robot_width/2)
                         correction *= 0.1
@@ -457,7 +458,7 @@ def calibrate_gyro(m, gyro= None):
     time.sleep(0.2)
     m.stop()
 
-    gyro.update()
+    gyro
     gyro.starting_deg = gyro.get_yawsum()
     gyro.last_calibrated = time.time()
 
