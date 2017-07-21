@@ -25,42 +25,44 @@ def rotateLeft(m, gyro, power= motors.MOTOR_DEFAULT_POWER_ROTATION, wait= motors
 
 
 def rotateDegrees(m, gyro, degrees):
-    now = gyro.update().yawsum
+    now = gyro.update().get_yawsum()
     if degrees > 1:
         m.setSpeeds(-50,50)
+        time.sleep(0.005)
         if degrees > 7:
-            while gyro.update().yawsum <= now+degrees-7:
+            while gyro.update().get_yawsum() <= now+degrees-7:
                 pass
 
         m.setSpeeds(-30,30)
         start = time.time()
-        while gyro.update().yawsum <= now+degrees-4 and time.time()-start < 1:
+        while gyro.update().get_yawsum() <= now+degrees-4 and time.time()-start < 1:
             pass
 
         start = time.time()
         m.setSpeeds(-20,20)
-        while(gyro.update().yawsum <= now+degrees-1 and time.time()-start < 1):
+        while(gyro.update().get_yawsum() <= now+degrees-1 and time.time()-start < 1):
             pass
     elif degrees < -1:
         m.setSpeeds(50,-50)
+        time.sleep(0.005)
         if degrees < -7:
-            while gyro.update().yawsum >= now+degrees+7:
+            while gyro.update().get_yawsum() >= now+degrees+7:
                 pass
 
         m.setSpeeds(30,-30)
         start = time.time()
-        while gyro.update().yawsum >= now+degrees+4 and time.time()-start < 1:
+        while gyro.update().get_yawsum() >= now+degrees+4 and time.time()-start < 1:
             pass
 
         m.setSpeeds(20,-20)
         start = time.time()
-        while gyro.update().yawsum >= now+degrees+1 and time.time()-start < 1:
+        while gyro.update().get_yawsum() >= now+degrees+1 and time.time()-start < 1:
             pass
     m.stop()
 
 
 def set_degrees(m, gyro, degrees):
-    now = gyro.update().yawsum
+    now = gyro.update().get_yawsum()
     diff = (now-degrees)%360
     rotateDegrees(m, gyro, -diff)
 
@@ -99,12 +101,12 @@ def parallel(m, tof = None, times = 1, gyro = None, deg = None, slow = False):
     """
     print("Parallel")
     gyro.update()
-    before = gyro.yawsum
+    before = gyro.get_yawsum()
 
     posiziona_assi(m, gyro)
 
     gyro.update()
-    after = gyro.yawsum
+    after = gyro.get_yawsum()
     print("END Parallel")
     if(abs(before-after)>45):
         rospy.logfatal("LOG: WTF happened! Wrong rotation. Some shit with cosmic radiation happened")
@@ -119,12 +121,11 @@ def posiziona_assi(m, gyro):
     gyro.update()
     starting_deg = gyro.starting_deg
     starting_deg = int(starting_deg)%90
-    now = int(gyro.yawsum)%90
+    now = int(gyro.get_yawsum())%90
     if abs(starting_deg-now) <=45:
         to_rotate = starting_deg-now
     else:
         to_rotate = int(now-starting_deg)%90
-    rospy.logerr(to_rotate)
     if abs(to_rotate) > 1:
         rotateDegrees(m, gyro, to_rotate)
 
@@ -147,82 +148,20 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
         print("Sto per partire")
         started_time = time.time()
         gyro.update()
-        starting_deg = gyro.yawsum
+        starting_deg = gyro.get_yawsum()
         while time.time()-started_time < motors.MOTOR_CELL_TIME: #or (avg2 >= dim.MIN_DISTANCE): #While the number of cells is not changed or the distance from a wall is too low
             m.setSpeeds(motors.MOTOR_DEFAULT_POWER_LINEAR,motors.MOTOR_DEFAULT_POWER_LINEAR)
             gyro.update()
-            if(abs(starting_deg-gyro.yawsum) > 10):
+            if(abs(starting_deg-gyro.get_yawsum()) > 10):
                 #Got stuck
-                if(starting_deg-gyro.yawsum > 0):
+                if(starting_deg-gyro.get_yawsum() > 0):
                     disincagna(m, gyro, -1, deg= starting_deg)
                 else:
                     disincagna(m, gyro, 1, deg= starting_deg)
                 first_slow_down = True
                 parallel(m, tof, gyro=gyro)
-                starting_deg = gyro.yawsum
+                starting_deg = gyro.get_yawsum()
                 started_time = time.time() - 0.2
-            '''
-            gyro.update()
-            if gyro.pitch > 18: #Up
-                m.setSpeeds(-30,-30)
-                time.sleep(1)
-                m.setSpeeds(70,70)
-                time.sleep(0.6)
-                gyro.update()
-                while(gyro.pitch > 18):
-                    m.setSpeeds(70 + gyro.roll, 70 - gyro.roll)
-                    gyro.update()
-                time.sleep(0.2)
-                m.stop()
-                break
-            if gyro.pitch < -6: #Down
-                m.setSpeeds(40,40)
-                time.sleep(0.05)
-                m.setSpeeds(30,30)
-                time.sleep(0.05)
-                m.setSpeeds(22,22)
-                time.sleep(0.05)
-                m.setSpeeds(18,18)
-                time.sleep(0.05)
-                m.setSpeeds(15,15)
-                time.sleep(0.1)
-                gyro.update()
-                while(gyro.pitch < -6):
-                    gyro.update()
-                    m.setSpeeds(25 - gyro.roll, 25 + gyro.roll)
-                time.sleep(1)
-                m.stop()
-                break
-            victims = sm.check_victim(pos,h)
-            print("Victims: ", victims)
-            if (victims[0]): #and time.time()-h.last_read>5):
-                time_before_victims = time.time()
-                if mat.item(pos)//512 == 1 and sm.are_there_visual_victims_in_the_list(victims[1]): #If i've seen the victims but not the visual (at least not all of them)
-                    mat.itemset(pos, 1024, only_visual = True)
-                    saveAllVictims(m, gyro, victims, k, tof)
-                elif mat.item(pos)//512 == 0: #First time i see victims here
-                    mat.itemset(pos, 512)
-                    saveAllVictims(m, gyro, victims, k, tof)
-
-            if ch.is_something_touched():
-                if ch.read('E'):
-                    m.setSpeeds(70,30)
-                else:
-                    m.setSpeeds(30,70)
-                time.sleep(0.2)
-                if ch.read('E') and ch.read('O'):
-                    gyro.update()
-                    gyro.starting_deg = gyro.yawsum
-                    break
-                    print("Letti tutti")
-                elif ch.read('E'):
-                    disincagna(m, gyro, -1, deg)
-                else:
-                    disincagna(m, gyro, 1, deg)
-
-            N_now = z2*tof.n_cells(avg2, cosalfa, k=dim.cell_long)
-            '''
-            pass
         print("Ho finito il ciclo, merde")
         parallel(m, tof, gyro=gyro)
 
@@ -246,7 +185,7 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
                 correction = -4
             rotateDegrees(m, gyro, -correction*k_c)
             gyro.update()
-            starting_deg = gyro.yawsum
+            starting_deg = gyro.get_yawsum()
             first_slow_down = True
             avg_N = tof.read_fix('N')
             avg_N_prec = avg_N
@@ -262,11 +201,11 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
 
                 rospy.logdebug("LOG: Calculating speed")
                 #print(N_now, N_prec, abs(tof.n_cells_avg(avg+k*(dim.cell_dimension/2-precision))- N_prec))
-                if N_now != N_prec and (time.time()-started_slow < 3 or started_slow == 0):
+                if N_now != N_prec and (time.time()-started_slow < 4 or started_slow == 0):
                     m.setSpeeds(motors.MOTOR_PRECISION_POWER_LINEAR, motors.MOTOR_PRECISION_POWER_LINEAR)
                     if first_slow_down:
                         #parallel(m, tof, gyro=gyro)
-                        starting_deg = gyro.yawsum
+                        starting_deg = gyro.get_yawsum()
                         started_slow = time.time()
                         first_slow_down = False
                 elif time.time()-started_slow < 3 or started_slow == 0:
@@ -283,10 +222,10 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
                 rospy.logdebug("LOG: Reading gyro")
                 gyro.update()
                 rospy.logdebug("LOG: Gyro OK")
-                if(abs(starting_deg-gyro.yawsum) > 10):
+                if(abs(starting_deg-gyro.get_yawsum()) > 10):
                     rospy.loginfo("LOG: Disincagna")
                     #Got stuck
-                    if(starting_deg-gyro.yawsum > 0):
+                    if(starting_deg-gyro.get_yawsum() > 0):
                         disincagna(m, gyro, -1, deg= starting_deg)
                         started_time = time.time()
                         started_slow = 0
@@ -296,7 +235,7 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
                         started_slow = 0
                     first_slow_down = True
                     parallel(m, tof, gyro=gyro)
-                    starting_deg = gyro.yawsum
+                    starting_deg = gyro.get_yawsum()
 
                 avg = tof.read_fix(side)
                 avg_N = tof.read_fix('N')
@@ -358,15 +297,31 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
                     started_time = time.time()
                     started_slow = 0
                 rospy.logdebug("LOG: Checking Black cell")
-                try:
-                    if col.is_cell_black(): #To comment out the False
+
+                try: #Checking black cell
+                    if col.is_cell_black():
                         mat[new_pos[0]][new_pos[1]][new_pos[2]] = 256
                         nav_error = True
                         oneCellBack(m, mode='time', wait=motors.MOTOR_CELL_TIME*0.8)
                         break
                 except:
                     rospy.logerr("LOG: ERROR reading black cell")
+
+                #Checking victims
+                if (time.time() - h.last_victim < 0.8 and time.time() - h.last_saved > 1.2): #and time.time()-h.last_read>5):
+                    beginning = time.time()
+                    rospy.loginfo("LOG: Saving heat victims")
+                    time_before_victims = time.time()
+                    saveAllVictims(m, gyro, h.victims, k_kit, tof)
+                    h.last_saved = time.time()
+                    mat[pos[0]][pos[1]][pos[2]] = 512
+                    started_time += (time.time()-beginning)
+                    started_slow = 0
+                rospy.logdebug("LOG: Starting checking video victims")
+
                 rospy.logdebug("LOG: Finished cycle")
+
+
             m.stop()
             time.sleep(0.2)
             '''
@@ -396,27 +351,7 @@ def oneCellForward(m, power= motors.MOTOR_DEFAULT_POWER_LINEAR, wait= motors.MOT
         #print("Time passed: ", time.time() - h.last_victim)
         #print("Last saved passed: ", time.time() - h.last_saved)
         #saveAllVictims(m, gyro, h.isThereSomeVideoVictim, k_kit, tof)
-        if (time.time() - h.last_victim < 0.8 and time.time() - h.last_saved > 1.2): #and time.time()-h.last_read>5):
-            rospy.loginfo("LOG: Saving heat victims")
-            time_before_victims = time.time()
-            saveAllVictims(m, gyro, h.victims, k_kit, tof)
-            h.last_saved = time.time()
-            '''
-            if mat.item(pos)//512 == 1: #If i've seen the victims but not the visual
-                #mat.itemset(pos, 1024)
-                saveAllVictims(m, gyro, victims, k, tof)
-            elif mat.item(pos)//512 == 0: #First time i see victims here
-                #mat.itemset(pos, 512)
-                saveAllVictims(m, gyro, victims, k, tof)
-            '''
-        elif h.last_victim - h.last_saved > 2 and time.time() - h.last_victim < 2.1: #If the heat victim was seen long time ago
-            oneCellBack(m, mode='time')
-            saveAllVictims(m, gyro, h.victims, k_kit, tof)
-            k_kit.blink()
-            time.sleep(1)
-            oneCellForward(m, mode='time', gyro=gyro)
 
-        rospy.logdebug("LOG: Starting checking video victims")
         saveAllVictims(m, gyro, h.isThereSomeVideoVictim(), k_kit, tof)
 
     logging.info("Arrived in centre of the cell")
@@ -433,7 +368,7 @@ def saveAllVictims(m, gyro, victims, k, tof, only_visual = False):
         rospy.loginfo("LOG: Victims: %s", victims[1])
     if 'N' in victims[1] and not only_visual and tof.is_there_a_wall('N'):
         k.release_one_kit()
-    if 'UE' in victims[1] or 'UO' in victims[1]:
+    if 'UE' in victims[1] and tof.is_there_a_wall('E') or 'UO' in victims[1] and tof.is_there_a_wall('O'):
         k.blink()
         time.sleep(1)
     if (('E' in victims[1]  and not only_visual) or 'HE' in victims[1] or 'SE' in victims[1]) and tof.is_there_a_wall('E'):
@@ -473,7 +408,9 @@ def saveAllVictims(m, gyro, victims, k, tof, only_visual = False):
     else:
         turn += 1
 
-    if(turn < 4):
+    if(turn == 3):
+        rotateLeft(m, gyro)
+    elif(turn < 4):
         for i in range(turn):
             rotateRight(m, gyro)
 
@@ -514,7 +451,7 @@ def calibrate_gyro(m, gyro= None):
     m.stop()
 
     gyro.update()
-    gyro.starting_deg = gyro.yawsum
+    gyro.starting_deg = gyro.get_yawsum()
     gyro.last_calibrated = time.time()
 
     m.setSpeeds(30,30)
