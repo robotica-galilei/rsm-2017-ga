@@ -24,6 +24,9 @@ sleep 5
 set -v
 
 {
+if [[ $(hostname -I) == *"192.168.7.2"* ]]; then
+  export ROS_IP=192.168.7.2
+fi
 if [[ $(hostname -I) == *"192.168.1.127"* ]]; then
   export ROS_IP=192.168.1.127
 fi
