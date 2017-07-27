@@ -131,9 +131,9 @@ def moveTo(path, m, t, ch, h, k, col, gyro):
         rospy.loginfo("LOG: Cannot reach next cell, aborting deleting from route")
         unexplored_queue.remove(path[1][0])
         mat[path[1][0][0]][path[1][0][1]][path[1][0][2]] = 0
-    if t.read_raw('E') < 30 and t.read_raw('E') != -1:
+    if (t.read_raw('E') < 30 and t.read_raw('E') != -1) or (t.read_raw('O') > 100 and t.is_there_a_wall('O') and (t.read_raw('E') > 300 or t.read_raw('E') == -1)):
             cn.disincagna(m, gyro, -1, coeff=0.5)
-    if t.read_raw('O') < 30 and t.read_raw('O') != -1:
+    if (t.read_raw('O') < 30 and t.read_raw('O') != -1) or (t.read_raw('E') > 100 and t.is_there_a_wall('E') and (t.read_raw('O') > 300 or t.read_raw('O') == -1):
             cn.disincagna(m, gyro, 1, coeff=0.5)
     #cn.parallel(m, t, gyro = gyro)
     a = col.is_cell_silver()
