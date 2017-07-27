@@ -222,19 +222,22 @@ def oneCellForward(m, power= params.MOTOR_DEFAULT_POWER_LINEAR, wait= params.MOT
                     nav_error = True
                     oneCellBack(m, mode='time', wait=params.MOTOR_CELL_TIME*0.8)
                     break
-            except:
+            except Exception as e:
                 rospy.logerr("LOG: ERROR reading black cell")
+                rospy.logerr(e)
 
             #Checking victims
-            if (time.time() - h.last_victim < 0.8 and time.time() - h.last_saved > 1.2): #and time.time()-h.last_read>5):
-                time_already_passed = time.time() - started_time
-                rospy.loginfo("LOG: Saving heat victims")
-                time_before_victims = time.time()
-                saveAllVictims(m, gyro, h.victims, k_kit, tof)
-                mat[pos[0]][pos[1]][pos[2]] = 512
-                started_time = time.time() - time_already_passed
-                h.last_saved = time.time()
-
+            try:
+                if (time.time() - h.last_victim < 0.8 and time.time() - h.last_saved > 1.2): #and time.time()-h.last_read>5):
+                    time_already_passed = time.time() - started_time
+                    rospy.loginfo("LOG: Saving heat victims")
+                    time_before_victims = time.time()
+                    saveAllVictims(m, gyro, h.victims, k_kit, tof)
+                    mat[pos[0]][pos[1]][pos[2]] = 512
+                    started_time = time.time() - time_already_passed
+                    h.last_saved = time.time()
+            except:
+                pass
             rospy.logdebug("LOG: Finished cycle")
         print("Ho finito il ciclo, merde")
         parallel(m, tof, gyro=gyro)
@@ -447,6 +450,12 @@ def saveAllVictims(m, gyro, victims, k, tof, only_visual = False):
     if 'UE' in victims[1] and tof.is_there_a_wall('E') or 'UO' in victims[1] and tof.is_there_a_wall('O'):
         k.blink()
         time.sleep(0.5)
+        k.blink()
+        time.sleep(0.5)
+        k.blink()
+        time.sleep(0.5)
+        k.blink()
+        time.sleep(0.5)
     if (('E' in victims[1]  and not only_visual) or 'HE' in victims[1] or 'SE' in victims[1]) and tof.is_there_a_wall('E'):
         for i in range(turn):
             rotateRight(m, gyro)
@@ -489,6 +498,9 @@ def saveAllVictims(m, gyro, victims, k, tof, only_visual = False):
     elif(turn < 4):
         for i in range(turn):
             rotateRight(m, gyro)
+    m.setSpeeds(40,40)
+    time.sleep(0.2)
+    m.stop()
 
 
 def oneCellBack(m, mode= 'time', power= params.MOTOR_DEFAULT_POWER_LINEAR, wait= params.MOTOR_CELL_TIME, tof=None):

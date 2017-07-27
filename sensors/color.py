@@ -58,4 +58,4 @@ class Color:
             avg += k_color
             time.sleep(0.01)
         avg /= 10
-        return avg > 4600 and avg < 5800 and r > 40 and g > 40 and b > 40
+        return avg > 4600 and avg < 5800 and r > 40 and g > 40 and b > 40, avg
