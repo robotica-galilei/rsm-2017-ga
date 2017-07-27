@@ -17,13 +17,19 @@ def talker():
     directions = ['N', 'S', 'E', 'O']
     rates = {'N': 0.08, 'S': 0.08, 'E': 0.3, 'O': 0.3, 'NE': 0.3, 'NO': 0.3}
     last_read = {'N': time_now, 'S': time_now, 'E': time_now, 'O': time_now}
-    t = tof.Tof()
-    t.activate_all()
+    try:
+        t = tof.Tof()
+        t.activate_all()
+    except:
+        rospy.logfatal("Error with I2C-2")
     while not rospy.is_shutdown():
         for direction in directions:
             if time.time()-last_read[direction] > rates[direction]:
                 start_time = time.time()
-                val = str(t.read_fix(direction))
+                try:
+                    val = str(t.read_fix(direction))
+                except:
+                    rospy.logfatal("Error with I2C-2")
                 msg = direction + ':' + val
                 #rospy.loginfo('Read %s', msg)
                 pub.publish(msg)

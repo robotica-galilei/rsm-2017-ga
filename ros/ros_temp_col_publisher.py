@@ -28,7 +28,7 @@ def talker():
             if time.time()-last_read[direction] > rates[direction]:
                 val = str(h.read_raw(direction))
                 msg = direction + ':' + val
-                rospy.loginfo('Read %s', msg)
+                #rospy.loginfo('Read %s', msg)
                 pub_heat.publish(msg)
                 last_read[direction] = time.time()
             time.sleep(0.001)
@@ -36,7 +36,7 @@ def talker():
         if time.time()-last_read[direction] > rates[direction]:
             val = col.read_raw()
             msg = str(str(val[0]) + ',' + str(val[1]) + ',' + str(val[2]) + ',' + str(val[3]))
-            rospy.loginfo('%s', msg)
+            #rospy.loginfo('%s', msg)
             pub_color.publish(msg)
             last_read[direction] = time.time()
 
