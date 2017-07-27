@@ -42,7 +42,7 @@ class Color:
         Returns if the read is above the threshold
         '''
         #print("COLOR: ", self.read_raw())
-        return self.read_raw()[0] < 30 and self.read_raw()[1] < 30 and self.read_raw()[2] < 30 and self.read_raw()[3] < 100
+        return self.read_raw()[0] < 40 and self.read_raw()[1] < 40 and self.read_raw()[2] < 40 and self.read_raw()[3] < 100
 
     def is_cell_silver(self, thresh=None):
         '''
@@ -58,4 +58,4 @@ class Color:
             avg += k_color
             time.sleep(0.01)
         avg /= 10
-        return avg > 5600 and avg < 6800 and r > 50 and g > 50 and b > 50, avg
+        return avg > 4600 and avg < 5800 and r > 40 and g > 40 and b > 40
