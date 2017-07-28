@@ -416,11 +416,12 @@ if __name__ == '__main__':
 
     print("Starting main loop")
 
+    bypass_start_button = False
 
     while True:
         rospy.loginfo("LOG: Waiting for start")
         publish_robot_info(pub, status="Waiting for start")
-        while b.activated == False:
+        while b.activated == False and not bypass_start_button:
             k.blink()
             time.sleep(0.4)
         time.sleep(0.2)
@@ -436,8 +437,11 @@ if __name__ == '__main__':
         except SystemExit as e:
             print("SystemExit")
             stop_function(timer=timer_thread, m=m)
-        '''
+
         except Exception as e:
             stop_function(timer=timer_thread, m=m)
-            raise e
-        '''
+            for i in range(4)
+                k.blink()
+                time.sleep(0.3)
+            bypass_start_button = True
+            #raise e

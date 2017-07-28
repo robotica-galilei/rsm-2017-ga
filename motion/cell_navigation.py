@@ -247,7 +247,7 @@ def oneCellForward(m, power= params.MOTOR_DEFAULT_POWER_LINEAR, wait= params.MOT
         side, avg, k = tof.best_side('N','S') #Find the most accurate side between front and rear
         if (side == 'S' and (avg == -1 or avg > 600)) or (side == 'N' and avg == -1):
             rospy.logdebug("LOG: Going by time")
-            oneCellForward(m, mode='time', gyro=gyro)
+            oneCellForward(m= m, mode= 'time', tof= tof , ch= ch, h= h, gyro= gyro, k_kit= k_kit, col=col, mat= mat, pos= pos, new_pos=new_pos, deg_pos= deg_pos)
         else:
             rospy.logdebug("LOG: Going using normal mode")
             N_prec = tof.n_cells_avg(avg) #N_cells before the movement
@@ -460,10 +460,17 @@ def saveAllVictims(m, gyro, victims, k, tof, only_visual = False):
         for i in range(turn):
             rotateRight(m, gyro)
         if 'E' in victims[1] or 'HE' in victims[1] or 'SE' in victims[1]:
+            m.setSpeeds(-30,-30)
+            time.sleep(0.2)
+            m.stop()
             k.release_one_kit()
             if 'HE' in victims[1]:
                 time.sleep(1)
                 k.release_one_kit()
+            time.sleep(0.2)
+            m.setSpeeds(30,30)
+            time.sleep(0.2)
+            m.stop()
         else:
             k.blink()
         turn = 1
@@ -483,10 +490,17 @@ def saveAllVictims(m, gyro, victims, k, tof, only_visual = False):
         else:
             rotateLeft(m, gyro)
         if 'O' in victims[1] or 'HO' in victims[1] or 'SO' in victims[1]:
+            m.setSpeeds(-30,-30)
+            time.sleep(0.2)
+            m.stop()
             k.release_one_kit()
             if 'HO' in victims[1]:
                 time.sleep(1)
                 k.release_one_kit()
+            time.sleep(0.2)
+            m.setSpeeds(30,30)
+            time.sleep(0.2)
+            m.stop()
         else:
             k.blink()
         turn = 1
@@ -498,8 +512,9 @@ def saveAllVictims(m, gyro, victims, k, tof, only_visual = False):
     elif(turn < 4):
         for i in range(turn):
             rotateRight(m, gyro)
-    m.setSpeeds(40,40)
-    time.sleep(0.2)
+    if victims[0] == True:
+        m.setSpeeds(40,40)
+        time.sleep(0.3)
     m.stop()
 
 
